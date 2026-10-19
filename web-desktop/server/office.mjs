@@ -121,6 +121,7 @@ export async function open(user, target, publicOrigin, opts = {}) {
   if (opts.remoteOrigin) { const r = new URL(opts.remoteOrigin); url.protocol = r.protocol; url.host = r.host; }
   url.searchParams.set('WOPISrc', `${wopiBase}/wopi/files/${fileId}`);
   url.searchParams.set('lang', 'es');
+  url.searchParams.set('welcome', 'true'); // sin la presentación «Novedades» de Collabora al abrir
   return { url: url.href, token, ttl: Date.now() + TOKEN_HOURS * 3600e3 };
 }
 

@@ -44,7 +44,20 @@ export async function status() {
 export function start() {
   if (state.starting) return state.starting;
   state.starting = (async () => {
-    const s = await status();
+    let s = await status();
+    // La carpeta compartida tiene que ser la de esta versión (al pasar de NubeOS a WonderfulOS
+    // cambió de sitio): si el motor apunta a otra, se corrige y se reinicia.
+    const vmYaml = path.join(cfg.home, NAME, 'lima.yaml');
+    if (s.state !== 'sin instalar' && existsSync(vmYaml)) {
+      const y = readFileSync(vmYaml, 'utf8');
+      const m = y.match(/- location: "([^"]*linux-compartido)"/);
+      if (m && m[1] !== cfg.shared) {
+        mkdirSync(cfg.shared, { recursive: true });
+        if (s.state === 'encendido') await lima(['stop', NAME], { timeout: 180000 }).catch(() => lima(['stop', '-f', NAME], { timeout: 60000 }));
+        writeFileSync(vmYaml, y.replace(m[0], `- location: ${JSON.stringify(cfg.shared)}`));
+        s = await status();
+      }
+    }
     if (s.state === 'encendido') return;
     // Recursos del motor según el Mac: deja al menos 4 núcleos y 2/3 de la memoria para macOS.
     const cpus = Math.max(4, Math.min(8, os.cpus().length - 4));
