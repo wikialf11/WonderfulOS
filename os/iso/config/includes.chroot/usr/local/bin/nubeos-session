@@ -1,0 +1,6 @@
+#!/bin/sh
+# Sesión de WonderfulOS: labwc (gestor de ventanas pequeño) con WonderfulOS a pantalla completa.
+# Las apps de Linux que se abren desde WonderfulOS aparecen como ventanas encima.
+export XDG_CURRENT_DESKTOP=WonderfulOS:wlroots XDG_SESSION_DESKTOP=nubeos
+export NUBEOS_SESSION=1 MOZ_ENABLE_WAYLAND=1 QT_QPA_PLATFORM="wayland;xcb" GDK_BACKEND="wayland,x11"
+exec labwc -C /etc/nubeos/labwc

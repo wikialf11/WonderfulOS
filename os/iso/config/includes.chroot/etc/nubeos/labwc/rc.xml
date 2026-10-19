@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<labwc_config>
+  <core><decoration>server</decoration><gap>0</gap></core>
+  <theme>
+    <name>WonderfulOS</name>
+    <cornerRadius>0</cornerRadius>
+    <font place="ActiveWindow"><name>Inter</name><size>10</size><weight>bold</weight></font>
+    <font place="InactiveWindow"><name>Inter</name><size>10</size></font>
+  </theme>
+  <placement><policy>center</policy></placement>
+  <focus><followMouse>no</followMouse></focus>
+  <keyboard>
+    <default/>
+    <keybind key="A-F4"><action name="Close"/></keybind>
+    <keybind key="A-Tab"><action name="NextWindow"/></keybind>
+    <keybind key="W-Up"><action name="ToggleMaximize"/></keybind>
+  </keyboard>
+  <windowRules>
+    <!-- WonderfulOS es el escritorio (ya va a pantalla completa): siempre debajo y sin bordes -->
+    <windowRule identifier="nubeos" serverDecoration="no" skipTaskbar="yes"><action name="ToggleAlwaysOnBottom"/></windowRule>
+    <windowRule identifier="WonderfulOS" serverDecoration="no" skipTaskbar="yes"><action name="ToggleAlwaysOnBottom"/></windowRule>
+  </windowRules>
+</labwc_config>

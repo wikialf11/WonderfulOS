@@ -1,0 +1,11 @@
+# Bordes de las ventanas de apps de Linux: como las de WonderfulOS, esquinas en pico.
+border.width: 1
+window.active.border.color: #d8dcf0
+window.inactive.border.color: #e4e6f2
+window.active.title.bg.color: #f4f5fb
+window.inactive.title.bg.color: #fafafd
+window.active.label.text.color: #1d2030
+window.inactive.label.text.color: #7a7f95
+window.active.button.unpressed.image.color: #1d2030
+window.inactive.button.unpressed.image.color: #9aa0b8
+window.titlebar.padding.height: 6

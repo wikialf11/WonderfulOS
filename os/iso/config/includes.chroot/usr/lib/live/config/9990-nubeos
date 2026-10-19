@@ -1,0 +1,9 @@
+#!/bin/sh
+# Sesión en vivo: entra directamente en WonderfulOS (live-config deja otra sesión en sddm.conf).
+if [ -f /etc/sddm.conf ]; then sed -i 's/^Session=.*/Session=nubeos.desktop/' /etc/sddm.conf; fi
+grep -q '^Session=nubeos' /etc/sddm.conf 2>/dev/null || printf '[Autologin]\nUser=nubeos\nSession=nubeos.desktop\n' >> /etc/sddm.conf
+# Solo en el USB: el usuario de prueba puede instalar sin contraseña (no se copia al disco).
+mkdir -p /etc/polkit-1/rules.d
+cat > /etc/polkit-1/rules.d/49-nubeos-live.rules <<'R'
+polkit.addRule(function(action, subject) { if (subject.user == "nubeos") return polkit.Result.YES; });
+R

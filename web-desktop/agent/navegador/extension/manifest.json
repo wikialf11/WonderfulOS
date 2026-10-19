@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "WonderfulOS",
+  "version": "1.0",
+  "description": "Conecta el navegador con WonderfulOS: rellenar contraseñas del Llavero y guardar las nuevas.",
+  "permissions": ["tabs", "alarms"],
+  "host_permissions": ["<all_urls>"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [{ "matches": ["http://*/*", "https://*/*"], "js": ["content.js"], "run_at": "document_idle" }]
+}

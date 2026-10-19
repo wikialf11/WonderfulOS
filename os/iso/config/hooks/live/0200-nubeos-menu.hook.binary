@@ -1,0 +1,14 @@
+#!/bin/sh
+# Menú de arranque en español y con el nombre de WonderfulOS.
+set -e
+for f in boot/grub/grub.cfg boot/grub/config.cfg boot/grub/live-theme/theme.txt isolinux/*.cfg; do
+  [ -f "$f" ] || continue
+  sed -i \
+    -e 's/Live system (amd64 fail-safe mode)/WonderfulOS (modo seguro)/g' \
+    -e 's/Live system (amd64)/Probar o instalar WonderfulOS/g' \
+    -e 's/Live system/WonderfulOS/g' \
+    -e "s/'Utilities\.\.\.'/'Utilidades...'/g; s/Utilities\.\.\./Utilidades.../g" \
+    -e "s/'Advanced install options \.\.\.'/'Opciones avanzadas...'/g" \
+    -e 's/Live Boot Menu with GRUB/WonderfulOS/g' \
+    "$f"
+done

@@ -1,0 +1,11 @@
+.DS_Store
+node_modules/
+image/out/
+image/work/
+*.iso
+*.img
+os/iso/out/
+os/iso/cache/
+os/iso/config/includes.chroot/opt/nubeos/
+os/iso/config/includes.chroot/usr/share/nubeos/
+nubeos.zip

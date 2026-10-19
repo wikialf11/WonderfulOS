@@ -1,0 +1,19 @@
+[Unit]
+Description=Escritorio NubeOS (kiosko)
+After=systemd-user-sessions.service network-online.target plymouth-quit-wait.service
+Wants=network-online.target
+Conflicts=getty@tty1.service
+
+[Service]
+User=nubeos
+PAMName=login
+TTYPath=/dev/tty1
+StandardInput=tty
+UtmpIdentifier=tty1
+Environment=XDG_SESSION_TYPE=wayland
+ExecStart=/usr/local/bin/nubeos-session
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=graphical.target

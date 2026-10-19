@@ -1,0 +1,131 @@
+/* ===== WonderfulOS: aspecto de LibreOffice (Collabora Online) =====
+   Se añade al final de branding.css (ver Dockerfile). Principios:
+   - Una sola forma de hacer cada cosa: fuera la barra lateral, las pestañas que
+     repiten opciones, los atajos duplicados y los extras de la barra de estado.
+   - Aire: menos botones visibles, más separación y sin rótulos de grupo.
+   - Vidrio: el fondo es transparente y deja ver el escritorio desenfocado de WonderfulOS;
+     la barra superior lleva el degradado del icono de cada app. */
+
+:root, html {
+  --cool-font: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, system-ui, sans-serif;
+  --co-border-radius: 0;
+}
+/* Fondo alrededor de la página: el tono de las ventanas de WonderfulOS (el lienzo no admite transparencia). */
+html:root { --color-canvas: #eceef5 !important; }
+html:root[data-theme='dark'] { --color-canvas: #1a1c26 !important; }
+html [data-doctype='text'], html[data-doctype='text'] { --doc-type: 240, 110, 10 !important; --doc-type-2: 255, 150, 50; }
+html [data-doctype='spreadsheet'], html[data-doctype='spreadsheet'] { --doc-type: 15, 157, 88 !important; --doc-type-2: 34, 197, 110; }
+html [data-doctype='presentation'], html[data-doctype='presentation'] { --doc-type: 225, 29, 72 !important; --doc-type-2: 250, 82, 120; }
+html [data-doctype='drawing'], html[data-doctype='drawing'] { --doc-type: 91, 108, 255 !important; --doc-type-2: 167, 139, 250; }
+html[data-theme='dark'] [data-doctype='text'] { --doc-type: 255, 170, 90 !important; }
+html[data-theme='dark'] [data-doctype='spreadsheet'] { --doc-type: 62, 224, 143 !important; }
+html[data-theme='dark'] [data-doctype='presentation'] { --doc-type: 255, 122, 154 !important; }
+
+/* ---------- Vidrio: fondos transparentes (la ventana de WonderfulOS pone el desenfoque) ---------- */
+html, body, #main-document-content, #document-container, #presentation-controls-wrapper,
+.leaflet-container, #toolbar-down, #toolbar-wrapper.hasnotebookbar, #navigation-sidebar, #spreadsheet-row-column-frame {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+#toolbar-wrapper.hasnotebookbar {
+  background: linear-gradient(180deg, rgba(var(--doc-type), .10), rgba(var(--doc-type), .02)) !important;
+  border-bottom: .5px solid rgba(127, 127, 127, .18) !important;
+  padding: 6px 14px !important;
+}
+#toolbar-down { border-top: .5px solid rgba(127, 127, 127, .18) !important; }
+
+/* Barra superior: degradado del icono, con un brillo arriba como los iconos. */
+.main-nav.hasnotebookbar {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .18), rgba(255, 255, 255, 0) 60%),
+              linear-gradient(100deg, rgb(var(--doc-type)), rgb(var(--doc-type-2, var(--doc-type)))) !important;
+  padding-inline: 10px !important;
+}
+
+/* ---------- Una sola forma de hacer cada cosa ---------- */
+/* Sin logos ni nombre repetido (ya están en la ventana de WonderfulOS). */
+.document-logo, #document-header > a.document-logo, .img-coda-app-logo { display: none !important; }
+.main-nav.hasnotebookbar #document-titlebar { visibility: hidden; }
+/* Pestañas que repiten lo de Inicio o son para expertos. */
+#Format-tab-label, #Form-tab-label, #Help-tab-label, #References-tab-label, #Formula-tab-label,
+#Sheet-tab-label, #Draw-tab-label, #Master-tab-label { display: none !important; }
+/* Atajos duplicados arriba (guardar se hace solo; deshacer está en Inicio), modo edición y barra lateral. */
+#shortcutstoolbox, #viewMode, #readonlyMode, [id^='SidebarDeck.PropertyDeck'], #sidebar-dock-wrapper,
+#closebuttonwrapperseparator, #userListHeader { display: none !important; }
+/* Inicio: cortar/copiar/brocha/limpiar ya están en el menú del botón derecho y en el teclado. */
+[id^='home-cut'], [id^='home-copy'], [id^='home-brush'], [id^='home-reset-attributes'],
+[id^='home-clone'], [id^='home-formatpaintbrush'] { display: none !important; }
+/* Navegador flotante: el documento ya se recorre con la barra de desplazamiento. */
+[id^='view-navigator'], #navigator-floating-icon, .navigator-floating-icon { display: none !important; }
+/* Barra de estado: solo página, palabras y zoom. */
+#languagestatus, #languagestatus-button, #languagestatusbreak, [id^='signstatus'], #multi-page-view, #prevpage, #nextpage,
+#prevnextbreak, #menuoverflow, #permissionspacer, #statewordcountbreak, #statepagenumberbreak,
+#StateSelectionMode, #insertmode-container, #statusdocpos { display: none !important; }
+
+/* ---------- Aire ---------- */
+.notebookbar .ui-overflow-group-label, .notebookbar.ui-overflow-group-bottom { display: none !important; } /* rótulos «Portapapeles», «Párrafo»… y sus lanzadores */
+.notebookbar.ui-overflow-group { margin-inline: 6px !important; padding-inline: 6px !important; border: 0 !important; }
+.notebookbar .unotoolbutton, #toolbar-wrapper .unotoolbutton { margin: 1px 3px !important; }
+.ui-tab.notebookbar { font-size: 13px !important; font-weight: 500 !important; border-radius: 99px !important; margin: 5px 2px !important; padding-inline: 14px !important; transition: background .15s; }
+.main-nav.hasnotebookbar .ui-tab.selected.notebookbar,
+.main-nav.hasnotebookbar .ui-tab.selected.notebookbar:hover {
+  background: rgba(255, 255, 255, .92) !important; color: rgb(var(--doc-type)) !important;
+  box-shadow: 0 4px 14px -4px rgba(0, 0, 0, .3) !important; height: auto !important; margin-top: 5px !important;
+}
+.main-nav.hasnotebookbar button.ui-tab.notebookbar:not(.selected) { color: #fff !important; }
+.main-nav.hasnotebookbar button.ui-tab.notebookbar:not(.selected):hover { background: rgba(255, 255, 255, .2) !important; color: #fff !important; }
+html[data-theme='dark'] .main-nav.hasnotebookbar .ui-tab.selected.notebookbar { background: rgba(20, 22, 30, .75) !important; }
+
+/* Botones e campos redondeados y suaves. */
+.notebookbar .unotoolbutton, #toolbar-wrapper button, .jsdialog .ui-pushbutton, .ui-listbox, .ui-combobox,
+.ui-edit, .ui-spinfield, .jsdialog input, .jsdialog select { border-radius: 9px !important; }
+.ui-listbox, .ui-combobox, .ui-edit { background: rgba(127, 127, 127, .10) !important; border-color: transparent !important; }
+
+/* Galería de estilos: sin caja blanca; en modo oscuro las vistas previas se invierten. */
+#stylesview-iconview-list, .notebookbar.ui-iconview-root, .notebookbar .ui-iconview-entry, .notebookbar .ui-iconview-entry * {
+  background-color: transparent !important; border-color: transparent !important; }
+.notebookbar .ui-iconview-entry { border-radius: 8px !important; }
+.notebookbar .ui-iconview-entry.selected { background-color: rgba(var(--doc-type), .14) !important; }
+html[data-theme='dark'] [id^='stylesview'] img { filter: invert(.92) hue-rotate(180deg); }
+
+/* Diálogos y menús con vidrio, esquinas y sombra como WonderfulOS. */
+.jsdialog-window, .lokdialog_container, .ui-dialog, .jsdialog-container, .context-menu-list, .lo-menu {
+  border-radius: 16px !important; overflow: hidden;
+  backdrop-filter: blur(30px) saturate(1.6); -webkit-backdrop-filter: blur(30px) saturate(1.6);
+  box-shadow: 0 24px 60px -16px rgba(15, 23, 42, .45), 0 0 0 .5px rgba(15, 23, 42, .12) !important;
+}
+
+/* Inicio, solo lo esencial: lo demás está en su pestaña (Insertar) o en el teclado. */
+[id^='home-grow'], [id^='home-shrink'], [id^='home-subscript'], [id^='home-superscript'], [id^='home-spacing'],
+[id^='home-strikeout'], [id^='home-background-color'], [id^='home-increment-indent'], [id^='home-decrement-indent'],
+[id^='home-control-codes'], [id^='home-para-left-to-right'], [id^='home-para-right-to-left'],
+[id^='home-insert-table'], [id^='home-insert-graphic'], [id^='home-insert-page-break'], [id^='CharmapControl'],
+[id^='home-search-dialog'] { display: none !important; }
+
+/* Cálculo: filas/columnas (botón derecho), estilos de celda, ordenar/filtrar (pestaña Datos)… */
+[id^='home-format-paint-brush'], [id^='home-align-top'], [id^='home-align-vertical-center'], [id^='home-align-bottom'],
+[id^='home-insert-rows'], [id^='home-delete-rows'], [id^='home-insert-columns'], [id^='home-delete-columns'],
+[id^='home-conditional-format-menu'], [id^='StyleApply'], [id^='home-data-sort'], [id^='home-data-filter'],
+[id^='home-number-format-increment-decimals'], [id^='home-number-format-decrement-decimals'], [id^='pos_window'],
+[id^='functiondialog'] { display: none !important; }
+
+/* Presentaciones: formas, tablas, imágenes y gráficos están en Insertar; diseño en su pestaña. */
+[id^='home-set-default'], [id^='home-assign-layout'], [id^='home-shadowed'], [id^='home-charbackcolor'],
+[id^='home-cell-vertical'], [id^='home-xline-color'], [id^='home-fill-color'], [id^='home-basic-shapes'],
+[id^='home-connector-tool-box'], [id^='home-text'], [id^='home-object-chart'] { display: none !important; }
+
+/* Galería de estilos sin fondos blancos entre las vistas previas. */
+[id^='stylesview'], [id^='stylesview'] .ui-iconview-entry, [id^='stylesview'] div { background-color: transparent !important; border-color: transparent !important; }
+[id^='stylesview'] .ui-iconview-entry img { border-radius: 6px; }
+
+/* Cualquier galería de la cinta (transiciones, diseños…) sin caja clara. */
+.notebookbar [class*='iconview'], .notebookbar [class*='iconview'] *, .notebookbar .ui-scrollwindow {
+  background-color: transparent !important; border-color: transparent !important; }
+.notebookbar [class*='iconview-entry'] { border-radius: 10px !important; }
+.notebookbar [class*='iconview-entry']:hover { background-color: rgba(127, 127, 127, .14) !important; }
+.notebookbar [class*='iconview-entry'].selected { background-color: rgba(var(--doc-type), .18) !important; }
+
+/* Presentaciones: panel de diapositivas sin cabecera ni pestañas extra. */
+#navigation-sidebar .navigation-header { display: none !important; }
+
+/* WonderfulOS: esquinas en pico, como los iconos del sistema */
+*, *::before, *::after { border-radius: 0 !important; }

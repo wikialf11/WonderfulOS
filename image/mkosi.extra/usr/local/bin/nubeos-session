@@ -1,0 +1,12 @@
+#!/bin/sh
+# Sesión gráfica de NubeOS: Chromium a pantalla completa dentro del compositor
+# Wayland "cage", que solo muestra una aplicación y no deja salir de ella.
+set -eu
+. /etc/nubeos/nubeos.conf
+exec cage -s -- chromium \
+  --ozone-platform=wayland \
+  --kiosk \
+  --app="${NUBEOS_URL}" \
+  --noerrdialogs --disable-session-crashed-bubble --no-first-run \
+  --enable-features=WebRTCPipeWireCapturer \
+  --user-data-dir="${HOME}/.config/nubeos-browser"

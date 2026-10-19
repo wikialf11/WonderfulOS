@@ -1,0 +1,88 @@
+{
+  "name": "nubeos",
+  "productName": "WonderfulOS",
+  "version": "0.16.1",
+  "license": "GPL-3.0-or-later",
+  "description": "WonderfulOS en tu ordenador: el sistema de WonderfulOS con la potencia real de tu Mac, PC o Linux.",
+  "main": "main.mjs",
+  "type": "module",
+  "private": true,
+  "author": "WonderfulOS",
+  "scripts": {
+    "start": "electron .",
+    "dist:mac": "electron-builder --mac",
+    "dist:win": "electron-builder --win",
+    "dist:linux": "electron-builder --linux"
+  },
+  "build": {
+    "appId": "life.nubeos.escritorio",
+    "productName": "WonderfulOS",
+    "files": [
+      "main.mjs",
+      "preload.cjs",
+      "local.mjs",
+      "linux.mjs",
+      "office-engine.mjs",
+      "p2p.mjs",
+      "equipo.mjs",
+      "icon.png"
+    ],
+    "extraResources": [
+      {
+        "from": "../web-desktop",
+        "to": "web-desktop",
+        "filter": [
+          "**/*",
+          "!tests/**",
+          "!node_modules/**"
+        ]
+      },
+      {
+        "from": "linux",
+        "to": "linux"
+      }
+    ],
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.productivity",
+      "icon": "icon.png",
+      "extraResources": [
+        {
+          "from": "/opt/homebrew/Cellar/lima/2.2.1",
+          "to": "lima",
+          "filter": [
+            "bin/limactl",
+            "share/lima/**/*"
+          ]
+        }
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "icon.png",
+      "signAndEditExecutable": false
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Utility",
+      "icon": "icon.png",
+      "maintainer": "WonderfulOS <hola@nubeos.life>"
+    }
+  },
+  "devDependencies": {
+    "electron": "^38.8.6",
+    "electron-builder": "^26.15.3"
+  },
+  "allowScripts": {
+    "electron@38.8.6": true
+  },
+  "dependencies": {
+    "hyperdht": "6.34.0"
+  }
+}

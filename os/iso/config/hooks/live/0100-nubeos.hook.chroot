@@ -1,0 +1,52 @@
+#!/bin/sh
+# Personalización de WonderfulOS dentro de la imagen (se ejecuta al construir la ISO).
+set -e
+
+# ---- La app de WonderfulOS (copiada en /opt/nubeos por build.sh) ----
+chown -R root:root /opt/nubeos
+chmod 4755 /opt/nubeos/chrome-sandbox
+ln -sf /opt/nubeos/nubeos /usr/local/bin/nubeos
+
+# ---- Sesión de WonderfulOS por defecto (también en lo que se instale) ----
+update-alternatives --install /usr/share/wayland-sessions/default.desktop x-session-default /usr/share/wayland-sessions/nubeos.desktop 90 2>/dev/null || true
+# El instalador deja entrar directamente en WonderfulOS si el usuario lo elige.
+for f in /etc/calamares/modules/displaymanager.conf /usr/share/calamares/modules/displaymanager.conf; do
+  [ -f "$f" ] || continue
+  sed -i '/^defaultDesktopEnvironment:/,/^[^ ]/d' "$f"
+  printf 'defaultDesktopEnvironment:\n    executable: "nubeos-session"\n    desktopFile: "nubeos"\n' >> "$f"
+done
+
+# ---- Sin iniciar sesión: el instalador deja entrar solo (se puede cambiar en sus opciones) ----
+for f in /etc/calamares/modules/users.conf /usr/share/calamares/modules/users.conf; do
+  [ -f "$f" ] || continue
+  sed -i '/^doAutologin:/d' "$f"; echo 'doAutologin: true' >> "$f"
+done
+
+# ---- Instalador con el nombre de WonderfulOS ----
+for f in /etc/calamares/branding/*/branding.desc; do
+  [ -f "$f" ] || continue
+  sed -i -E 's/^( *(productName|shortProductName|versionedName|shortVersionedName|bootloaderEntryName|productUrl)): .*/\1: WonderfulOS/' "$f"
+  sed -i -E 's/^( *bootloaderEntryName): .*/\1: WonderfulOS/; s/^( *(version|shortVersion)): .*/\1: 1.0/' "$f"
+done
+for f in $(grep -rl "Install Debian" /usr/share/applications /etc/xdg /usr/bin /usr/sbin 2>/dev/null); do
+  sed -i 's/Install Debian/Instalar WonderfulOS/g' "$f"
+done
+# Menú de arranque: WonderfulOS y los demás sistemas (Windows…) para elegir al encender.
+cat >> /etc/os-release <<'OS'
+NUBEOS=1
+OS
+sed -i 's/^PRETTY_NAME=.*/PRETTY_NAME="WonderfulOS 1.0 (Debian 13)"/' /usr/lib/os-release
+
+# ---- Oficina: la misma que la versión online (Collabora), en el propio PC y sin servidores ----
+NUBEOS_NO_START=1 bash /usr/share/nubeos/office-setup.sh /usr/share/nubeos/nubeos-office.css
+systemctl enable coolwsd
+
+# ---- Apps de Linux: Flathub para todos ----
+flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo || true
+
+# ---- Tema de los bordes de las ventanas de Linux ----
+mkdir -p /etc/skel/.config/gtk-3.0
+printf '[Settings]\ngtk-font-name=Inter 10\ngtk-icon-theme-name=Adwaita\n' > /etc/skel/.config/gtk-3.0/settings.ini
+
+# ---- Arranque con logo ----
+plymouth-set-default-theme bgrt || plymouth-set-default-theme spinner || true

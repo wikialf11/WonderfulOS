@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=WonderfulOS
+Comment=El escritorio de WonderfulOS
+Exec=/usr/local/bin/nubeos-session
+Type=Application
+DesktopNames=WonderfulOS

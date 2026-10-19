@@ -1,0 +1,83 @@
+# WonderfulOS
+
+Un sistema operativo sencillo y bonito, basado en Linux, para trabajar: Navegador, Archivos,
+Mensajes, Listas, Notas, Calendario, Texto, Cálculo, Presentaciones (LibreOffice vía Collabora
+Online), Llavero y Ajustes. Es **software libre** (GPL-3.0-or-later).
+
+- **Funciona en tu ordenador**: se instala como app en Mac, Windows y Linux (`desktop/`), o como
+  sistema completo en un PC (`os/iso`, Debian + labwc).
+- **Sin suscripciones ni nube de pago**: tus datos se guardan en tu disco.
+- **Trabajo en equipo sin servidores de terceros**: un ordenador del equipo hace de servidor y los
+  demás se conectan con un código (red P2P cifrada HyperDHT). Mensajes, listas, notas, calendario,
+  archivos y documentos se sincronizan al momento y se editan a la vez. También se puede compartir
+  un archivo o carpeta suelta por P2P.
+
+Partes del proyecto:
+- `desktop/`: la app de escritorio (Electron): servidor local, oficina, motor Linux en Mac, P2P y equipo.
+- `web-desktop/`: el escritorio y sus apps (HTML/JS) y su servidor (cuentas, archivos, datos en tiempo real).
+- `os/`: la ISO para instalar WonderfulOS como sistema de un PC.
+- `docs/`: arquitectura y notas.
+
+## Instalar
+
+Descarga el instalador de tu sistema en la página de *Releases* (`.dmg` para Mac, `Setup .exe` para
+Windows, `.AppImage` para Linux) o compílalo:
+
+```bash
+cd desktop && npm install && npx electron-builder
+```
+
+## Probar el escritorio web
+
+No necesita dependencias ni compilación, solo Node.js. Desde la carpeta del proyecto:
+
+```bash
+cd web-desktop && node server.mjs
+```
+
+y abre <http://127.0.0.1:4310>. El servidor también arranca, en el puerto 4311,
+el proxy de navegación que permite al Navegador mostrar cualquier web y buscar
+sin salir del escritorio (en producción lo hará la máquina en la nube de cada
+usuario).
+
+Qué incluye el MVP:
+
+| | |
+|---|---|
+| **Escritorio** | Ventanas que se mueven, redimensionan, minimizan y maximizan; barra de tareas; menú Inicio con búsqueda; notificaciones; tema claro/oscuro y fondos. |
+| **Cuentas** | Inicio de sesión y registro. Cada usuario tiene sus archivos y apps en la nube y los ve igual desde cualquier equipo. |
+| **Archivos** | Como un disco en línea: carpetas, crear, renombrar, eliminar y **👥 Compartir** archivos, carpetas y apps con otros usuarios (solo ver o editar). Lo que te comparten aparece en **Compartido conmigo**; las apps compartidas se instalan con un doble clic. Los datos viven en el servidor (`~/.nubeos` en desarrollo, `NUBEOS_DATA` en producción). Sin servidor, funciona en modo local guardando en el navegador. |
+| **Texto** | Editor `.txt`/`.md` con Abrir/Guardar (Ctrl+O / Ctrl+S), recuento de palabras y descarga. |
+| **Cálculo** | Hoja de cálculo con fórmulas (`=SUMA(A1:A5)`, `PROMEDIO`, `MIN`, `MAX`, `CONTAR`, `SI`, `REDONDEAR`…), autosuma e importación/exportación CSV. |
+| **Diapositivas** | Presentaciones con miniaturas, temas, reordenación y modo presentación a pantalla completa. |
+| **Navegador** | Busca y abre cualquier web dentro del escritorio (a través del proxy de navegación), con atrás/adelante y la **Tienda de apps**. Instala apps de terceros desde la Tienda o cualquier web con **⊕ Instalar app**; aparecen en el escritorio y en Inicio y se ejecutan en una ventana aislada. Las direcciones locales (p. ej. ComfyUI en `127.0.0.1:8188`) se abren directamente. Las **descargas** se guardan en la carpeta Descargas de WonderfulOS, no en la del equipo. |
+| **Ajustes** | Apariencia, selector de plan (Gratis, Básico, Pro, Ultra) como demostración y desinstalación de apps de terceros. |
+
+Pruebas del motor de fórmulas:
+
+```bash
+cd web-desktop && node --test tests/*.test.mjs
+```
+
+## Estructura
+
+```
+docs/ARQUITECTURA.md     Visión, componentes, planes, seguridad y hoja de ruta
+web-desktop/             Escritorio en el navegador (HTML/CSS/JS sin dependencias)
+  server.mjs             Servidor: escritorio, API y proxy
+  server/api.mjs         API: cuentas, archivos, compartir, descargas
+  server/store.mjs       Datos en disco: usuarios, sesiones, archivos, compartidos
+  server/proxy.mjs       Proxy de navegación y búsqueda
+  js/wm.js               Gestor de ventanas
+  js/fs.js               Sistema de archivos virtual
+  js/desktop.js          Shell: registro de apps, menú Inicio, barra de tareas
+  js/apps/               Apps nativas
+  js/proxy.js           Navegación a través del proxy
+  js/thirdparty.js       Registro y ejecución aislada de apps de terceros
+  store/                 Tienda de apps y apps de ejemplo (Reloj, Calculadora)
+image/                   Imagen Debian arrancable en modo kiosko (mkosi)
+```
+
+## Licencia
+
+WonderfulOS es software libre: se distribuye bajo la licencia **GNU GPL versión 3 o posterior** (ver `LICENSE`). Usa piezas libres de otros proyectos con sus propias licencias: Collabora Online / LibreOffice (MPL-2.0), Roundcube (GPL-3.0), HyperDHT (Apache-2.0 / MIT), Electron (MIT), Lima (Apache-2.0), Xpra (GPL-2.0) y Debian.

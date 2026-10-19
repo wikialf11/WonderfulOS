@@ -1,0 +1,72 @@
+# WonderfulOS para PC: Debian 13 donde el escritorio ES WonderfulOS (la misma app que en Mac y
+# Windows, a pantalla completa). Las apps de Linux se abren como ventanas encima.
+
+# Sistema base y sesión en vivo
+live-boot
+live-config
+live-config-systemd
+locales
+console-setup
+keyboard-configuration
+sudo
+polkitd
+pkexec
+lxpolkit
+network-manager
+firmware-linux-free
+firmware-linux-nonfree
+firmware-iwlwifi
+firmware-realtek
+firmware-atheros
+plymouth
+plymouth-themes
+pipewire
+pipewire-pulse
+wireplumber
+bluez
+upower
+
+# Sesión gráfica: un gestor de ventanas pequeño (labwc, Wayland) y XWayland
+sddm
+sddm-theme-maui
+labwc
+xwayland
+xdg-desktop-portal
+xdg-desktop-portal-wlr
+xdg-desktop-portal-gtk
+wlr-randr
+swayidle
+
+# Lo que necesita la app de WonderfulOS (Electron)
+libgtk-3-0t64
+libnss3
+libasound2t64
+libgbm1
+libxss1
+libsecret-1-0
+libnotify4
+xdg-utils
+
+# Oficina: Collabora Online con el aspecto de WonderfulOS, en el propio PC (la instala el hook)
+hunspell-es
+wget
+curl
+ca-certificates
+
+# Apps de Linux: Flathub (Tienda), AppImage y .deb
+flatpak
+libfuse2t64
+gdebi-core
+
+# Instalador al disco, junto a Windows u otro sistema (menú para elegir al arrancar)
+calamares
+calamares-settings-debian
+os-prober
+grub-efi-amd64-bin
+grub-pc-bin
+efibootmgr
+
+# Aspecto
+fonts-inter
+fonts-noto
+fonts-noto-color-emoji

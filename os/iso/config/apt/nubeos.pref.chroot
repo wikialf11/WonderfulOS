@@ -1,0 +1,10 @@
+# python3-uno (macros en Python de LibreOffice) no hace falta y su instalación falla al
+# construir la ISO en un Mac (emulación de amd64).
+Package: python3-uno libreoffice-script-provider-python
+Pin: release *
+Pin-Priority: -1
+
+# El escritorio es WonderfulOS: nada de KDE Plasma (lo arrastraba el tema de la pantalla de inicio).
+Package: plasma-desktop plasma-workspace sddm-theme-debian-breeze sddm-theme-breeze plasma-firewall plasma-systemmonitor
+Pin: release *
+Pin-Priority: -1

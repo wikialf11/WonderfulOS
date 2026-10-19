@@ -1,0 +1,12 @@
+{
+  "KPlugin": {
+    "Id": "WonderfulOS",
+    "Name": "WonderfulOS Aurora",
+    "Authors": [
+      {
+        "Name": "WonderfulOS"
+      }
+    ],
+    "License": "CC-BY-SA-4.0"
+  }
+}

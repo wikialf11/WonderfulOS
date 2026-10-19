@@ -1,0 +1,13 @@
+{
+  "license": "GPL-3.0-or-later",
+  "name": "nubeos-web-desktop",
+  "private": true,
+  "type": "module",
+  "main": "server.mjs",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node server.mjs",
+    "build": "echo \"WonderfulOS no necesita compilación\"",
+    "test": "node --test tests/*.test.mjs"
+  }
+}

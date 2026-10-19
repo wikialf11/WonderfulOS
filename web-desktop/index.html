@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#1c1e28">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>WonderfulOS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/shell.css">
+</head>
+<body>
+  <div id="screen"></div>
+  <div id="home"></div>
+  <nav id="menubar"></nav>
+  <div id="windows"></div>
+  <div id="snap-preview"></div>
+  <nav id="dock"></nav>
+  <div id="launchpad" hidden></div>
+  <div id="spotlight" class="glass-panel" hidden></div>
+  <div id="control" class="glass-panel" hidden></div>
+  <div id="toasts"></div>
+  <button id="home-bar" aria-label="Ir al inicio"></button>
+
+  <div id="login" hidden>
+    <form class="login-card glass-panel" autocomplete="on">
+      <div class="logo"></div>
+      <h1>WonderfulOS</h1>
+      <p class="sub">Tus documentos, en cualquier ordenador.</p>
+      <input name="username" placeholder="Usuario" autocomplete="username" required autocapitalize="none" spellcheck="false">
+      <input name="password" type="password" placeholder="Contraseña" autocomplete="current-password" required>
+      <input name="invite" placeholder="Código de invitación" autocomplete="off" hidden>
+      <p class="error" hidden></p>
+      <button class="btn primary" type="submit">Entrar</button>
+      <button class="link" type="button">¿No tienes cuenta? Crear una</button>
+    </form>
+  </div>
+
+  <script type="module" src="js/desktop.js"></script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+# Ventana para pedir la contraseña cuando algo necesita permisos (instalar apps…).
+lxpolkit &
+# WonderfulOS ocupa toda la pantalla; si se cierra, vuelve a abrirse.
+(while true; do /opt/nubeos/nubeos --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations; sleep 1; done) &
