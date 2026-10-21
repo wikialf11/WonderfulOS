@@ -143,7 +143,7 @@ function renderMenubar() {
     <span class="spacer"></span>
     <button data-action="search" title="Buscar (Ctrl+Espacio)">${GLYPHS.search}</button>
     <button data-action="control" title="Centro de control">${GLYPHS.sliders}</button>
-    ${account.user && (!window.nubeosDesktop || window.nubeosDesktop.remote) ? `<button data-menu="user" title="Tu cuenta">${GLYPHS.user}<span>${esc(account.user)}</span></button>` : ''}
+    ${account.user && !window.nubeosDesktop ? `<button data-menu="user" title="Tu cuenta">${GLYPHS.user}<span>${esc(account.user)}</span></button>` : ''}
     <button class="clock" data-action="control"></button>`;
   tick();
   $('#menubar').querySelectorAll('[data-menu]').forEach((b) => { b.onclick = (e) => openMenu(b, b.dataset.menu, e); });
@@ -473,7 +473,7 @@ async function openLinuxFile(path) {
   } catch (e) { notify(e.message, 8000, { title: 'Apps de Linux', icon: 'tienda' }); }
 }
 if (window.nubeosDesktop) {
-  window.nubeosDesktop.info().then((i) => { desktopPlatform = i.platform; desktopSystem = window.nubeosDesktop.remote ? {} : { session: i.session, live: i.live };
+  window.nubeosDesktop.info().then((i) => { desktopPlatform = i.platform; desktopSystem = { session: i.session, live: i.live };
     if (i.live) notify('Estás probando WonderfulOS desde el USB. Para quedártelo, abre el menú de WonderfulOS › «Instalar WonderfulOS en este ordenador»: puedes conservar Windows y elegir al encender.', 15000, { title: 'Bienvenido a WonderfulOS', icon: 'ajustes' });
   });
   document.body.classList.add('desktop-app');

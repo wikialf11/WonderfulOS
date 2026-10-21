@@ -13,8 +13,7 @@ const sections = () => [
   ['dock', 'dock', 'Dock'],
   ['pantalla', 'sun', 'Pantalla'],
   ['accesibilidad', 'info', 'Accesibilidad'],
-  ...(window.nubeosDesktop?.team ? [['servidor', 'share', 'Equipo']] : []),
-  ...(window.nubeosDesktop && !window.nubeosDesktop.remote ? [['equipo', 'dock', 'Este ordenador']] : []),
+  ...(window.nubeosDesktop ? [['equipo', 'dock', 'Este ordenador']] : []),
   ['acerca', 'info', 'Acerca de WonderfulOS'],
 ];
 
@@ -40,40 +39,6 @@ export default {
       ${options.map(([v, l]) => `<button data-${name}="${v}" style="border:0;padding:6px 14px;border-radius:8px;background:${v === value ? 'var(--panel-solid)' : 'transparent'};box-shadow:${v === value ? '0 1px 3px rgba(0,0,0,.15)' : 'none'}">${l}</button>`).join('')}</div>`;
 
     const gb = (b) => (b >= 1024 ** 4 ? `${(b / 1024 ** 4).toFixed(1)} TB` : `${Math.round(b / 1024 ** 3)} GB`);
-
-    // ---------- Equipo: un ordenador guarda los datos del equipo y los demás se conectan ----------
-    async function drawTeam(box) {
-      const d = window.nubeosDesktop;
-      const st = await d.team('status').catch((e) => ({ error: e.message }));
-      if (!box.isConnected) return;
-      const card = (inner) => `<div style="padding:16px 18px;background:color-mix(in srgb, var(--text) 4%, transparent);margin-bottom:12px">${inner}</div>`;
-      const muted = (t) => `<small style="color:var(--muted);display:block;margin-top:4px;line-height:1.45">${t}</small>`;
-      let html = muted('Con un equipo, todos trabajáis sobre los mismos archivos, listas, notas, calendario, mensajes y documentos, y los cambios se ven al momento. Un ordenador hace de servidor y guarda todo, así que nada se pierde aunque alguien se desconecte. Ese ordenador tiene que estar encendido para que los demás entren.') + '<div style="height:14px"></div>';
-      if (st.remote || st.joined) {
-        html += card(`<strong>Estás conectado a un equipo</strong>${muted('Lo que ves en este escritorio está guardado en el servidor del equipo y lo comparten todos sus miembros.')}
-          <div style="margin-top:12px"><button class="btn" data-team-leave>Salir del equipo y volver a mi ordenador</button></div>`);
-      } else if (st.host) {
-        html += card(`<strong>Este ordenador es el servidor de «${esc(st.host.name)}»</strong>${muted('Pasa este código a tu equipo. Cada persona lo pega en Ajustes › Equipo de su WonderfulOS y crea su propia cuenta.')}
-          <div style="display:flex;gap:8px;margin-top:12px"><input readonly value="${esc(st.host.code)}" style="flex:1;padding:9px 10px;font-family:ui-monospace,monospace;font-size:12px;border:1px solid var(--border);background:var(--panel-solid);color:var(--text)"><button class="btn primary" data-team-copy>Copiar</button></div>
-          ${muted('Mantén este ordenador encendido con WonderfulOS para que el equipo pueda trabajar. Si los demás no consiguen conectar, revisa que el cortafuegos permita conexiones entrantes a WonderfulOS.')}
-          <div style="margin-top:12px"><button class="btn" data-team-stop>Dejar de ser servidor</button></div>`);
-      } else {
-        html += card(`<strong>Unirme a un equipo</strong>${muted('Pega el código que te ha pasado quien tiene el servidor (empieza por «equipo-»).')}
-          <form data-team-join style="display:flex;gap:8px;margin-top:12px"><input required placeholder="equipo-…" aria-label="Código del equipo" style="flex:1;padding:9px 10px;font-family:ui-monospace,monospace;border:1px solid var(--border);background:var(--panel-solid);color:var(--text)"><button class="btn primary">Unirme</button></form>`);
-        html += card(`<strong>Crear un equipo en este ordenador</strong>${muted('Este ordenador será el servidor: guardará los datos del equipo. Elige el que más tiempo esté encendido.')}
-          <form data-team-create style="display:flex;gap:8px;margin-top:12px"><input required placeholder="Nombre del equipo" aria-label="Nombre del equipo" style="flex:1;padding:9px 10px;border:1px solid var(--border);background:var(--panel-solid);color:var(--text)"><button class="btn primary">Crear equipo</button></form>`);
-      }
-      box.innerHTML = html;
-      const act = async (op, arg, ok) => {
-        try { await d.team(op, arg); if (ok) ctx.notify(ok, 5000, { title: 'Equipo', icon: 'ajustes' }); } catch (e) { ctx.notify(String(e.message).replace(/^Error invoking remote method '[^']+': (Error: )?/, ''), 8000, { title: 'Equipo', icon: 'ajustes' }); }
-        drawTeam(box);
-      };
-      box.querySelector('[data-team-copy]')?.addEventListener('click', () => { navigator.clipboard.writeText(st.host.code); ctx.notify('Código copiado.', 2500, { title: 'Equipo', icon: 'ajustes' }); });
-      box.querySelector('[data-team-stop]')?.addEventListener('click', () => act('stop', null, 'Este ordenador ya no es el servidor del equipo.'));
-      box.querySelector('[data-team-leave]')?.addEventListener('click', () => act('leave', null));
-      box.querySelector('[data-team-join]')?.addEventListener('submit', (e) => { e.preventDefault(); box.innerHTML = 'Conectando con el servidor del equipo…'; act('join', e.target.querySelector('input').value); });
-      box.querySelector('[data-team-create]')?.addEventListener('submit', (e) => { e.preventDefault(); act('create', e.target.querySelector('input').value, 'Equipo creado. Pasa el código a tus compañeros.'); });
-    }
 
     function render() {
       const s = settings.get();
@@ -110,7 +75,6 @@ export default {
         html += `<div data-linux-row></div>`;
         html += row('Salir de WonderfulOS', '<button class="btn" data-quit>Salir</button>', 'Vuelves al sistema de tu ordenador');
       }
-      if (current === 'servidor') html += '<div data-team>Cargando…</div>';
       if (current === 'apariencia') {
         html += row('Tema', segmented('theme', [['light', 'Claro'], ['dark', 'Oscuro'], ['auto', 'Automático']], s.theme), 'Automático sigue la hora del sistema');
         html += row('Color de acento', `<div style="display:flex;gap:8px">${ACCENTS.map((c) => `<button data-accent="${c}" title="${c}" style="width:26px;height:26px;border-radius:50%;border:${c === s.accent ? '3px solid var(--text)' : '0'};background:${c}"></button>`).join('')}</div>`);
@@ -140,7 +104,7 @@ export default {
       if (current === 'acerca') {
         html += `<div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:30px;text-align:center">
           <div style="width:96px;height:96px;box-shadow:0 14px 30px rgba(20,22,31,.35)">${ICONS.logo}</div><div style="font-size:26px;font-weight:650">WonderfulOS</div>
-          <div style="color:var(--muted)">Versión 0.16.2 · basado en Linux</div>
+          <div style="color:var(--muted)">Versión 0.16.3 · basado en Linux</div>
           <p style="max-width:420px;color:var(--muted)">Un sistema operativo basado en Linux, sencillo y bonito: oficina, correo, navegador y todas las apps de Linux, con la potencia de tu ordenador. Es <b>software libre</b> (licencia GPL-3.0): puedes usarlo, estudiarlo, compartirlo y mejorarlo.</p></div>`;
       }
       content.innerHTML = html;
@@ -153,7 +117,6 @@ export default {
         r.oninput = () => settings.set(r.dataset.range === 'brightness' ? { dim: +(0.6 - r.value / 100).toFixed(2) } : { [r.dataset.range]: +r.value });
       });
       content.querySelectorAll('[data-check]').forEach((c) => { c.onchange = () => settings.set({ [c.dataset.check]: c.checked }); });
-      if (current === 'servidor') drawTeam(content.querySelector('[data-team]'));
       if (current === 'equipo') {
         const d = window.nubeosDesktop;
         d.info().then((i) => { const c = content.querySelector('[data-login]'); if (c) c.checked = i.openAtLogin; });

@@ -264,9 +264,7 @@ export async function apiHandler(req, res, url) {
     }
     if (route === 'POST /office/open') {
       const origin = `${isHttps(req) ? 'https' : 'http'}://${req.headers.host}`;
-      // Miembro de un equipo (llega por la puerta del servidor de equipo): la oficina se abre por esa misma puerta.
-      const viaTeam = req.headers['x-wos-equipo'] === '1';
-      return send(200, await office.open(user, await readJson(req, 4000), origin, viaTeam ? { remoteOrigin: origin, origin } : {}));
+      return send(200, await office.open(user, await readJson(req, 4000), origin));
     }
     if (route === 'POST /office/new') {
       const { dir, kind, name } = await readJson(req, 4000);

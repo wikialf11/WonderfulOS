@@ -788,7 +788,7 @@ body:has(.window.focused .app-browser-local) #dock, body:has(.window.focused .ap
 /* ===== Coherencia: los iconos acaban en pico, así que todas las esquinas también ===== */
 *, *::before, *::after { border-radius: 0 !important; }
 /* Solo siguen redondos los puntos y los indicadores de carga. */
-.dot, .spinner, .wa-busy i, .dock-item .dot, .p2p-state::before, [style*="border-radius:50%"], [style*="border-radius: 50%"] { border-radius: 50% !important; }
+.dot, .spinner, .wa-busy i, .dock-item .dot, [style*="border-radius:50%"], [style*="border-radius: 50%"] { border-radius: 50% !important; }
 .app-img-icon { width: 100%; height: 100%; object-fit: contain; display: block; }
 .dock-item .app-img-icon, .launchpad .app-img-icon { padding: 4%; }
 
@@ -818,26 +818,3 @@ button, [role="button"], .wa-card, .dock-item { cursor: pointer; }
 .wa-count { margin: 12px 22px 0; color: var(--muted); font-size: 13px; }
 .wa-icon img { width: 100%; height: 100%; object-fit: contain; }
 .wa-warn { color: #d97706 !important; font-weight: 600; }
-
-/* ---------- Compartido P2P (Archivos) ---------- */
-.files-items.p2p { display: block; padding: 18px 22px; overflow: auto; }
-.files-items.p2p h4 { margin: 22px 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
-.p2p-join { display: flex; flex-direction: column; gap: 4px; padding: 16px; background: var(--accent-soft); }
-.p2p-join form { display: flex; gap: 8px; margin-top: 8px; }
-.p2p-join input { flex: 1; padding: 9px 12px; border: 1px solid var(--border); background: var(--panel-solid); color: var(--text); font-family: ui-monospace, monospace; }
-.p2p-list { display: flex; flex-direction: column; gap: 6px; }
-.p2p-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: color-mix(in srgb, var(--text) 4%, transparent); }
-.p2p-row .ic svg { width: 34px; height: 34px; display: block; }
-.p2p-row .t { flex: 1; min-width: 0; }
-.p2p-row .t small { display: block; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.p2p-row .acts { display: flex; gap: 6px; }
-.p2p-state { font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
-.p2p-state::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #9ca3af; }
-.p2p-state.on { color: #0f9d58; }
-.p2p-state.on::before { background: #22c55e; }
-.p2p-dialog { max-width: 460px; }
-.p2p-dialog .muted, .files-items.p2p .muted { color: var(--muted); font-size: 13px; }
-.p2p-perm { display: flex; align-items: center; gap: 10px; margin: 12px 0; }
-.p2p-perm select { flex: 1; padding: 7px; }
-.p2p-code { display: flex; gap: 8px; margin: 10px 0; }
-.p2p-code input { flex: 1; padding: 9px 10px; font-family: ui-monospace, monospace; font-size: 12px; border: 1px solid var(--border); background: var(--panel-solid); color: var(--text); }

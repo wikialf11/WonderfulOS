@@ -13,7 +13,7 @@ const DAYS = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'];
 export default {
   id: APP,
   name: 'Calendario',
-  description: 'Tus citas y las de tu equipo',
+  description: 'Tus citas y recordatorios',
 
   async launch(ctx) {
     const win = ctx.createWindow({ title: 'Calendario', width: 1040, height: 660 });

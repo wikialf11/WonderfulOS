@@ -6,7 +6,6 @@ import { prompt, confirm } from '../dialogs.js';
 import { normalize, dirname, basename, isCloud, SHARED_ROOT } from '../fs.js';
 import { api } from '../api.js';
 import { humanSize, esc } from '../util.js';
-import { P2P_ROOT, renderP2P, shareDialog as shareP2P } from './p2p.js';
 
 const PLACES = [
   ['/', 'home', 'Inicio'],
@@ -55,7 +54,6 @@ export default {
     const items = $('.files-items');
     const picker = $('input[type=file]');
     let dir = '/';
-    let p2pView = null;
     let history = [], pos = -1, view = 'grid', query = '';
     let sel = new Set(); // rutas seleccionadas (clic, Cmd/Ctrl+clic o rectángulo)
     const single = () => (sel.size === 1 ? [...sel][0] : null);
@@ -67,10 +65,9 @@ export default {
     const isOwn = (p) => !p.startsWith(SHARED_ROOT);
 
     function go(p, push = true) {
-      if (p !== P2P_ROOT) p = normalize(p);
-      if (p !== SHARED_ROOT && p !== P2P_ROOT && !ctx.fs.isDir(p)) return;
+      p = normalize(p);
+      if (p !== SHARED_ROOT && !ctx.fs.isDir(p)) return;
       dir = p;
-      p2pView = null; // al entrar en «Compartido P2P» se empieza por la lista
       if (push) { history = history.slice(0, pos + 1); history.push(dir); pos = history.length - 1; }
       sel = new Set(); query = ''; $('.files-search input').value = '';
       render();
@@ -80,11 +77,10 @@ export default {
     function renderSide() {
       const places = $('.places');
       places.innerHTML = '';
-      const list = [...PLACES, ...(isCloud() ? [[SHARED_ROOT, 'share', 'Compartido conmigo']] : []), ...(window.nubeosDesktop?.p2p ? [[P2P_ROOT, 'share', 'Compartido P2P']] : [])];
+      const list = [...PLACES, ...(isCloud() ? [[SHARED_ROOT, 'share', 'Compartido conmigo']] : [])];
       for (const [p, g, label] of list) {
         const b = document.createElement('button');
         const on = p === SHARED_ROOT ? inShared() : dir === p;
-        if (p === P2P_ROOT) b.title = 'Compartir directamente entre ordenadores';
         b.className = `place${on ? ' on' : ''}`;
         b.innerHTML = `${GLYPHS[g]}<span>${label}</span>`;
         b.onclick = () => go(p);
@@ -104,26 +100,8 @@ export default {
     }
 
     function render() {
-      win.setTitle(dir === '/' ? 'Inicio' : dir === P2P_ROOT ? 'Compartido P2P' : basename(dir));
+      win.setTitle(dir === '/' ? 'Inicio' : basename(dir));
       renderSide();
-      if (dir === P2P_ROOT) {
-        // Panel P2P: tiene sus propias migas y elementos.
-        for (const b of ['.upload', '.new', '.share']) $(b).hidden = true;
-        $('.back').disabled = pos <= 0; $('.fwd').disabled = pos >= history.length - 1;
-        $('.files-status').textContent = '';
-        if (p2pView) return; // ya está en pantalla: no se rehace al refrescar la ventana
-        p2pView = renderP2P(items, ctx, win, (crumbs) => {
-          const c = $('.crumbs');
-          c.innerHTML = '';
-          crumbs.forEach(([label, fn], i) => {
-            const b = document.createElement('button');
-            b.textContent = label; b.className = i === crumbs.length - 1 ? 'here' : ''; b.onclick = fn;
-            c.appendChild(b);
-            if (i < crumbs.length - 1) c.insertAdjacentHTML('beforeend', '<span class="sep">›</span>');
-          });
-        });
-        return;
-      }
       // Migas de pan
       const crumbs = $('.crumbs');
       crumbs.innerHTML = '';
@@ -195,7 +173,6 @@ export default {
               { label: 'Mostrar en la carpeta', run: () => window.nubeosDesktop.showInSystem(e.path) },
             ] : e.type === 'file' ? [{ label: 'Descargar a mi ordenador', run: () => tryDo(() => ctx.fs.downloadToComputer(e.path)) }] : []),
             ...(isCloud() && own ? [{ label: 'Compartir…', run: () => shareDialog(e.path) }] : []),
-            ...(window.nubeosDesktop?.p2p && own ? [{ label: 'Compartir por P2P…', run: () => shareP2P(win, ctx, e.path) }] : []),
             '-',
             { label: 'Cambiar nombre…', disabled: !canEdit, run: () => rename(e.path) },
             { label: isShareRoot ? 'Quitar de Compartido conmigo' : 'Eliminar', disabled: !canEdit && !isShareRoot, run: () => remove(e.path) },
@@ -405,7 +382,7 @@ export default {
       uploadFiles([...e.dataTransfer.files]);
     });
 
-    const off = ctx.fs.onChange(() => dir !== P2P_ROOT && render());
+    const off = ctx.fs.onChange(() => render());
     const onAccount = () => renderSide();
     ctx.account?.listeners.add(onAccount);
     win.onClose(() => { off(); ctx.account?.listeners.delete(onAccount); return true; });

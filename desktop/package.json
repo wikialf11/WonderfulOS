@@ -1,7 +1,7 @@
 {
   "name": "nubeos",
   "productName": "WonderfulOS",
-  "version": "0.16.2",
+  "version": "0.16.3",
   "license": "GPL-3.0-or-later",
   "description": "WonderfulOS en tu ordenador: el sistema de WonderfulOS con la potencia real de tu Mac, PC o Linux.",
   "main": "main.mjs",
@@ -23,8 +23,6 @@
       "local.mjs",
       "linux.mjs",
       "office-engine.mjs",
-      "p2p.mjs",
-      "equipo.mjs",
       "icon.png"
     ],
     "extraResources": [
@@ -81,8 +79,5 @@
   },
   "allowScripts": {
     "electron@38.8.6": true
-  },
-  "dependencies": {
-    "hyperdht": "6.34.0"
   }
 }

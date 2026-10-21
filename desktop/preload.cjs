@@ -6,19 +6,7 @@ const listeners = { notice: new Set(), openUrl: new Set() };
 ipcRenderer.on('nubeos:notice', (e, msg) => listeners.notice.forEach((fn) => fn(msg)));
 ipcRenderer.on('nubeos:open-url', (e, url) => listeners.openUrl.forEach((fn) => fn(url)));
 
-// ¿La ventana muestra el escritorio de un equipo (otro ordenador)? Entonces el puente es mínimo.
-const LOCAL = (process.argv.find((a) => a.startsWith('--wos-local=')) || '').slice(12);
-const remote = !!LOCAL && location.origin !== LOCAL;
-const team = { team: (op, arg) => call('equipo', op, arg) };
-if (remote) {
-  contextBridge.exposeInMainWorld('nubeosDesktop', {
-    remote: true, ...team,
-    info: () => call('info'), quit: () => call('quit'), setZoom: (z) => call('zoom', z),
-    onNotice: (fn) => { listeners.notice.add(fn); return () => listeners.notice.delete(fn); },
-    onOpenUrl: (fn) => { listeners.openUrl.add(fn); return () => listeners.openUrl.delete(fn); },
-  });
-} else contextBridge.exposeInMainWorld('nubeosDesktop', {
-  ...team,
+contextBridge.exposeInMainWorld('nubeosDesktop', {
   info: () => call('info'),
   quit: () => call('quit'),
   setZoom: (z) => call('zoom', z),
@@ -41,7 +29,6 @@ if (remote) {
     open: (id) => call('apps-open', id),
   },
   mail: { start: () => call('mail-start') },
-  p2p: (op, ...args) => call('p2p', op, ...args),
   linux: {
     status: () => call('linux-status'),
     start: () => call('linux-start'),

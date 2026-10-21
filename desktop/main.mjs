@@ -16,8 +16,6 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import * as local from './local.mjs';
 import * as linux from './linux.mjs';
 import * as office from './office-engine.mjs';
-import * as p2p from './p2p.mjs';
-import * as equipo from './equipo.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 // Para probar sin tocar el WonderfulOS instalado: NUBEOS_USERDATA=/otra/carpeta npm start
@@ -38,18 +36,14 @@ const freePort = () => new Promise((ok) => { const s = net.createServer(); s.lis
 
 let win = null;
 let LOCAL_ORIGIN = '';
-let loadDesktop = async () => {};
-// Cuando la ventana muestra el escritorio de un equipo (otro ordenador), esa página solo puede usar
-// estas funciones del ordenador; el resto (archivos del equipo, programas, apagar…) queda bloqueado.
-const REMOTE_OK = new Set(['nubeos:info', 'nubeos:quit', 'nubeos:zoom', 'nubeos:equipo']);
 const rawHandle = ipcMain.handle.bind(ipcMain);
 ipcMain.handle = (ch, fn) => rawHandle(ch, (e, ...args) => {
   const from = (() => { try { return new URL(e.senderFrame?.url || '').origin; } catch { return ''; } })();
-  if (from !== LOCAL_ORIGIN && !REMOTE_OK.has(ch)) throw new Error('No permitido desde el escritorio del equipo');
+  if (from !== LOCAL_ORIGIN) throw new Error('No permitido desde fuera de este ordenador');
   return fn(e, ...args);
 });
 async function start() {
-  // Servidor de WonderfulOS dentro de la app, solo accesible desde este equipo.
+  // Servicio local de la interfaz, solo accesible desde este equipo.
   const port = await freePort();
   Object.assign(process.env, { NUBEOS_DATA: DATA, PORT: String(port), PROXY_PORT: String(await freePort()), HOST: '127.0.0.1', NUBEOS_LOCAL: '1' });
   // La oficina es la misma que la versión online (Collabora), en este ordenador: ver office-engine.mjs.
@@ -72,33 +66,18 @@ async function start() {
   await session.defaultSession.cookies.set({ url: origin, name: 'nubeos_sid', value: token, httpOnly: true, sameSite: 'lax' });
 
   local.init({ store, user: acct.user, dataDir: DATA, send: (ch, msg) => win?.webContents.send(ch, msg) });
-  // Compartir P2P (ver p2p.mjs).
-  const officeServer = await import(pathToFileURL(path.join(WEB, 'server', 'office.mjs')).href);
-  p2p.init({
-    dataDir: DATA, store, user: acct.user, office: officeServer, importFile: local.importFile,
-    officeUrl: () => office.OFFICE_URL, publicOrigin: () => process.env.NUBEOS_PUBLIC_ORIGIN,
-    ensureOffice: async () => { await office.start(); process.env.NUBEOS_WOPI_URL = await office.wopiUrl(); },
-  }).catch((e) => console.error('P2P:', e.message));
-  // Servidor de equipo (ver equipo.mjs).
-  await equipo.init({ dataDir: DATA, webPort: () => port, officeUrl: () => office.OFFICE_URL }).catch((e) => console.error('Equipo:', e.message));
   office.init({ here: app.isPackaged ? process.resourcesPath : HERE, web: WEB, dataDir: DATA, port, exe: process.execPath, send: (ch, msg) => win?.webContents.send(ch, msg) });
   linux.init({ resources: app.isPackaged ? process.resourcesPath : HERE, dataDir: DATA, here: app.isPackaged ? process.resourcesPath : HERE, web: WEB, send: (ch, msg) => win?.webContents.send(ch, msg) });
 
   win = new BrowserWindow({
     title: 'WonderfulOS', backgroundColor: '#14161f', show: false,
     fullscreen: !process.env.NUBEOS_WINDOWED, width: 1440, height: 900, autoHideMenuBar: true, frame: process.platform === 'darwin',
-    webPreferences: { preload: path.join(HERE, 'preload.cjs'), webviewTag: true, contextIsolation: true, additionalArguments: [`--wos-local=${origin}`] },
+    webPreferences: { preload: path.join(HERE, 'preload.cjs'), webviewTag: true, contextIsolation: true },
   });
   // Los enlaces que piden ventana nueva se abren como pestaña del Navegador de WonderfulOS.
   win.webContents.setWindowOpenHandler(({ url }) => { win.webContents.send('nubeos:open-url', url); return { action: 'deny' }; });
   win.once('ready-to-show', () => { win.show(); setTimeout(prepareOffice, 8000); });
-  // Miembro de un equipo: se abre el escritorio del equipo (si su servidor responde).
-  loadDesktop = async () => {
-    if (await equipo.reachable(15000)) return win.loadURL(await equipo.teamUrl());
-    await win.loadURL(origin);
-    if (equipo.status().joined) setTimeout(() => win?.webContents.send('nubeos:notice', { kind: 'linux', text: 'El servidor de tu equipo no está conectado: estás en tu propio escritorio. Lo intentaré de nuevo al reiniciar o desde Ajustes › Equipo.' }), 4000);
-  };
-  loadDesktop();
+  win.loadURL(origin);
   win.webContents.on('will-attach-webview', (e, prefs) => { delete prefs.preload; prefs.nodeIntegration = false; prefs.contextIsolation = true; });
 
   // Descargas del Navegador (sus pestañas usan la sesión «persist:navegador») → Archivos › Descargas.
@@ -202,19 +181,6 @@ ipcMain.handle('nubeos:zoom', (e, z) => { const f = Math.min(1.6, Math.max(0.8, 
 ipcMain.handle('nubeos:open-at-login', (e, on) => { app.setLoginItemSettings({ openAtLogin: !!on }); return app.getLoginItemSettings().openAtLogin; });
 ipcMain.handle('nubeos:fullscreen', (e, on) => { win.setFullScreen(!!on); return win.isFullScreen(); });
 ipcMain.handle('nubeos:mail-start', async () => { await office.startMail(); return office.MAIL_URL; });
-ipcMain.handle('nubeos:p2p', async (e, op, ...args) => {
-  const ops = { share: p2p.share, unshare: p2p.unshare, mine: p2p.myShares, join: p2p.join, leave: p2p.leave, joined: p2p.joined, browse: p2p.browse, download: p2p.download, office: p2p.office };
-  if (!ops[op]) throw new Error('Operación no válida');
-  return ops[op](...args);
-});
-ipcMain.handle('nubeos:equipo', async (e, op, arg) => {
-  if (op === 'status') return { ...equipo.status(), remote: !String(e.senderFrame?.url || '').startsWith(LOCAL_ORIGIN) };
-  if (op === 'create') return equipo.createTeam(arg);
-  if (op === 'stop') return equipo.stopTeam();
-  if (op === 'join') { const r = await equipo.joinTeam(arg); setTimeout(loadDesktop, 300); return r; }
-  if (op === 'leave') { const r = equipo.leaveTeam(); setTimeout(loadDesktop, 300); return r; }
-  throw new Error('Operación no válida');
-});
 ipcMain.handle('nubeos:office-mode', () => (office.supported() ? 'motor' : 'escritorio'));
 ipcMain.handle('nubeos:office-start', async () => { await office.start(); process.env.NUBEOS_WOPI_URL = await office.wopiUrl(); });
 ipcMain.handle('nubeos:office-open', (e, p, theme) => local.openInOffice(p, theme));
@@ -236,5 +202,5 @@ ipcMain.handle('nubeos:linux-install', (e, id) => linux.install(id));
 ipcMain.handle('nubeos:linux-uninstall', (e, id) => linux.uninstall(id));
 ipcMain.handle('nubeos:linux-open', (e, id) => linux.open(id));
 ipcMain.handle('nubeos:linux-open-file', (e, p) => linux.openFile(local.realCopy(p), path.basename(p)));
-app.on('before-quit', () => { equipo.stop(); p2p.stop(); office.stop(); linux.stop(); });
+app.on('before-quit', () => { office.stop(); linux.stop(); });
 ipcMain.handle('nubeos:open-external', (e, url) => { if (/^https?:/.test(url)) shell.openExternal(url); });

@@ -1,7 +1,7 @@
 # WonderfulOS en tu ordenador (Mac, Windows y Linux)
 
 App de escritorio que ocupa toda la pantalla y se usa como el sistema: el escritorio de
-WonderfulOS con la potencia real del equipo. Dentro corre el servidor de WonderfulOS en modo local
+WonderfulOS con la potencia real del equipo. Dentro corre el servicio local de WonderfulOS
 (`NUBEOS_LOCAL=1`): los archivos se guardan en este disco y el espacio es el del disco.
 
 - Navegador: Chromium de la propia app, con pestañas; descargas a Archivos › Descargas.

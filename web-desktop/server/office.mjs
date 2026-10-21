@@ -97,8 +97,7 @@ const fileIdOf = (owner, p) => b64(`${owner}\n${p}`);
 
 // ---------- Abrir un documento ----------
 /** target: { path } (propio) o { share, rel } (compartido contigo). */
-/** opts (compartido P2P): { guest: nombre de quien entra, write, origin: dirección de su escritorio }. */
-export async function open(user, target, publicOrigin, opts = {}) {
+export async function open(user, target, publicOrigin) {
   const base = officeBase(user);
   if (!base) fail(503, 'En la versión web la oficina no está disponible ahora mismo. Con WonderfulOS instalado en tu ordenador se abre con LibreOffice.');
   let owner = user, p, canWrite = true;
@@ -115,13 +114,14 @@ export async function open(user, target, publicOrigin, opts = {}) {
   const action = (await actions(base))[ext];
   if (!action) fail(415, `La oficina no abre archivos .${ext || '?'}`);
   const fileId = fileIdOf(owner, p);
-  const token = makeToken({ f: fileId, u: opts.guest || user, o: owner, p, w: canWrite && opts.write !== false && action.name === 'edit', ...(opts.origin ? { po: opts.origin } : {}) });
+  const token = makeToken({ f: fileId, u: user, o: owner, p, w: canWrite && action.name === 'edit' });
   const wopiBase = (process.env.NUBEOS_WOPI_URL || publicOrigin).replace(/\/$/, '');
   const url = new URL(action.url.replace(/<[^>]*>/g, '').replace(/[?&]$/, ''));
-  if (opts.remoteOrigin) { const r = new URL(opts.remoteOrigin); url.protocol = r.protocol; url.host = r.host; }
   url.searchParams.set('WOPISrc', `${wopiBase}/wopi/files/${fileId}`);
   url.searchParams.set('lang', 'es');
-  url.searchParams.set('welcome', 'true'); // sin la presentación «Novedades» de Collabora al abrir
+  // Sin «welcome»: ese parámetro abre la ventana de novedades de Collabora, que bloquea la
+  // inicialización del editor y hace que no llegue el aviso Document_Loaded (la oficina se
+  // quedaba cargando para siempre). Si la ventana aparece igualmente, el CSS de la oficina la oculta.
   return { url: url.href, token, ttl: Date.now() + TOKEN_HOURS * 3600e3 };
 }
 

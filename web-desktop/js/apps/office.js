@@ -46,8 +46,7 @@ function makeApp(id, name, description, kind) {
       if (!isCloud()) return ctx.notify('La oficina funciona con tu cuenta de WonderfulOS: inicia sesión.', 5000, { title: name, icon: id });
       // WonderfulOS instalado en el ordenador. En el Mac, la misma oficina que la versión online
       // (dentro del motor Linux); en los demás, LibreOffice de escritorio del propio equipo.
-      // En el escritorio de un equipo, la oficina es la del servidor del equipo (como en la versión web).
-      const d = window.nubeosDesktop?.remote ? null : window.nubeosDesktop;
+      const d = window.nubeosDesktop;
       const engine = d && (await d.office.mode?.().catch(() => '')) === 'motor';
       if (d && !engine) return openLocal(ctx, { id, name }, kind, path);
       const { enabled } = engine ? { enabled: true } : await officeInfo();
@@ -96,9 +95,8 @@ export function officeAppFor(name) {
   return id ? { id, name: { texto: 'Texto', calculo: 'Cálculo', diapositivas: 'Presentaciones' }[id] } : null;
 }
 
-/** opener (compartido P2P): devuelve { url, token, ttl } de la oficina de otro ordenador. */
-export function openEditor(ctx, app, path, prepare = null, opener = null) {
-  const node = opener ? {} : ctx.fs.stat(path);
+export function openEditor(ctx, app, path, prepare = null) {
+  const node = ctx.fs.stat(path);
   if (!node) return ctx.notify(`No existe ${basename(path)}`);
   const win = ctx.createWindow({ title: basename(path), width: Math.min(1280, innerWidth - 80), height: Math.min(820, innerHeight - 170) });
   win.body.classList.add('app-office');
@@ -112,12 +110,12 @@ export function openEditor(ctx, app, path, prepare = null, opener = null) {
 
   const target = node.share ? { share: node.share, rel: node.rel || '/' } : { path };
   let origin = '';
-  let tries = 0, retryTimer = null;
+  let tries = 0, retryTimer = null, revealTimer = null;
   // En el Mac la oficina vive en el motor Linux: se enciende (y la primera vez se instala) antes.
   let prepared = null;
   if (prepare) loading.querySelector('span').textContent = 'Preparando la oficina… la primera vez tarda unos minutos.';
   const ready = () => (prepared ||= prepare ? prepare().catch((e) => { prepared = null; throw Object.assign(e, { status: 0 }); }) : Promise.resolve());
-  const start = () => ready().then(() => (opener ? opener() : api('office/open', { method: 'POST', body: target }))).then(({ url, token, ttl }) => {
+  const start = () => ready().then(() => api('office/open', { method: 'POST', body: target })).then(({ url, token, ttl }) => {
     origin = new URL(url).origin;
     const form = document.createElement('form');
     form.method = 'post';
@@ -133,7 +131,11 @@ export function openEditor(ctx, app, path, prepare = null, opener = null) {
     document.body.appendChild(form);
     form.submit();
     form.remove();
+    // Red de seguridad: si esta versión de Collabora no avisa de que el documento está listo,
+    // se muestra igualmente el editor (antes que dejar el aviso de carga para siempre).
+    revealTimer = setTimeout(() => { if (loading.isConnected) loading.remove(); }, 90000);
   }).catch((e) => {
+    clearTimeout(revealTimer);
     // Si LibreOffice está arrancando o se ha reiniciado, se reintenta solo durante un minuto.
     const auto = e.status === 503 && ++tries < 12;
     loading.innerHTML = `${auto ? '<div class="spinner"></div>' : ''}<strong>${auto ? 'Conectando con LibreOffice…' : 'No se pudo abrir el documento'}</strong>
@@ -145,22 +147,29 @@ export function openEditor(ctx, app, path, prepare = null, opener = null) {
 
   // Mensajes de LibreOffice: listo, cambios sin guardar y cerrar.
   const send = (MessageId, Values = {}) => iframe.contentWindow?.postMessage(JSON.stringify({ MessageId, SendTime: Date.now(), Values }), origin);
+  // El documento está listo. Se quita el aviso con la primera señal fiable: según la versión de
+  // Collabora, Document_Loaded puede no llegar (alguna ventana suya bloquea la inicialización),
+  // pero Doc_Title con DocType y Doc_PartChanged sí se envían cuando el editor ya está abierto.
+  const loaded = () => { clearTimeout(revealTimer); loading.remove(); };
   const onMessage = (e) => {
     if (e.source !== iframe.contentWindow || e.origin !== origin) return;
     let msg;
     try { msg = typeof e.data === 'string' ? JSON.parse(e.data) : e.data; } catch { return; }
     const v = msg.Values || {};
     if (msg.MessageId === 'App_LoadingStatus' && v.Status === 'Frame_Ready') send('Host_PostmessageReady');
-    if (msg.MessageId === 'App_LoadingStatus' && v.Status === 'Document_Loaded') loading.remove();
+    if (msg.MessageId === 'App_LoadingStatus' && v.Status === 'Document_Loaded') loaded();
+    if (msg.MessageId === 'Doc_Title' && v.DocType) loaded();
+    if (msg.MessageId === 'Doc_PartChanged') loaded();
     if (msg.MessageId === 'Doc_ModifiedStatus') win.setTitle(`${v.Modified ? '● ' : ''}${basename(path)}`);
     if (msg.MessageId === 'UI_Close') win.close();
   };
   addEventListener('message', onMessage);
   win.onClose(() => {
     clearTimeout(retryTimer);
+    clearTimeout(revealTimer);
     removeEventListener('message', onMessage);
     // LibreOffice guarda al cerrar; luego refrescamos tamaños y fechas.
-    if (!opener) setTimeout(() => ctx.fs.reload().catch(() => {}), 3000);
+    setTimeout(() => ctx.fs.reload().catch(() => {}), 3000);
     return true;
   });
 }

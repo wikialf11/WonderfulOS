@@ -6,14 +6,11 @@ Online), Llavero y Ajustes. Es **software libre** (GPL-3.0-or-later).
 
 - **Funciona en tu ordenador**: se instala como app en Mac, Windows y Linux (`desktop/`), o como
   sistema completo en un PC (`os/iso`, Debian + labwc).
-- **Sin suscripciones ni nube de pago**: tus datos se guardan en tu disco.
-- **Trabajo en equipo sin servidores de terceros**: un ordenador del equipo hace de servidor y los
-  demás se conectan con un código (red P2P cifrada HyperDHT). Mensajes, listas, notas, calendario,
-  archivos y documentos se sincronizan al momento y se editan a la vez. También se puede compartir
-  un archivo o carpeta suelta por P2P.
+- **100% privado y local**: tus datos se guardan en tu disco y no salen de tu ordenador.
+- **Sin servidores externos ni cuentas externas**: no hay P2P, servidor de equipo ni nube de pago.
 
 Partes del proyecto:
-- `desktop/`: la app de escritorio (Electron): servidor local, oficina, motor Linux en Mac, P2P y equipo.
+- `desktop/`: la app de escritorio (Electron): servicio local, oficina y motor Linux en Mac.
 - `web-desktop/`: el escritorio y sus apps (HTML/JS) y su servidor (cuentas, archivos, datos en tiempo real).
 - `os/`: la ISO para instalar WonderfulOS como sistema de un PC.
 - `docs/`: arquitectura y notas.
@@ -80,4 +77,4 @@ image/                   Imagen Debian arrancable en modo kiosko (mkosi)
 
 ## Licencia
 
-WonderfulOS es software libre: se distribuye bajo la licencia **GNU GPL versión 3 o posterior** (ver `LICENSE`). Usa piezas libres de otros proyectos con sus propias licencias: Collabora Online / LibreOffice (MPL-2.0), Roundcube (GPL-3.0), HyperDHT (Apache-2.0 / MIT), Electron (MIT), Lima (Apache-2.0), Xpra (GPL-2.0) y Debian.
+WonderfulOS es software libre: se distribuye bajo la licencia **GNU GPL versión 3 o posterior** (ver `LICENSE`). Usa piezas libres de otros proyectos con sus propias licencias: Collabora Online / LibreOffice (MPL-2.0), Roundcube (GPL-3.0), Electron (MIT), Lima (Apache-2.0), Xpra (GPL-2.0) y Debian.

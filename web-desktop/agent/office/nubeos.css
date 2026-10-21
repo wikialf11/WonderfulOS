@@ -130,5 +130,7 @@ html[data-theme='dark'] [id^='stylesview'] img { filter: invert(.92) hue-rotate(
 /* WonderfulOS: esquinas en pico, como los iconos del sistema */
 *, *::before, *::after { border-radius: 0 !important; }
 
-/* Sin la ventana de bienvenida / novedades de Collabora. */
-[id^='iframe-welcome'], .iframe-welcome-wrap, .iframe-dialog-wrap:has([id^='iframe-welcome']) { display: none !important; }
+/* Sin la ventana de bienvenida / novedades de Collabora: tapa el documento y, en algunas
+   versiones, impide que llegue el aviso de documento cargado. */
+[id^='iframe-welcome'], .iframe-welcome-wrap, .iframe-welcome-content, .iframe-welcome-modal,
+.iframe-dialog-wrap:has([id^='iframe-welcome']) { display: none !important; }
