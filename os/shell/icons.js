@@ -1,21 +1,17 @@
-// Iconos de WonderfulOS. Estilo plano en capas: fondo con degradado suave, formas
-// blancas semitransparentes superpuestas, un brillo superior y sombra propia.
+// Iconos de WonderfulOS. Estilo plano y minimalista: fondo de un único color sólido
+// muy saturado, formas blancas y sombra propia.
 
 const SQ = 'M50 3C86 3 97 14 97 50S86 97 50 97 3 86 3 50 14 3 50 3Z'; // "squircle"
 
 let uid = 0;
-function base(bg, body, { glass = false } = {}) {
+function base(bg, body) {
   const id = `i${++uid}`;
   return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <defs>
-    <linearGradient id="${id}b" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="${bg[0]}"/><stop offset="1" stop-color="${bg[1]}"/></linearGradient>
-    <linearGradient id="${id}h" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="${glass ? 0.7 : 0.32}"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/></linearGradient>
     <linearGradient id="${id}w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity=".82"/></linearGradient>
     <filter id="${id}s" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2.5" stdDeviation="2.5" flood-color="#0b1020" flood-opacity=".22"/></filter>
   </defs>
-  <path d="${SQ}" fill="url(#${id}b)"/>
-  <path d="${SQ}" fill="url(#${id}h)"/>
-  <path d="${SQ}" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="1"/>
+  <path d="${SQ}" fill="${bg}"/>
   <g filter="url(#${id}s)">${body.replaceAll('W', `url(#${id}w)`)}</g>
 </svg>`;
 }
@@ -32,12 +28,12 @@ function gear(cx, cy, r1, r2, teeth) {
 }
 
 export const ICONS = {
-  archivos: base(['#5ab2ff', '#2f6bff'], `
+  archivos: base('#1D6BFF', `
     <path d="M22 32a6 6 0 0 1 6-6h14l7 7h23a6 6 0 0 1 6 6v6H22Z" fill="#fff" fill-opacity=".55"/>
     <rect x="22" y="38" width="56" height="38" rx="7" fill="W"/>
     <rect x="22" y="38" width="56" height="9" rx="4" fill="#2f6bff" fill-opacity=".12"/>`),
 
-  navegador: base(['#38e0c8', '#3b5bff'], `
+  navegador: base('#06B6D4', `
     <circle cx="50" cy="50" r="28" fill="#fff" fill-opacity=".22"/>
     <circle cx="50" cy="50" r="28" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width="3"/>
     <ellipse cx="50" cy="50" rx="12" ry="28" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="2.5"/>
@@ -45,36 +41,36 @@ export const ICONS = {
     <path d="M62 36 54 54 38 64 46 46Z" fill="W"/>
     <path d="M62 36 46 46 54 54Z" fill="#ff5a7a"/>`),
 
-  ajustes: base(['#8b93a7', '#3d4456'], `
+  ajustes: base('#6366F1', `
     <polygon points="${gear(50, 50, 22, 29, 10)}" fill="W" stroke="#fff" stroke-linejoin="round" stroke-width="3"/>
     <circle cx="50" cy="50" r="13" fill="#4a5164"/>
     <circle cx="50" cy="50" r="7" fill="#fff" fill-opacity=".9"/>`),
 
-  launchpad: base(['#a78bfa', '#f472b6'], `
+  launchpad: base('#C026D3', `
     <rect x="25" y="25" width="22" height="22" rx="7" fill="W"/>
     <rect x="53" y="25" width="22" height="22" rx="7" fill="#fff" fill-opacity=".7"/>
     <rect x="25" y="53" width="22" height="22" rx="7" fill="#fff" fill-opacity=".7"/>
     <rect x="53" y="53" width="22" height="22" rx="7" fill="#fff" fill-opacity=".45"/>`),
 
-  buscar: base(['#7c8cff', '#5246e5'], `
+  buscar: base('#7C3AED', `
     <circle cx="45" cy="45" r="17" fill="#fff" fill-opacity=".25" stroke="#fff" stroke-width="6"/>
     <path d="M58 58l14 14" stroke="#fff" stroke-width="8" stroke-linecap="round"/>`),
 
-  papelera: base(['#f3f5fa', '#c9d0dd'], `
+  papelera: base('#EF4444', `
     <path d="M31 38h38l-3.5 35a6 6 0 0 1-6 5.5h-19a6 6 0 0 1-6-5.5Z" fill="#fff" stroke="#8a94a8" stroke-width="2.5"/>
     <rect x="27" y="30" width="46" height="8" rx="4" fill="#8a94a8"/>
     <rect x="42" y="24" width="16" height="7" rx="3.5" fill="#8a94a8"/>
-    <path d="M44 46v24M56 46v24" stroke="#c9d0dd" stroke-width="3" stroke-linecap="round"/>`, { glass: true }),
+    <path d="M44 46v24M56 46v24" stroke="#c9d0dd" stroke-width="3" stroke-linecap="round"/>`),
 
-  tienda: base(['#ffb347', '#ff5f6d'], `
+  tienda: base('#FF7A00', `
     <path d="M28 40h44l-4 34a6 6 0 0 1-6 5H38a6 6 0 0 1-6-5Z" fill="W"/>
     <path d="M40 40v-6a10 10 0 0 1 20 0v6" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
     <circle cx="42" cy="52" r="3" fill="#ff5f6d"/><circle cx="58" cy="52" r="3" fill="#ff5f6d"/>`),
 
-  logo: base(['#7c8cff', '#ec4899'], `
+  logo: base('#5B21B6', `
     <path d="M33 66a12 12 0 0 1-1.4-23.9A15.5 15.5 0 0 1 61.5 37 11 11 0 0 1 68 66Z" fill="W"/>`),
 
-  app: base(['#60a5fa', '#7c3aed'], '<rect x="30" y="30" width="40" height="40" rx="12" fill="W"/>'),
+  app: base('#0EA5E9', '<rect x="30" y="30" width="40" height="40" rx="12" fill="W"/>'),
 };
 
 // ---------- Iconos de archivos (planos, sin fondo) ----------

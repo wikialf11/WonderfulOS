@@ -1,21 +1,17 @@
-// Iconos de WonderfulOS. Estilo plano en capas: fondo con degradado suave, formas
-// blancas semitransparentes superpuestas, un brillo superior y sombra propia.
+// Iconos de WonderfulOS. Estilo plano y minimalista: fondo de un único color sólido
+// muy saturado, formas blancas y sombra propia.
 
 const SQ = 'M3 3H97V97H3Z'; // cuadrado con esquinas en pico
 
 let uid = 0;
-function base(bg, body, { glass = false } = {}) {
+function base(bg, body) {
   const id = `i${++uid}`;
   return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <defs>
-    <linearGradient id="${id}b" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="${bg[0]}"/><stop offset="1" stop-color="${bg[1]}"/></linearGradient>
-    <linearGradient id="${id}h" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="${glass ? 0.7 : 0.32}"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/></linearGradient>
     <linearGradient id="${id}w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity=".82"/></linearGradient>
     <filter id="${id}s" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2.5" stdDeviation="2.5" flood-color="#0b1020" flood-opacity=".22"/></filter>
   </defs>
-  <path d="${SQ}" fill="url(#${id}b)"/>
-  <path d="${SQ}" fill="url(#${id}h)"/>
-  <path d="${SQ}" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="1"/>
+  <path d="${SQ}" fill="${bg}"/>
   <g filter="url(#${id}s)">${body.replaceAll('W', `url(#${id}w)`)}</g>
 </svg>`;
 }
@@ -32,69 +28,69 @@ function gear(cx, cy, r1, r2, teeth) {
 }
 
 export const ICONS = {
-  archivos: base(['#5ab2ff', '#2f6bff'], `
+  archivos: base('#1D6BFF', `
     <path d="M22 32a6 6 0 0 1 6-6h14l7 7h23a6 6 0 0 1 6 6v6H22Z" fill="#fff" fill-opacity=".55"/>
     <rect x="22" y="38" width="56" height="38" rx="7" fill="W"/>
     <rect x="22" y="38" width="56" height="9" rx="4" fill="#2f6bff" fill-opacity=".12"/>`),
 
-  // Navegador: planeta con anillo, sobre degradado cian–índigo.
-  navegador: base(['#22d3ee', '#4f46e5'], `
+  // Navegador: planeta con anillo sobre fondo cian.
+  navegador: base('#06B6D4', `
     <circle cx="50" cy="50" r="22" fill="W"/>
     <path d="M28 50h44M50 28c-7 7-7 37 0 44M50 28c7 7 7 37 0 44" stroke="#4f46e5" stroke-opacity=".35" stroke-width="2.5" fill="none"/>
     <ellipse cx="50" cy="50" rx="36" ry="11" transform="rotate(-24 50 50)" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="3.5"/>
     <circle cx="80" cy="37" r="4.5" fill="#fde047"/>`),
 
-  ajustes: base(['#8b93a7', '#3d4456'], `
+  ajustes: base('#6366F1', `
     <polygon points="${gear(50, 50, 22, 29, 10)}" fill="W" stroke="#fff" stroke-linejoin="round" stroke-width="3"/>
     <circle cx="50" cy="50" r="13" fill="#4a5164"/>
     <circle cx="50" cy="50" r="7" fill="#fff" fill-opacity=".9"/>`),
 
-  launchpad: base(['#a78bfa', '#f472b6'], `
+  launchpad: base('#C026D3', `
     <rect x="25" y="25" width="22" height="22" rx="7" fill="W"/>
     <rect x="53" y="25" width="22" height="22" rx="7" fill="#fff" fill-opacity=".7"/>
     <rect x="25" y="53" width="22" height="22" rx="7" fill="#fff" fill-opacity=".7"/>
     <rect x="53" y="53" width="22" height="22" rx="7" fill="#fff" fill-opacity=".45"/>`),
 
-  buscar: base(['#7c8cff', '#5246e5'], `
+  buscar: base('#7C3AED', `
     <circle cx="45" cy="45" r="17" fill="#fff" fill-opacity=".25" stroke="#fff" stroke-width="6"/>
     <path d="M58 58l14 14" stroke="#fff" stroke-width="8" stroke-linecap="round"/>`),
 
-  papelera: base(['#f3f5fa', '#c9d0dd'], `
+  papelera: base('#EF4444', `
     <path d="M31 38h38l-3.5 35a6 6 0 0 1-6 5.5h-19a6 6 0 0 1-6-5.5Z" fill="#fff" stroke="#8a94a8" stroke-width="2.5"/>
     <rect x="27" y="30" width="46" height="8" rx="4" fill="#8a94a8"/>
     <rect x="42" y="24" width="16" height="7" rx="3.5" fill="#8a94a8"/>
-    <path d="M44 46v24M56 46v24" stroke="#c9d0dd" stroke-width="3" stroke-linecap="round"/>`, { glass: true }),
+    <path d="M44 46v24M56 46v24" stroke="#c9d0dd" stroke-width="3" stroke-linecap="round"/>`),
 
-  tienda: base(['#ffb347', '#ff5f6d'], `
+  tienda: base('#FF7A00', `
     <path d="M28 40h44l-4 34a6 6 0 0 1-6 5H38a6 6 0 0 1-6-5Z" fill="W"/>
     <path d="M40 40v-6a10 10 0 0 1 20 0v6" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
     <circle cx="42" cy="52" r="3" fill="#ff5f6d"/><circle cx="58" cy="52" r="3" fill="#ff5f6d"/>`),
 
   // WonderfulOS: tres círculos de color que se mezclan.
-  logo: base(['#2b2f45', '#14161f'], `
+  logo: base('#5B21B6', `
     <circle cx="50" cy="39" r="17" fill="#ff5f6d" fill-opacity=".9"/>
     <circle cx="39" cy="58" r="17" fill="#3ec7ff" fill-opacity=".85" style="mix-blend-mode:screen"/>
     <circle cx="61" cy="58" r="17" fill="#ffc94d" fill-opacity=".85" style="mix-blend-mode:screen"/>`),
 
-  app: base(['#60a5fa', '#7c3aed'], '<rect x="30" y="30" width="40" height="40" rx="12" fill="W"/>'),
+  app: base('#0EA5E9', '<rect x="30" y="30" width="40" height="40" rx="12" fill="W"/>'),
 
-  texto: base(['#ffc04d', '#ff8a1f'], `
+  texto: base('#F59E0B', `
     <rect x="27" y="20" width="46" height="60" rx="8" fill="W"/>
     <path d="M36 36h28M36 46h28M36 56h18" stroke="#ff8a1f" stroke-opacity=".75" stroke-width="5" stroke-linecap="round"/>
     <path d="M58 70 74 54l6 6-16 16h-6Z" fill="#fff" fill-opacity=".6"/>`),
 
-  calculo: base(['#3ee08f', '#0f9d58'], `
+  calculo: base('#10B981', `
     <rect x="22" y="24" width="56" height="52" rx="9" fill="W"/>
     <rect x="22" y="24" width="56" height="13" rx="6" fill="#0f9d58" fill-opacity=".25"/>
     <path d="M22 50h56M22 63h56M41 24v52M60 24v52" stroke="#0f9d58" stroke-opacity=".4" stroke-width="2.5"/>
     <rect x="62" y="52" width="14" height="9" rx="2" fill="#0f9d58" fill-opacity=".7"/>`),
 
-  diapositivas: base(['#ff7a9a', '#e11d48'], `
+  diapositivas: base('#E11D48', `
     <rect x="20" y="26" width="60" height="40" rx="8" fill="W"/>
     <rect x="30" y="36" width="26" height="6" rx="3" fill="#e11d48" fill-opacity=".7"/>
     <rect x="30" y="47" width="40" height="4" rx="2" fill="#e11d48" fill-opacity=".35"/>
     <path d="M50 66v10M40 80l10-6 10 6" stroke="#fff" stroke-opacity=".85" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`),
-  listas: base(['#3a3f52', '#111318'], `
+  listas: base('#0891B2', `
     <rect x="24" y="22" width="52" height="58" rx="9" fill="W"/>
     <rect x="31" y="32" width="9" height="9" rx="2.5" fill="#22c55e"/>
     <path d="M33 36.5l2 2 4-4.5" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
@@ -105,20 +101,20 @@ export const ICONS = {
     <rect x="45" y="66" width="16" height="5" rx="2.5" fill="#111318" fill-opacity=".45"/>
     <circle cx="72" cy="72" r="9" fill="#f97316"/><circle cx="64" cy="76" r="6" fill="#3b82f6" stroke="#fff" stroke-width="1.5"/>`),
 
-  // Notas: hoja doblada sobre degradado turquesa.
-  notas: base(['#5eead4', '#0e7490'], `
+  // Notas: hoja doblada sobre fondo turquesa.
+  notas: base('#14B8A6', `
     <path d="M28 22h34l12 12v38a6 6 0 0 1-6 6H28a6 6 0 0 1-6-6V28a6 6 0 0 1 6-6Z" fill="W"/>
     <path d="M62 22v8a4 4 0 0 0 4 4h8Z" fill="#0e7490" fill-opacity=".35"/>
     <path d="M31 46h30M31 55h30M31 64h18" stroke="#0e7490" stroke-opacity=".5" stroke-width="4" stroke-linecap="round"/>`),
 
-  // Fotos: paisaje (sol y montañas) sobre un atardecer.
-  fotos: base(['#fbbf24', '#e11d48'], `
+  // Fotos: paisaje (sol y montañas) sobre fondo coral.
+  fotos: base('#F43F5E', `
     <rect x="20" y="24" width="60" height="52" rx="10" fill="#fff" fill-opacity=".28"/>
     <circle cx="62" cy="40" r="7" fill="W"/>
     <path d="M20 70l18-22 12 14 8-9 22 23v0a10 10 0 0 1-10 10H30a10 10 0 0 1-10-10Z" fill="W"/>`),
 
   // Calendario: tarjeta con una semana de puntos y el día marcado.
-  calendario: base(['#f9a8d4', '#be185d'], `
+  calendario: base('#EC4899', `
     <rect x="20" y="24" width="60" height="54" rx="11" fill="W"/>
     <rect x="20" y="24" width="60" height="14" rx="7" fill="#be185d" fill-opacity=".22"/>
     <path d="M34 19v10M66 19v10" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
@@ -126,24 +122,24 @@ export const ICONS = {
     <circle cx="55.6" cy="58" r="6" fill="#be185d"/>`),
 
   // Recordatorios: campana con un destello.
-  recordatorios: base(['#7dd3fc', '#2563eb'], `
+  recordatorios: base('#3B82F6', `
     <path d="M50 22a18 18 0 0 0-18 18v12l-7 10h50l-7-10V40a18 18 0 0 0-18-18Z" fill="W"/>
     <path d="M42 68a8 8 0 0 0 16 0Z" fill="W"/>
     <circle cx="68" cy="28" r="7" fill="#fde047"/>`),
 
-  // Llavero: llave sobre degradado dorado–coral.
-  llavero: base(['#fcd34d', '#ea580c'], `
+  // Llavero: llave sobre fondo naranja.
+  llavero: base('#F97316', `
     <circle cx="38" cy="44" r="15" fill="W"/>
     <circle cx="38" cy="44" r="6" fill="#ea580c" fill-opacity=".55"/>
     <path d="M50 52l22 22M62 64l6-6M68 70l5-5" stroke="#fff" stroke-width="8" stroke-linecap="round"/>`),
 
   // Mensajes: dos burbujas superpuestas, violeta.
-  mensajes: base(['#a78bfa', '#6d28d9'], `
+  mensajes: base('#8B5CF6', `
     <rect x="18" y="24" width="44" height="32" rx="12" fill="#fff" fill-opacity=".45"/>
     <path d="M44 38h26a12 12 0 0 1 12 12v8a12 12 0 0 1-12 12h-4l2 9-11-9H44a12 12 0 0 1-12-12v-8a12 12 0 0 1 12-12Z" fill="W"/>
     <circle cx="48" cy="54" r="3" fill="#6d28d9"/><circle cx="57" cy="54" r="3" fill="#6d28d9"/><circle cx="66" cy="54" r="3" fill="#6d28d9"/>`),
 
-  correo: base(['#3ec7ff', '#5b6cff'], `
+  correo: base('#4F46E5', `
     <rect x="18" y="28" width="64" height="46" rx="9" fill="W"/>
     <path d="M22 33l28 21 28-21" fill="none" stroke="#5b6cff" stroke-opacity=".8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`),
 };
