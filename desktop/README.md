@@ -8,6 +8,7 @@ WonderfulOS con la potencia real del equipo. Dentro corre el servicio local de W
 - Oficina: LibreOffice del equipo con un perfil propio de WonderfulOS (modo oscuro, iconos,
   cinta de pestañas); cada vez que guardas, el documento se guarda en WonderfulOS.
 - Tienda: Homebrew (Mac), winget (Windows) o Flathub (Linux).
+- Llavero: contraseñas cifradas en `datos/llavero.json`, sin cuenta ni conexión.
 - Ajustes › Este ordenador: abrir WonderfulOS al encender el equipo, pantalla completa, salir.
 
 Probar: `npm start` (con `NUBEOS_WINDOWED=1` se abre en ventana).

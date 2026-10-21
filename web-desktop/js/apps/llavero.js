@@ -6,27 +6,33 @@ import { avatarColor, emptyState } from '../cloud.js';
 import { esc } from '../util.js';
 
 const STRENGTH = [['Muy débil', '#ef4444'], ['Débil', '#f97316'], ['Aceptable', '#eab308'], ['Fuerte', '#22c55e'], ['Muy fuerte', '#10b981']];
-const copy = (ctx, text, what) => navigator.clipboard?.writeText(text).then(() => ctx.notify(`${what} copiado. Se borrará del portapapeles en 30 s.`, 3000, { title: 'Llavero', icon: 'llavero' }))
-  .then(() => setTimeout(() => navigator.clipboard.readText().then((t) => t === text && navigator.clipboard.writeText('')).catch(() => {}), 30000));
+const copy = (ctx, text, what) => {
+  const write = navigator.clipboard?.writeText(text);
+  if (!write) return ctx.notify('No se pudo copiar al portapapeles.', 4000, { title: 'Llavero', icon: 'llavero' });
+  return write.then(() => {
+    ctx.notify(`Copiado: ${what}. Se borrará del portapapeles en 30 s.`, 3000, { title: 'Llavero', icon: 'llavero' });
+    setTimeout(() => navigator.clipboard.readText().then((t) => t === text && navigator.clipboard.writeText('')).catch(() => {}), 30000);
+  }).catch(() => ctx.notify('No se pudo copiar al portapapeles.', 4000, { title: 'Llavero', icon: 'llavero' }));
+};
 
 export default {
   id: 'llavero',
   name: 'Llavero',
-  description: 'Tus contraseñas, cifradas',
+  description: 'Tus contraseñas, cifradas en tu disco',
 
   async launch(ctx, opts = {}) {
     const win = ctx.createWindow({ title: 'Llavero', width: 880, height: 580 });
     win.body.classList.add('app-cloud', 'app-llavero');
     const $ = (s) => win.body.querySelector(s);
     let current = null, query = '', editing = null, reveal = false;
-    try { await keychain.init(); } catch (e) { win.body.innerHTML = emptyState(ICONS.llavero, 'Sin conexión', e.message); return; }
+    try { await keychain.init(); } catch (e) { win.body.innerHTML = emptyState(ICONS.llavero, 'No se pudo abrir el llavero', e.message); return; }
 
     function lockScreen() {
       const first = !keychain.isSetUp();
       win.body.innerHTML = `<form class="kc-lock">
         <div class="kc-icon">${ICONS.llavero}</div>
         <h2>${first ? 'Crea tu llavero' : 'Llavero bloqueado'}</h2>
-        <p>${first ? 'Elige una contraseña maestra. Cifra todas tus contraseñas en tu dispositivo: nadie más puede leerlas, ni siquiera WonderfulOS. <strong>Si la olvidas, no se pueden recuperar.</strong>' : 'Escribe tu contraseña maestra para ver tus contraseñas.'}</p>
+        <p>${first ? 'Elige una contraseña maestra. Tus contraseñas se guardan cifradas en este dispositivo, sin cuenta ni conexión: nadie más puede leerlas, ni siquiera WonderfulOS. <strong>Si la olvidas, no se pueden recuperar.</strong>' : 'Escribe tu contraseña maestra para ver tus contraseñas.'}</p>
         <input type="password" name="p1" placeholder="Contraseña maestra" autocomplete="${first ? 'new-password' : 'current-password'}" required>
         ${first ? '<input type="password" name="p2" placeholder="Repítela" autocomplete="new-password" required>' : ''}
         <p class="err" hidden></p>

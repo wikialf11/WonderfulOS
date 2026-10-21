@@ -29,6 +29,10 @@ contextBridge.exposeInMainWorld('nubeosDesktop', {
     open: (id) => call('apps-open', id),
   },
   mail: { start: () => call('mail-start') },
+  llavero: {
+    load: () => call('llavero-load'),
+    save: (data) => call('llavero-save', data),
+  },
   linux: {
     status: () => call('linux-status'),
     start: () => call('linux-start'),

@@ -9,7 +9,7 @@
 import { app, BrowserWindow, ipcMain, session, shell, dialog, Menu, clipboard } from 'electron';
 import { spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { readFileSync, writeFileSync, mkdirSync, existsSync, renameSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, renameSync, readdirSync } from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -27,12 +27,40 @@ for (const old of ['Color' + 'OS', 'Nube' + 'OS'].map((n) => path.join(app.getPa
 const WEB = app.isPackaged ? path.join(process.resourcesPath, 'web-desktop') : path.join(HERE, '..', 'web-desktop');
 const DATA = path.join(app.getPath('userData'), 'datos');
 mkdirSync(DATA, { recursive: true });
+// El Llavero no usa cuentas ni el servicio local: guarda un único archivo cifrado en el disco.
+const LLAVERO_FILE = path.join(DATA, 'llavero.json');
+let LLAVERO_USER = '';
 
 if (!app.requestSingleInstanceLock()) app.quit();
 // Rendimiento: dibujar con la tarjeta gráfica siempre que se pueda (el navegador va mucho más fluido).
 for (const f of ['ignore-gpu-blocklist', 'enable-gpu-rasterization', 'enable-zero-copy']) app.commandLine.appendSwitch(f);
 
 const freePort = () => new Promise((ok) => { const s = net.createServer(); s.listen(0, '127.0.0.1', () => { const { port } = s.address(); s.close(() => ok(port)); }); });
+
+function writeLlavero(data) {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('Datos del llavero no válidos');
+  const json = JSON.stringify(data);
+  if (json.length > 5 * 1024 * 1024) throw new Error('El llavero es demasiado grande');
+  const tmp = `${LLAVERO_FILE}.tmp`;
+  writeFileSync(tmp, json, { mode: 0o600 });
+  renameSync(tmp, LLAVERO_FILE);
+}
+function readLlavero() {
+  if (existsSync(LLAVERO_FILE)) return JSON.parse(readFileSync(LLAVERO_FILE, 'utf8'));
+  // Migración: si ya había un llavero en los datos de la app, se pasa al archivo local.
+  try {
+    const dir = path.join(DATA, 'apps');
+    for (const f of readdirSync(dir)) {
+      if (!f.endsWith('.json')) continue;
+      const d = JSON.parse(readFileSync(path.join(dir, f), 'utf8'));
+      if (d.app === 'llavero' && d.owner === LLAVERO_USER && d.data?.salt) {
+        writeLlavero(d.data);
+        return d.data;
+      }
+    }
+  } catch { /* todavía no hay llavero */ }
+  return null;
+}
 
 let win = null;
 let LOCAL_ORIGIN = '';
@@ -63,6 +91,7 @@ async function start() {
     writeFileSync(accountFile, JSON.stringify(acct), { mode: 0o600 });
   }
   const { token } = store.login(acct.user, acct.password);
+  LLAVERO_USER = acct.user;
   await session.defaultSession.cookies.set({ url: origin, name: 'nubeos_sid', value: token, httpOnly: true, sameSite: 'lax' });
 
   local.init({ store, user: acct.user, dataDir: DATA, send: (ch, msg) => win?.webContents.send(ch, msg) });
@@ -180,6 +209,8 @@ ipcMain.handle('nubeos:quit', () => app.quit());
 ipcMain.handle('nubeos:zoom', (e, z) => { const f = Math.min(1.6, Math.max(0.8, Number(z) || 1)); win?.webContents.setZoomFactor(f); return f; });
 ipcMain.handle('nubeos:open-at-login', (e, on) => { app.setLoginItemSettings({ openAtLogin: !!on }); return app.getLoginItemSettings().openAtLogin; });
 ipcMain.handle('nubeos:fullscreen', (e, on) => { win.setFullScreen(!!on); return win.isFullScreen(); });
+ipcMain.handle('nubeos:llavero-load', () => readLlavero());
+ipcMain.handle('nubeos:llavero-save', (e, data) => { writeLlavero(data); return { ok: true }; });
 ipcMain.handle('nubeos:mail-start', async () => { await office.startMail(); return office.MAIL_URL; });
 ipcMain.handle('nubeos:office-mode', () => (office.supported() ? 'motor' : 'escritorio'));
 ipcMain.handle('nubeos:office-start', async () => { await office.start(); process.env.NUBEOS_WOPI_URL = await office.wopiUrl(); });
