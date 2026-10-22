@@ -80,12 +80,23 @@ export default {
         html += row('Color de acento', `<div style="display:flex;gap:8px">${ACCENTS.map((c) => `<button data-accent="${c}" title="${c}" style="width:26px;height:26px;border-radius:50%;border:${c === s.accent ? '3px solid var(--text)' : '0'};background:${c}"></button>`).join('')}</div>`);
       }
       if (current === 'fondo') {
-        html += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px">${Object.entries(WALLPAPERS).map(([id, w]) => {
-          const bg = settings.isDark(s) ? w.dark : w.light;
-          return `<button data-wallpaper="${id}" style="border:0;padding:0;background:none;text-align:left">
-            <div style="height:100px;border-radius:14px;background:${bg};outline:${id === s.wallpaper ? '3px solid var(--accent)' : '0'};outline-offset:2px"></div>
-            <div style="margin-top:6px;font-size:13px">${w.name}</div></button>`;
-        }).join('')}</div>`;
+        const dark = settings.isDark(s);
+        const customColor = /^#[0-9a-f]{6}$/i.test(s.wallpaperColor || '') ? s.wallpaperColor : '#2563eb';
+        const tile = (id, name, bg) => `<button data-wallpaper="${id}" style="border:0;padding:0;background:none;text-align:left">
+          <div style="height:100px;border-radius:14px;background:${bg};box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);outline:${id === s.wallpaper ? '3px solid var(--accent)' : '0'};outline-offset:2px"></div>
+          <div style="margin-top:6px;font-size:13px">${name}</div></button>`;
+        const grid = (items) => `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px">${items.join('')}</div>`;
+        const solids = Object.entries(WALLPAPERS).filter(([, w]) => w.kind === 'solid');
+        const gradients = Object.entries(WALLPAPERS).filter(([, w]) => w.kind !== 'solid');
+        html += `<h3 style="margin:0 0 10px;font-size:15px">Colores planos</h3>`;
+        html += grid([...solids.map(([id, w]) => tile(id, w.name, dark ? w.dark : w.light)), tile('custom', 'Personalizado', customColor)]);
+        html += `<div style="display:flex;align-items:center;gap:10px;margin:14px 0 24px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px">Color personalizado
+            <input type="color" data-wallpaper-color value="${customColor}" style="width:38px;height:30px;padding:2px;border:0;border-radius:8px;background:none;cursor:pointer">
+          </label><code data-wallpaper-hex style="font-size:12px;color:var(--muted)">${customColor}</code>
+        </div>`;
+        html += `<h3 style="margin:0 0 10px;font-size:15px">Degradados</h3>`;
+        html += grid(gradients.map(([id, w]) => tile(id, w.name, dark ? w.dark : w.light)));
       }
       if (current === 'dock') {
         html += row('Tamaño de los iconos', `<input type="range" min="40" max="80" value="${s.dockSize}" data-range="dockSize" style="width:180px;accent-color:var(--accent)">`);
@@ -104,7 +115,7 @@ export default {
       if (current === 'acerca') {
         html += `<div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:30px;text-align:center">
           <div style="width:96px;height:96px;box-shadow:0 14px 30px rgba(20,22,31,.35)">${ICONS.logo}</div><div style="font-size:26px;font-weight:650">WonderfulOS</div>
-          <div style="color:var(--muted)">Versión 0.16.4 · basado en Linux</div>
+          <div style="color:var(--muted)">Versión 0.16.6 · basado en Linux</div>
           <p style="max-width:420px;color:var(--muted)">Un sistema operativo basado en Linux, sencillo y bonito: oficina, correo, navegador y todas las apps de Linux, con la potencia de tu ordenador. Es <b>software libre</b> (licencia GPL-3.0): puedes usarlo, estudiarlo, compartirlo y mejorarlo.</p></div>`;
       }
       content.innerHTML = html;
@@ -113,6 +124,18 @@ export default {
       content.querySelectorAll('[data-scale]').forEach((b) => { b.onclick = () => { settings.set({ textScale: Number(b.dataset.scale) }); render(); }; });
       content.querySelectorAll('[data-accent]').forEach((b) => { b.onclick = () => { settings.set({ accent: b.dataset.accent }); render(); }; });
       content.querySelectorAll('[data-wallpaper]').forEach((b) => { b.onclick = () => { settings.set({ wallpaper: b.dataset.wallpaper }); render(); }; });
+      const color = content.querySelector('[data-wallpaper-color]');
+      if (color) color.oninput = () => {
+        settings.set({ wallpaper: 'custom', wallpaperColor: color.value });
+        const customTile = content.querySelector('[data-wallpaper="custom"] > div');
+        if (customTile) customTile.style.background = color.value;
+        const hex = content.querySelector('[data-wallpaper-hex]');
+        if (hex) hex.textContent = color.value;
+        content.querySelectorAll('[data-wallpaper]').forEach((b) => {
+          const preview = b.firstElementChild;
+          if (preview) preview.style.outline = b.dataset.wallpaper === 'custom' ? '3px solid var(--accent)' : '0';
+        });
+      };
       content.querySelectorAll('[data-range]').forEach((r) => {
         r.oninput = () => settings.set(r.dataset.range === 'brightness' ? { dim: +(0.6 - r.value / 100).toFixed(2) } : { [r.dataset.range]: +r.value });
       });

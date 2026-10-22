@@ -17,12 +17,7 @@
   --spring: cubic-bezier(.2, .9, .25, 1.15);
   --ease: cubic-bezier(.2, .8, .2, 1);
   --dock-size: 58px;
-  --wallpaper:
-    radial-gradient(60vw 60vw at 12% 18%, #7dd3fc 0%, transparent 60%),
-    radial-gradient(55vw 55vw at 88% 22%, #c4b5fd 0%, transparent 60%),
-    radial-gradient(70vw 70vw at 70% 95%, #f9a8d4 0%, transparent 55%),
-    radial-gradient(60vw 60vw at 15% 90%, #a5b4fc 0%, transparent 60%),
-    linear-gradient(160deg, #eef2ff, #fdf2f8);
+  --wallpaper: #2563eb;
   font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   font-size: 14px;
   color: var(--text);
@@ -39,11 +34,7 @@
   --stroke: rgba(255, 255, 255, 0.12);
   --border: rgba(255, 255, 255, 0.08);
   --shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.7), 0 0 0 0.5px rgba(255, 255, 255, 0.12);
-  --wallpaper:
-    radial-gradient(60vw 60vw at 15% 15%, #1e3a8a 0%, transparent 60%),
-    radial-gradient(55vw 55vw at 85% 20%, #5b21b6 0%, transparent 60%),
-    radial-gradient(70vw 70vw at 70% 100%, #9d174d 0%, transparent 55%),
-    linear-gradient(160deg, #0b1020, #140c1f);
+  --wallpaper: #2563eb;
 }
 
 * { box-sizing: border-box; }
