@@ -621,14 +621,6 @@ body:has(.window.focused .app-browser-local) #dock, body:has(.window.focused .ap
 /* Foco del teclado siempre visible. */
 :focus-visible { outline: 2px solid var(--accent) !important; outline-offset: 2px; }
 button, [role="button"], .dock-item { cursor: pointer; }
-/* Alto contraste: texto más oscuro, bordes marcados, sin transparencias ni desenfoques. */
-:root[data-contrast] { --muted: var(--text); --border: color-mix(in srgb, var(--text) 55%, var(--panel-solid)); }
-:root[data-contrast] .window, :root[data-contrast] #menubar, :root[data-contrast] #dock, :root[data-contrast] .menu,
-:root[data-contrast] .window-body, :root[data-contrast] .dialog {
-  background: var(--panel-solid) !important;
-  border: 1.5px solid var(--text) !important;
-}
-:root[data-contrast] .btn, :root[data-contrast] input, :root[data-contrast] select { border: 1.5px solid var(--text) !important; }
 /* Menos movimiento (también si el ordenador lo pide). */
 :root[data-reduce-motion] *, :root[data-reduce-motion] *::before, :root[data-reduce-motion] *::after { animation-duration: 0s !important; transition-duration: 0s !important; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0s !important; transition-duration: 0s !important; } }

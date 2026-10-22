@@ -20,15 +20,39 @@ export const WALLPAPERS = {
   carbon: { name: 'Carbón', kind: 'solid', light: '#1f2937', dark: '#1f2937' },
 };
 
-const DEFAULTS = { theme: 'auto', accent: '#8b5cf6', wallpaper: 'indigo', wallpaperColor: '#4f46e5', dockSize: 58, magnify: true, dim: 0, night: false, focus: false, textScale: 1, contrast: false, reduceMotion: false };
+const DEFAULTS = { theme: 'auto', accent: '#8b5cf6', wallpaper: 'indigo', wallpaperColor: '#4f46e5', dockSize: 58, magnify: true, dim: 0, night: false, focus: false, textScale: 1.15 };
+const SCALE_MIGRATION = 'nubeos.shell.scaleDefault.v2';
 const listeners = new Set();
+
+// El tamaño «Grande» pasa a ser el valor de partida. Si el perfil venía con el
+// antiguo valor por defecto (1), se sube una sola vez; las elecciones explícitas
+// de «Muy grande» se conservan y después se puede volver a «Normal».
+try {
+  const saved = localStorage.getItem(KEY);
+  if (!localStorage.getItem(SCALE_MIGRATION)) {
+    if (saved) {
+      const prev = JSON.parse(saved);
+      if (prev.textScale === undefined || Number(prev.textScale) === 1) {
+        localStorage.setItem(KEY, JSON.stringify({ ...DEFAULTS, ...prev, textScale: DEFAULTS.textScale }));
+      }
+    }
+    localStorage.setItem(SCALE_MIGRATION, '1');
+  }
+} catch { /* sin persistencia */ }
 
 export const settings = {
   get() {
-    try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch { return { ...DEFAULTS }; }
+    try {
+      const s = { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) || '{}') };
+      delete s.contrast;
+      delete s.reduceMotion;
+      return s;
+    } catch { return { ...DEFAULTS }; }
   },
   set(patch) {
     const next = { ...this.get(), ...patch };
+    delete next.contrast;
+    delete next.reduceMotion;
     try { localStorage.setItem(KEY, JSON.stringify(next)); } catch { /* sin persistencia */ }
     this.apply(next);
     listeners.forEach((fn) => fn(next));
@@ -49,9 +73,8 @@ export const settings = {
     const id = s.wallpaper === 'custom' ? 'custom' : (WALLPAPERS[s.wallpaper] ? s.wallpaper : DEFAULTS.wallpaper);
     const wp = id === 'custom' ? custom : WALLPAPERS[id][dark ? 'dark' : 'light'];
     root.style.setProperty('--wallpaper', wp || WALLPAPERS[DEFAULTS.wallpaper].light);
-    // Accesibilidad: alto contraste, menos movimiento y tamaño del texto (zoom de todo el sistema).
-    root.toggleAttribute('data-contrast', !!s.contrast);
-    root.toggleAttribute('data-reduce-motion', !!s.reduceMotion);
+    // Accesibilidad: el movimiento reducido es siempre fijo; el tamaño del texto es ajustable.
+    root.toggleAttribute('data-reduce-motion', true);
     const z = Number(s.textScale) || 1;
     if (window.nubeosDesktop?.setZoom) window.nubeosDesktop.setZoom(z);
     else root.style.zoom = z === 1 ? '' : String(z);

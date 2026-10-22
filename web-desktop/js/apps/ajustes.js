@@ -97,15 +97,13 @@ export default {
         html += row('Luz nocturna', `<input type="checkbox" ${s.night ? 'checked' : ''} data-check="night" style="width:20px;height:20px;accent-color:var(--accent)">`, 'Colores más cálidos para descansar la vista');
       }
       if (current === 'accesibilidad') {
-        html += row('Tamaño del texto', segmented('scale', [['1', 'Normal'], ['1.15', 'Grande'], ['1.3', 'Muy grande']], String(s.textScale || 1)), 'Agranda todo el sistema: textos, iconos y ventanas');
-        html += row('Alto contraste', `<input type="checkbox" ${s.contrast ? 'checked' : ''} data-check="contrast" style="width:20px;height:20px;accent-color:var(--accent)">`, 'Texto más marcado y bordes visibles');
-        html += row('Reducir el movimiento', `<input type="checkbox" ${s.reduceMotion ? 'checked' : ''} data-check="reduceMotion" style="width:20px;height:20px;accent-color:var(--accent)">`, 'Sin animaciones ni efecto lupa en el dock');
+        html += row('Tamaño del texto', segmented('scale', [['1', 'Normal'], ['1.15', 'Grande'], ['1.3', 'Muy grande']], String(s.textScale || 1.15)), 'Agranda todo el sistema: textos, iconos y ventanas');
         html += `<small style="color:var(--muted)">Todo se puede usar con el teclado: Tab para moverte, Intro para abrir y Esc para cerrar.</small>`;
       }
       if (current === 'acerca') {
         html += `<div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:30px;text-align:center">
           <div style="width:96px;height:96px">${ICONS.logo}</div><div style="font-size:26px;font-weight:650">WonderfulOS</div>
-          <div style="color:var(--muted)">Versión 0.17.0 · basado en Linux</div>
+          <div style="color:var(--muted)">Versión 0.17.1 · basado en Linux</div>
           <p style="max-width:420px;color:var(--muted)">Un sistema operativo sencillo: oficina, navegador y apps de Linux, con la potencia de tu ordenador. Es <b>software libre</b> (licencia GPL-3.0): puedes usarlo, estudiarlo, compartirlo y mejorarlo.</p></div>`;
       }
       content.innerHTML = html;
