@@ -31,6 +31,19 @@ export const basename = (p) => normalize(p).split('/').pop();
 export const extname = (p) => { const m = basename(p).match(/\.([^.]+)$/); return m ? m[1].toLowerCase() : ''; };
 const within = (p, root) => p === root || p.startsWith(root === '/' ? '/' : root + '/');
 
+/** Tamaño en bytes UTF-8 sin crear un Blob ni una copia del texto. */
+function utf8Length(text) {
+  let bytes = 0;
+  for (let i = 0; i < text.length; i++) {
+    const c = text.charCodeAt(i);
+    if (c < 0x80) bytes += 1;
+    else if (c < 0x800) bytes += 2;
+    else if (c >= 0xd800 && c <= 0xdbff && i + 1 < text.length) { bytes += 4; i++; }
+    else bytes += 3;
+  }
+  return bytes;
+}
+
 function localSeed() {
   const now = Date.now();
   return {
@@ -220,6 +233,6 @@ export const fs = {
   },
   size(p) {
     const n = node(normalize(p));
-    return !n || n.type !== 'file' ? 0 : n.blob ? n.size || 0 : new Blob([n.content || '']).size;
+    return !n || n.type !== 'file' ? 0 : n.blob ? n.size || 0 : utf8Length(String(n.content || ''));
   },
 };

@@ -10,6 +10,17 @@ let source = null;
 
 const emit = (app) => listeners.get(app)?.forEach((fn) => fn(docsOf(app)));
 const docsOf = (app) => [...(cache.get(app)?.values() || [])];
+// Guarda un documento solo si es más nuevo. Así el aviso del servidor y la respuesta
+// directa de una misma operación no repintan la app dos veces.
+function put(app, doc) {
+  const map = cache.get(app);
+  if (!map) return false;
+  const old = map.get(doc.id);
+  if (old && Number(doc.version || 0) <= Number(old.version || 0)) return false;
+  map.set(doc.id, doc);
+  emit(app);
+  return true;
+}
 
 function connect() {
   if (source) return;
@@ -20,9 +31,8 @@ function connect() {
     if (msg.type === 'notice') return noticeListeners.forEach((fn) => fn(msg));
     const app = msg.doc?.app || msg.app;
     if (!cache.has(app)) return;
-    if (msg.type === 'removed') cache.get(app).delete(msg.id);
-    else cache.get(app).set(msg.doc.id, msg.doc);
-    emit(app);
+    if (msg.type === 'removed') { cache.get(app).delete(msg.id); emit(app); }
+    else put(app, msg.doc);
   };
   // Si se corta (servidor reiniciado, sin red), EventSource reconecta solo; al volver, recargamos.
   source.onopen = () => { for (const app of cache.keys()) cloud.load(app, true).catch(() => {}); };
@@ -69,11 +79,22 @@ export const cloud = {
   /** Cambia un documento: se ve al instante y luego se confirma con el servidor. */
   async ops(app, id, ops) {
     const doc = cache.get(app)?.get(id);
-    if (doc) { applyOps(doc.data, structuredClone(ops)); emit(app); }
+    if (doc) {
+      applyOps(doc.data, ops);
+      doc.version = Number(doc.version || 0) + 1;
+      doc.updated = Date.now();
+      emit(app);
+    }
     try {
       const { doc: saved } = await api(`apps/${app}/${id}/ops`, { method: 'POST', body: { ops } });
-      cache.get(app)?.set(id, saved);
-      emit(app);
+      const map = cache.get(app);
+      if (map) {
+        const old = map.get(id);
+        if (!old || Number(saved.version || 0) >= Number(old.version || 0)) {
+          map.set(id, saved);
+          if (!old || Number(saved.version || 0) > Number(old.version || 0)) emit(app);
+        }
+      }
       return saved;
     } catch (e) {
       await cloud.load(app, true).catch(() => {}); // deshacemos lo optimista

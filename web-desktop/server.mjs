@@ -21,6 +21,7 @@ const PORT = Number(process.env.PORT || 4310);
 const HOST = process.env.HOST || '127.0.0.1';
 const PROXY_PORT = Number(process.env.PROXY_PORT || PORT + 1);
 const PROXY_HOST = process.env.PROXY_HOST; // p. ej. web.nubeos.ejemplo.com
+const LOCAL = process.env.NUBEOS_LOCAL === '1';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
@@ -37,7 +38,8 @@ async function desktopHandler(req, res) {
   if (url.pathname.endsWith('/nubeos-config.json')) {
     res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
     const proxyOrigin = process.env.PUBLIC_PROXY_ORIGIN || (PROXY_HOST ? `https://${PROXY_HOST}` : null);
-    return res.end(JSON.stringify({ ...(proxyOrigin ? { proxyOrigin } : { proxyPort: PROXY_PORT }), inviteRequired: inviteRequired() }));
+    const proxy = proxyOrigin ? { proxyOrigin } : LOCAL ? {} : { proxyPort: PROXY_PORT };
+    return res.end(JSON.stringify({ ...proxy, inviteRequired: inviteRequired() }));
   }
   let pathname;
   try { pathname = decodeURIComponent(url.pathname); } catch { res.writeHead(400); return res.end(); }
@@ -71,5 +73,6 @@ if (process.env.NUBEOS_ROLE === 'proxy') {
     .listen(PORT, HOST, () => console.log(`WonderfulOS en el puerto ${PORT} (proxy en ${PROXY_HOST}). Datos: ${DATA}`));
 } else {
   http.createServer(desktopHandler).listen(PORT, HOST, () => console.log(`Escritorio WonderfulOS: http://${HOST}:${PORT}  (datos en ${DATA})`));
-  http.createServer(proxyHandler).listen(PROXY_PORT, HOST, () => console.log(`Proxy del Navegador: http://${HOST}:${PROXY_PORT}`));
+  // En la app de escritorio el Navegador es su propio Chromium: no hace falta el proxy.
+  if (!LOCAL) http.createServer(proxyHandler).listen(PROXY_PORT, HOST, () => console.log(`Proxy del Navegador: http://${HOST}:${PROXY_PORT}`));
 }

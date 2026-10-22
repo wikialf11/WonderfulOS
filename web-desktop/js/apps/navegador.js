@@ -8,8 +8,6 @@ import { settings } from '../shell/settings.js';
 import { GLYPHS } from '../shell/icons.js';
 import { keychain, hostOf } from '../keychain.js';
 import { esc } from '../util.js';
-import ligero from './navegador-ligero.js';
-import local from './navegador-local.js';
 
 let info = null;
 
@@ -42,9 +40,16 @@ export default {
 
   async launch(ctx, startUrl) {
     // WonderfulOS instalado en el ordenador: el Navegador es el Chromium de la propia app.
-    if (window.nubeosDesktop) return local.launch(ctx, startUrl);
+    // Se carga solo al abrir: el escritorio no necesita el proxy ni el navegador ligero.
+    if (window.nubeosDesktop) {
+      const { default: local } = await import('./navegador-local.js');
+      return local.launch(ctx, startUrl);
+    }
     info ??= await api('browser/info').catch(() => ({ enabled: false }));
-    if (!info.enabled) return ligero.launch(ctx, startUrl);
+    if (!info.enabled) {
+      const { default: ligero } = await import('./navegador-ligero.js');
+      return ligero.launch(ctx, startUrl);
+    }
     // Un solo navegador por persona (con sus pestañas dentro): si ya está abierto, se trae al frente.
     const open = ctx.windows?.().find((w) => w.appId === 'navegador');
     if (open) return open.focus();

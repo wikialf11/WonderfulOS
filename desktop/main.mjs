@@ -34,6 +34,9 @@ let LLAVERO_USER = '';
 if (!app.requestSingleInstanceLock()) app.quit();
 // Rendimiento: dibujar con la tarjeta gráfica siempre que se pueda (el navegador va mucho más fluido).
 for (const f of ['ignore-gpu-blocklist', 'enable-gpu-rasterization', 'enable-zero-copy']) app.commandLine.appendSwitch(f);
+// Servicios de Chromium que no hacen falta en un sistema local: menos red y CPU en segundo plano.
+for (const f of ['disable-background-networking', 'disable-component-update', 'disable-domain-reliability', 'disable-sync', 'no-pings', 'disable-breakpad']) app.commandLine.appendSwitch(f);
+app.commandLine.appendSwitch('disable-features', 'MediaRouter,GlobalMediaControls,HardwareMediaKeyHandling,Translate,AutofillServerCommunication,OptimizationHints');
 
 const freePort = () => new Promise((ok) => { const s = net.createServer(); s.listen(0, '127.0.0.1', () => { const { port } = s.address(); s.close(() => ok(port)); }); });
 
@@ -101,11 +104,11 @@ async function start() {
   win = new BrowserWindow({
     title: 'WonderfulOS', backgroundColor: '#14161f', show: false,
     fullscreen: !process.env.NUBEOS_WINDOWED, width: 1440, height: 900, autoHideMenuBar: true, frame: process.platform === 'darwin',
-    webPreferences: { preload: path.join(HERE, 'preload.cjs'), webviewTag: true, contextIsolation: true },
+    webPreferences: { preload: path.join(HERE, 'preload.cjs'), webviewTag: true, contextIsolation: true, spellcheck: false, backgroundThrottling: true },
   });
   // Los enlaces que piden ventana nueva se abren como pestaña del Navegador de WonderfulOS.
   win.webContents.setWindowOpenHandler(({ url }) => { win.webContents.send('nubeos:open-url', url); return { action: 'deny' }; });
-  win.once('ready-to-show', () => { win.show(); setTimeout(prepareOffice, 8000); });
+  win.once('ready-to-show', () => win.show());
   win.loadURL(origin);
   win.webContents.on('will-attach-webview', (e, prefs) => { delete prefs.preload; prefs.nodeIntegration = false; prefs.contextIsolation = true; });
 
@@ -113,6 +116,7 @@ async function start() {
   for (const s of [session.defaultSession, session.fromPartition('persist:navegador')]) {
     s.on('will-download', (event, item) => local.handleDownload(item));
     s.setUserAgent(CHROME_UA, 'es-ES,es;q=0.9,en;q=0.8');
+    s.setSpellCheckerEnabled(false);
   }
   // La oficina (Collabora del motor Linux) se muestra dentro del escritorio de WonderfulOS.
   session.defaultSession.webRequest.onHeadersReceived({ urls: ['http://127.0.0.1:9980/*', 'http://127.0.0.1:9990/*'] }, ({ responseHeaders }, done) => {
@@ -131,19 +135,6 @@ async function start() {
 const CHROME_UA = `Mozilla/5.0 (${process.platform === 'darwin' ? 'Macintosh; Intel Mac OS X 10_15_7' : process.platform === 'win32' ? 'Windows NT 10.0; Win64; x64' : 'X11; Linux x86_64'}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${process.versions.chrome.split('.')[0]}.0.0.0 Safari/537.36`;
 app.userAgentFallback = CHROME_UA;
 app.commandLine.appendSwitch('lang', 'es-ES');
-/** La oficina (Texto, Cálculo, Presentaciones) viene lista: la primera vez se instala sola en segundo
- *  plano y, a partir de ahí, se enciende al arrancar para que los documentos se abran al momento. */
-async function prepareOffice() {
-  if (!office.supported()) return;
-  const flag = path.join(DATA, 'oficina-lista');
-  const first = !existsSync(flag);
-  if (first) win?.webContents.send('nubeos:notice', { kind: 'linux', text: 'Preparando la oficina (Texto, Cálculo y Presentaciones). Se hace una sola vez y tarda unos minutos; puedes seguir usando WonderfulOS.' });
-  try {
-    await office.start();
-    process.env.NUBEOS_WOPI_URL = await office.wopiUrl();
-    if (first) { writeFileSync(flag, new Date().toISOString()); win?.webContents.send('nubeos:notice', { kind: 'linux', text: 'La oficina está lista.' }); }
-  } catch (e) { console.error('Oficina:', e); }
-}
 app.whenReady().then(start).catch((e) => { dialog.showErrorBox('WonderfulOS no pudo arrancar', String(e?.stack || e)); app.quit(); });
 // Las páginas que abren otra ventana (enlaces con target=_blank…) se abren como pestaña nueva.
 app.on('web-contents-created', (e, contents) => {

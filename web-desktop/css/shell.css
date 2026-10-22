@@ -11,8 +11,8 @@
   --glass-strong: rgba(255, 255, 255, 0.78);
   --stroke: rgba(255, 255, 255, 0.55);
   --border: rgba(15, 23, 42, 0.09);
-  --shadow: 0 30px 80px -20px rgba(15, 23, 42, 0.45), 0 0 0 0.5px rgba(15, 23, 42, 0.12);
-  --shadow-soft: 0 12px 40px -12px rgba(15, 23, 42, 0.35);
+  --shadow: 0 18px 44px -22px rgba(15, 23, 42, 0.42), 0 0 0 0.5px rgba(15, 23, 42, 0.12);
+  --shadow-soft: 0 8px 24px -14px rgba(15, 23, 42, 0.32);
   --radius: 16px;
   --spring: cubic-bezier(.2, .9, .25, 1.15);
   --ease: cubic-bezier(.2, .8, .2, 1);
@@ -33,7 +33,7 @@
   --glass-strong: rgba(30, 32, 44, 0.78);
   --stroke: rgba(255, 255, 255, 0.12);
   --border: rgba(255, 255, 255, 0.08);
-  --shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.7), 0 0 0 0.5px rgba(255, 255, 255, 0.12);
+  --shadow: 0 18px 44px -22px rgba(0, 0, 0, 0.6), 0 0 0 0.5px rgba(255, 255, 255, 0.12);
   --wallpaper: #4f46e5;
 }
 
@@ -54,7 +54,7 @@ button { cursor: pointer; }
 #menubar {
   position: fixed; top: 0; left: 0; right: 0; height: 30px; z-index: 9000;
   display: flex; align-items: center; gap: 4px; padding: 0 10px;
-  background: var(--glass); backdrop-filter: blur(30px) saturate(1.8); -webkit-backdrop-filter: blur(30px) saturate(1.8);
+  background: var(--glass); backdrop-filter: blur(16px) saturate(1.35); -webkit-backdrop-filter: blur(16px) saturate(1.35);
   border-bottom: 0.5px solid var(--stroke); font-size: 13px;
 }
 #menubar button { border: 0; background: none; padding: 3px 9px; border-radius: 7px; display: flex; align-items: center; gap: 6px; height: 24px; }
@@ -68,7 +68,7 @@ button { cursor: pointer; }
 #snap-preview {
   position: absolute; top: 34px; bottom: 96px; pointer-events: none; z-index: 8000; opacity: 0;
   border-radius: 18px; background: var(--accent-soft); border: 2px solid color-mix(in srgb, var(--accent) 50%, transparent);
-  backdrop-filter: blur(6px); transition: all .25s var(--ease);
+  transition: opacity .2s var(--ease);
 }
 #snap-preview.show { opacity: 1; }
 #snap-preview.left { left: 8px; width: calc(50% - 12px); }
@@ -78,11 +78,11 @@ button { cursor: pointer; }
 .window {
   position: absolute; display: flex; flex-direction: column; pointer-events: auto;
   min-width: 340px; min-height: 220px;
-  background: var(--panel); backdrop-filter: blur(40px) saturate(1.6); -webkit-backdrop-filter: blur(40px) saturate(1.6);
+  background: var(--panel); backdrop-filter: blur(20px) saturate(1.35); -webkit-backdrop-filter: blur(20px) saturate(1.35);
   border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden;
   transition: transform .32s var(--spring), opacity .25s var(--ease);
 }
-.window.focused { box-shadow: 0 40px 100px -20px rgba(15, 23, 42, 0.55), 0 0 0 0.5px rgba(15, 23, 42, 0.16); }
+.window.focused { box-shadow: 0 24px 60px -24px rgba(15, 23, 42, 0.55), 0 0 0 0.5px rgba(15, 23, 42, 0.16); }
 .window:not(.focused) .titlebar { opacity: .7; }
 .window.opening { animation: win-open .28s var(--spring); }
 @keyframes win-open { from { transform: scale(.92) translateY(14px); opacity: 0; } }
@@ -108,7 +108,7 @@ button { cursor: pointer; }
 .window-body { flex: 1; overflow: auto; position: relative; display: flex; flex-direction: column; background: color-mix(in srgb, var(--panel-solid) 55%, transparent); }
 .resize-handle { position: absolute; right: 0; bottom: 0; width: 18px; height: 18px; cursor: nwse-resize; }
 
-body.overview #windows { pointer-events: auto; background: rgba(0, 0, 0, .25); backdrop-filter: blur(6px); }
+body.overview #windows { pointer-events: auto; background: rgba(0, 0, 0, .32); }
 body.overview .window { cursor: pointer; }
 body.overview .window * { pointer-events: none; }
 
@@ -116,17 +116,16 @@ body.overview .window * { pointer-events: none; }
 #dock {
   position: fixed; left: 50%; bottom: 10px; transform: translateX(-50%); z-index: 9000;
   display: flex; align-items: flex-end; gap: 4px; padding: 8px 10px;
-  background: var(--glass); backdrop-filter: blur(30px) saturate(1.8); -webkit-backdrop-filter: blur(30px) saturate(1.8);
+  background: var(--glass); backdrop-filter: blur(16px) saturate(1.35); -webkit-backdrop-filter: blur(16px) saturate(1.35);
   border: 0.5px solid var(--stroke); border-radius: 24px; box-shadow: var(--shadow-soft);
 }
-.dock-item { position: relative; width: var(--dock-size); height: var(--dock-size); border: 0; background: none; padding: 0;
-  transition: width .18s var(--ease), height .18s var(--ease), margin .18s var(--ease); }
-.dock-item svg { width: 100%; height: 100%; filter: drop-shadow(0 4px 8px rgba(0,0,0,.18)); }
+.dock-item { position: relative; width: var(--dock-size); height: var(--dock-size); border: 0; background: none; padding: 0; }
+.dock-item svg { width: 100%; height: 100%; transform-origin: 50% 100%; transition: transform .16s var(--ease); }
 .dock-item .dot { position: absolute; left: 50%; bottom: -6px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: var(--text); opacity: 0; transition: opacity .2s; }
 .dock-item.running .dot { opacity: .7; }
 .dock-item .tip {
   position: absolute; bottom: calc(100% + 14px); left: 50%; transform: translateX(-50%) translateY(4px); white-space: nowrap;
-  background: var(--glass-strong); backdrop-filter: blur(20px); padding: 5px 10px; border-radius: 8px; font-size: 12px;
+  background: var(--glass-strong); padding: 5px 10px; border-radius: 8px; font-size: 12px;
   box-shadow: var(--shadow-soft); opacity: 0; pointer-events: none; transition: opacity .15s, transform .15s;
 }
 .dock-item:hover .tip { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -136,7 +135,7 @@ body.overview .window * { pointer-events: none; }
 
 /* ---------- Paneles flotantes comunes ---------- */
 .glass-panel {
-  background: var(--glass-strong); backdrop-filter: blur(40px) saturate(1.8); -webkit-backdrop-filter: blur(40px) saturate(1.8);
+  background: var(--glass-strong); backdrop-filter: blur(22px) saturate(1.4); -webkit-backdrop-filter: blur(22px) saturate(1.4);
   border: 0.5px solid var(--stroke); border-radius: 20px; box-shadow: var(--shadow);
 }
 .pop { animation: pop .22s var(--spring); }
@@ -167,8 +166,7 @@ body.overview .window * { pointer-events: none; }
 
 /* Launchpad */
 #launchpad { position: fixed; inset: 0; z-index: 9400; display: flex; flex-direction: column; align-items: center; padding-top: 9vh;
-  background: rgba(10, 12, 24, .35); backdrop-filter: blur(40px) saturate(1.4); -webkit-backdrop-filter: blur(40px) saturate(1.4);
-  animation: fade .25s var(--ease); }
+  background: rgba(10, 12, 24, .55); animation: fade .25s var(--ease); }
 #launchpad[hidden] { display: none; }
 @keyframes fade { from { opacity: 0; } }
 #launchpad input { width: 280px; padding: 8px 14px; border-radius: 12px; border: 0.5px solid rgba(255,255,255,.3); background: rgba(255,255,255,.18); color: #fff; outline: none; text-align: center; }
@@ -205,7 +203,7 @@ body.overview .window * { pointer-events: none; }
 /* Pantalla de bloqueo */
 #lock { position: fixed; inset: 0; z-index: 99990; display: flex; flex-direction: column; align-items: center; color: #fff;
   background: var(--wallpaper); background-size: cover; transition: transform .7s var(--ease), opacity .7s; }
-#lock::before { content: ""; position: absolute; inset: 0; backdrop-filter: blur(28px); background: rgba(0,0,0,.18); }
+#lock::before { content: ""; position: absolute; inset: 0; background: rgba(0,0,0,.18); }
 #lock > * { position: relative; }
 #lock .date { margin-top: 12vh; font-size: 20px; font-weight: 500; opacity: .9; }
 #lock .date::first-letter { text-transform: uppercase; }
@@ -229,7 +227,7 @@ body.overview .window * { pointer-events: none; }
 textarea { outline: none; }
 .dialog-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.18); display: grid; place-items: center; z-index: 5; animation: fade .15s; }
 .dialog { width: min(420px, 92%); max-height: 90%; display: flex; flex-direction: column; gap: 10px; padding: 18px; background: var(--glass-strong);
-  backdrop-filter: blur(30px); border-radius: 18px; box-shadow: var(--shadow); animation: pop .22s var(--spring); }
+  border-radius: 18px; box-shadow: var(--shadow); animation: pop .22s var(--spring); }
 .dialog h3 { margin: 0; font-size: 15px; }
 .dialog .file-list { border-radius: 10px; overflow: auto; min-height: 140px; max-height: 260px; background: color-mix(in srgb, var(--text) 4%, transparent); }
 .dialog .file-list div { padding: 7px 12px; cursor: default; }
@@ -238,9 +236,7 @@ textarea { outline: none; }
 .dialog input, .dialog select { padding: 8px 10px; border: 0; border-radius: 9px; background: color-mix(in srgb, var(--text) 6%, transparent); outline: none; }
 .dialog .actions { display: flex; justify-content: flex-end; gap: 8px; }
 
-/* ---------- Iconos: sombra suave bajo cada app ---------- */
-.dock-item svg { filter: drop-shadow(0 6px 10px rgba(15, 23, 42, .22)) drop-shadow(0 1px 1px rgba(15, 23, 42, .12)); }
-#launchpad .app svg { filter: drop-shadow(0 14px 22px rgba(0, 0, 0, .28)); }
+/* ---------- Iconos: sin sombras pesadas (se dibujan igual y cuestan menos) ---------- */
 
 /* Botones de icono */
 .icon-btn { width: 32px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 9px; background: none; color: var(--muted); transition: background .15s, color .15s; }
@@ -271,7 +267,7 @@ textarea { outline: none; }
 .files-items.list { display: flex; flex-direction: column; gap: 1px; }
 .file { border-radius: 12px; outline: none; cursor: default; transition: background .12s; }
 .files-items.grid .file { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 6px; text-align: center; }
-.files-items.grid .fi svg { width: 64px; height: 64px; filter: drop-shadow(0 4px 6px rgba(15,23,42,.15)); }
+.files-items.grid .fi svg { width: 64px; height: 64px; }
 .files-items.list .file { display: flex; align-items: center; gap: 12px; padding: 6px 10px; }
 .files-items.list .fi svg { width: 26px; height: 26px; }
 .files-items.list .fn { flex: 1; }
@@ -325,7 +321,7 @@ textarea { outline: none; }
 /* ---------- Inicio de sesión ---------- */
 #login { position: fixed; inset: 0; z-index: 99995; display: grid; place-items: center; background: var(--wallpaper); background-size: cover; }
 #login[hidden] { display: none; }
-#login::before { content: ""; position: absolute; inset: 0; backdrop-filter: blur(24px); background: rgba(0,0,0,.12); }
+#login::before { content: ""; position: absolute; inset: 0; background: rgba(0,0,0,.12); }
 .login-card { position: relative; width: min(360px, 92vw); display: flex; flex-direction: column; gap: 10px; padding: 32px 28px; text-align: center; animation: pop .35s var(--spring); }
 .login-card .logo { width: 84px; height: 84px; margin: 0 auto 6px; }
 .login-card h1 { margin: 0; font-size: 26px; font-weight: 650; letter-spacing: -.5px; }
@@ -764,3 +760,37 @@ button, [role="button"], .wa-card, .dock-item { cursor: pointer; }
 .wa-count { margin: 12px 22px 0; color: var(--muted); font-size: 13px; }
 .wa-icon img { width: 100%; height: 100%; object-fit: contain; }
 .wa-warn { color: #d97706 !important; font-weight: 600; }
+
+/* ===== Modo ligero (por defecto) =====
+   El vidrio con desenfoque es lo que más tarjeta gráfica consume. En modo ligero las
+   superficies son casi opacas, sin desenfoques ni sombras de iconos. Se puede desactivar
+   en Ajustes › Apariencia para recuperar el efecto de cristal. */
+:root[data-light] {
+  --panel: var(--panel-solid);
+  --panel-2: var(--panel-solid);
+  --glass: color-mix(in srgb, var(--panel-solid) 96%, transparent);
+  --glass-strong: var(--panel-solid);
+  --shadow: 0 8px 22px -16px rgba(15, 23, 42, 0.38), 0 0 0 0.5px rgba(15, 23, 42, 0.1);
+  --shadow-soft: 0 4px 14px -10px rgba(15, 23, 42, 0.3);
+}
+:root[data-light][data-theme="dark"] {
+  --shadow: 0 8px 22px -16px rgba(0, 0, 0, 0.55), 0 0 0 0.5px rgba(255, 255, 255, 0.1);
+}
+:root[data-light] #menubar,
+:root[data-light] #dock,
+:root[data-light] .window,
+:root[data-light] .glass-panel,
+:root[data-light] .dialog,
+:root[data-light] #lock .hint,
+:root[data-light] .wa-sheet,
+:root[data-light] body.mobile.app-open #menubar {
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+}
+:root[data-light] .window-body { background: var(--panel-solid); }
+:root[data-light] .dock-item svg,
+:root[data-light] #launchpad .app svg,
+:root[data-light] #home .home-app svg,
+:root[data-light] .files-items.grid .fi svg,
+:root[data-light] .app-empty svg,
+:root[data-light] .kc-icon svg,
+:root[data-light] .wa-hero-art svg { filter: none !important; }

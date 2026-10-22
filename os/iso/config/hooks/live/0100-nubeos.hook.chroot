@@ -39,7 +39,8 @@ sed -i 's/^PRETTY_NAME=.*/PRETTY_NAME="WonderfulOS 1.0 (Debian 13)"/' /usr/lib/o
 
 # ---- Oficina: la misma que la versión online (Collabora), en el propio PC y sin servidores ----
 NUBEOS_NO_START=1 bash /usr/share/nubeos/office-setup.sh /usr/share/nubeos/nubeos-office.css
-systemctl enable coolwsd
+# No se enciende al arrancar: se inicia solo al abrir Texto, Cálculo o Presentaciones.
+systemctl disable coolwsd 2>/dev/null || true
 
 # ---- Apps de Linux: Flathub para todos ----
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo || true

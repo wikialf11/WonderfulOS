@@ -55,6 +55,11 @@ export default {
     let history = [], pos = -1, view = 'grid', query = '';
     let sel = new Set(); // rutas seleccionadas (clic, Cmd/Ctrl+clic o rectángulo)
     const uploads = new Map(); // nombre -> progreso (0..1)
+    let renderFrame = 0;
+    const scheduleRender = () => {
+      if (renderFrame) return;
+      renderFrame = requestAnimationFrame(() => { renderFrame = 0; render(); });
+    };
 
     const tryDo = (fn) => { try { fn(); } catch (e) { ctx.notify(e.message, 5000, { title: 'Archivos', icon: 'archivos' }); } };
 
@@ -190,7 +195,7 @@ export default {
         uploads.set(file.name, 0);
         render();
         try {
-          await ctx.fs.upload(target, file, (p) => { uploads.set(file.name, p); render(); });
+          await ctx.fs.upload(target, file, (p) => { uploads.set(file.name, p); scheduleRender(); });
         } catch (e) {
           ctx.notify(`${file.name}: ${e.message}`, 7000, { title: 'No se pudo subir', icon: 'archivos' });
         }
@@ -283,10 +288,10 @@ export default {
       uploadFiles([...e.dataTransfer.files]);
     });
 
-    const off = ctx.fs.onChange(() => render());
+    const off = ctx.fs.onChange(() => scheduleRender());
     const onAccount = () => renderSide();
     ctx.account?.listeners.add(onAccount);
-    win.onClose(() => { off(); ctx.account?.listeners.delete(onAccount); return true; });
+    win.onClose(() => { off(); if (renderFrame) cancelAnimationFrame(renderFrame); ctx.account?.listeners.delete(onAccount); return true; });
     go(ctx.fs.isDir(start || '') ? start : '/Documentos');
     if (arg?.upload) uploadFiles(arg.upload, start);
   },

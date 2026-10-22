@@ -219,6 +219,9 @@ function openMenu(btn, kind, e) {
 // ---------- Dock (con efecto lupa) ----------
 const DOCK = ['launchpad', 'navegador', 'archivos', 'listas', 'notas', 'calendario', 'texto', 'calculo', 'diapositivas', 'llavero', 'ajustes'];
 const MOBILE_DOCK = ['navegador', 'archivos', 'listas', 'notas'];
+let dockCfg = settings.get();
+let dockItems = [];
+let dockRaf = 0;
 function renderDock() {
   const dock = $('#dock');
   dock.innerHTML = '';
@@ -232,25 +235,48 @@ function renderDock() {
     b.onclick = () => (id === 'launchpad' ? toggleLaunchpad() : activate(id));
     dock.appendChild(b);
   }
+  dockItems = []; // se vuelven a medir al pasar el ratón
   updateRunning();
 }
 function updateRunning() {
   const running = new Set(allWindows().map((w) => w.appId));
   document.querySelectorAll('.dock-item[data-app]').forEach((b) => b.classList.toggle('running', running.has(b.dataset.app)));
 }
-$('#dock').addEventListener('mousemove', (e) => {
-  const s = settings.get();
-  if (!s.magnify || s.reduceMotion || isMobile()) return;
-  for (const item of document.querySelectorAll('.dock-item')) {
-    const r = item.getBoundingClientRect();
-    const d = Math.abs(e.clientX - (r.left + r.width / 2));
-    const size = s.dockSize + Math.max(0, 1 - d / 160) * s.dockSize * 0.55;
-    item.style.width = item.style.height = `${size}px`;
-  }
-});
-$('#dock').addEventListener('mouseleave', () => {
-  document.querySelectorAll('.dock-item').forEach((i) => { i.style.width = i.style.height = ''; });
-});
+function measureDock() {
+  const rect = $('#dock').getBoundingClientRect();
+  dockItems = [...document.querySelectorAll('#dock .dock-item')].map((item) => ({
+    el: item.querySelector('svg'),
+    x: rect.left + item.offsetLeft + item.offsetWidth / 2,
+  }));
+}
+function resetDockScale() {
+  for (const { el } of dockItems) if (el) el.style.transform = '';
+}
+// La lupa se calcula como máximo una vez por fotograma y solo cambia el transform:
+// antes se leía localStorage y se cambiaba el tamaño de cada icono en cada mousemove.
+$('#dock').addEventListener('pointerenter', () => { dockCfg = settings.get(); measureDock(); }, { passive: true });
+$('#dock').addEventListener('pointermove', (e) => {
+  if (!dockCfg.magnify || dockCfg.reduceMotion || isMobile()) return;
+  if (!dockItems.length) measureDock();
+  if (dockRaf) return;
+  const pointerX = e.clientX;
+  dockRaf = requestAnimationFrame(() => {
+    dockRaf = 0;
+    for (const { el, x } of dockItems) {
+      if (!el) continue;
+      const d = Math.abs(pointerX - x);
+      const scale = 1 + Math.max(0, 1 - d / 160) * 0.55;
+      const next = scale > 1.01 ? `scale(${scale.toFixed(3)})` : '';
+      if (el.style.transform !== next) el.style.transform = next;
+    }
+  });
+}, { passive: true });
+$('#dock').addEventListener('pointerleave', () => {
+  if (dockRaf) cancelAnimationFrame(dockRaf);
+  dockRaf = 0;
+  resetDockScale();
+}, { passive: true });
+addEventListener('resize', () => { resetDockScale(); dockItems = []; }, { passive: true });
 
 // ---------- Launchpad ----------
 function toggleLaunchpad(force) {
@@ -507,11 +533,19 @@ async function offerToSave(n) {
 }
 
 // ---------- Móvil: pantalla de inicio y barra de inicio ----------
+function updateHomeClock() {
+  const strong = $('#home .home-clock strong');
+  if (!strong) return;
+  const t = new Date();
+  strong.textContent = t.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  const day = $('#home .home-clock span');
+  if (day) day.textContent = t.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+}
 function renderHome() {
   const home = $('#home');
   if (!isMobile()) { home.innerHTML = ''; return; }
-  const t = new Date();
-  home.innerHTML = `<div class="home-clock"><strong>${t.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</strong><span>${t.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}</span></div><div class="home-grid"></div>`;
+  home.innerHTML = '<div class="home-clock"><strong></strong><span></span></div><div class="home-grid"></div>';
+  updateHomeClock();
   const grid = home.querySelector('.home-grid');
   VISIBLE.filter((a) => !MOBILE_DOCK.includes(a.id)).forEach((a, i) => {
     const b = document.createElement('button');
@@ -531,7 +565,7 @@ mobileQuery.addEventListener('change', () => { document.body.classList.toggle('m
 
 // ---------- Arranque ----------
 onWindowsChange(() => { renderMenubar(); updateRunning(); updateMobile(); });
-settings.onChange(() => renderDock());
+settings.onChange(() => { dockCfg = settings.get(); dockItems = []; renderDock(); });
 fs.onError((msg) => notify(msg, 7000, { title: 'No se pudo guardar', icon: 'archivos' }));
 
 if (isCloud()) {
@@ -542,8 +576,11 @@ if (isCloud()) {
   fs.onChange(() => { clearTimeout(t); t = setTimeout(refreshAccount, 1500); });
 
   // Navegador: ficha para el proxy (caduca, se renueva) y descargas que seguían en curso.
-  await refreshProxyToken();
-  setInterval(refreshProxyToken, 3600e3);
+  // La app de escritorio usa su propio Chromium y no necesita el proxy.
+  if (!window.nubeosDesktop) {
+    await refreshProxyToken();
+    setInterval(refreshProxyToken, 3600e3);
+  }
   resumeDownloads(ctx);
 
   cloud.onNotice((n) => {
@@ -560,7 +597,22 @@ if (isCloud()) {
 renderMenubar();
 renderDock();
 renderHome();
-setInterval(() => { tick(); if (isMobile() && !document.body.classList.contains('app-open')) renderHome(); }, 10000);
+// El reloj solo cambia una vez por minuto: nada de despertar el navegador cada 10 s ni
+// reconstruir la pantalla de inicio. Se ajusta al cambio de minuto y se recupera al volver.
+let clockTimer = 0;
+function scheduleClock() {
+  clearTimeout(clockTimer);
+  const now = new Date();
+  const wait = Math.max(1000, 60000 - now.getSeconds() * 1000 - now.getMilliseconds() + 30);
+  clockTimer = setTimeout(() => { tick(); updateHomeClock(); scheduleClock(); }, wait);
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) return;
+  tick();
+  updateHomeClock();
+  scheduleClock();
+});
+scheduleClock();
 
 if (!sessionStorage.getItem('nubeos.welcome')) {
   sessionStorage.setItem('nubeos.welcome', '1');

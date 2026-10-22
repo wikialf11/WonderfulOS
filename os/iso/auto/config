@@ -19,6 +19,6 @@ lb config noauto \
   --iso-volume "WonderfulOS" \
   --image-name "nubeos" \
   --memtest none \
-  --apt-recommends true \
+  --apt-recommends false \
   --bootappend-live "boot=live components quiet splash locales=es_ES.UTF-8 keyboard-layouts=es timezone=Europe/Madrid username=nubeos hostname=nubeos" \
   "${@}"

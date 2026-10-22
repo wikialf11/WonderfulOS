@@ -269,15 +269,16 @@ if (browserEnabled()) {
   setInterval(() => {
     for (const [user, s] of sessions) if (!s.starting && Date.now() - s.last > IDLE_MS) stop(user);
   }, 60e3).unref();
-}
-// Los navegadores en el ordenador de cada usuario también se apagan sin uso.
-{
-  setInterval(() => {
-    for (const [user, s] of sessions) if (s.remote && Date.now() - s.last > IDLE_MS) stop(user);
-  }, 60e3).unref();
   // Si el servidor se reinició, los contenedores huérfanos se paran.
   run('docker', ['ps', '-aq', '--filter', 'name=nubeos-nav-']).then(({ stdout }) => {
     const ids = stdout.split('\n').filter(Boolean);
     if (ids.length) run('docker', ['rm', '-f', ...ids]).catch(() => {});
   }).catch(() => {});
+}
+// Los navegadores en el ordenador de cada usuario también se apagan sin uso. En modo
+// local no hay sesiones remotas, así que el temporizador no hace nada y no molesta.
+{
+  setInterval(() => {
+    for (const [user, s] of sessions) if (s.remote && Date.now() - s.last > IDLE_MS) stop(user);
+  }, 60e3).unref();
 }

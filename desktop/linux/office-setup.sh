@@ -36,7 +36,8 @@ fi
 # Con systemd (Mac, Linux) como servicio; sin él (WSL) se arranca directamente.
 if [ -d /run/systemd/system ]; then
   [ -n "${RESTART:-}" ] && systemctl restart coolwsd
-  systemctl enable --now coolwsd >/dev/null 2>&1
+  systemctl disable coolwsd >/dev/null 2>&1 || true
+  systemctl start coolwsd >/dev/null 2>&1
 else
   [ -n "${RESTART:-}" ] && pkill -x coolwsd && sleep 2
   if ! pgrep -x coolwsd >/dev/null; then

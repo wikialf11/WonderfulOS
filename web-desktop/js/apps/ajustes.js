@@ -78,6 +78,7 @@ export default {
       if (current === 'apariencia') {
         html += row('Tema', segmented('theme', [['light', 'Claro'], ['dark', 'Oscuro'], ['auto', 'Automático']], s.theme), 'Automático sigue la hora del sistema');
         html += row('Color de acento', `<div style="display:flex;gap:8px">${ACCENTS.map((c) => `<button data-accent="${c}" title="${c}" style="width:26px;height:26px;border-radius:50%;border:${c === s.accent ? '3px solid var(--text)' : '0'};background:${c}"></button>`).join('')}</div>`);
+        html += row('Modo ligero', `<input type="checkbox" ${s.light !== false ? 'checked' : ''} data-check="light" style="width:20px;height:20px;accent-color:var(--accent)">`, 'Sin desenfoques, sombras grandes ni adornos: menos consumo y más fluidez');
       }
       if (current === 'fondo') {
         const dark = settings.isDark(s);
@@ -115,7 +116,7 @@ export default {
       if (current === 'acerca') {
         html += `<div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:30px;text-align:center">
           <div style="width:96px;height:96px;box-shadow:0 14px 30px rgba(20,22,31,.35)">${ICONS.logo}</div><div style="font-size:26px;font-weight:650">WonderfulOS</div>
-          <div style="color:var(--muted)">Versión 0.16.7 · basado en Linux</div>
+          <div style="color:var(--muted)">Versión 0.16.8 · basado en Linux</div>
           <p style="max-width:420px;color:var(--muted)">Un sistema operativo basado en Linux, sencillo y bonito: oficina, correo, navegador y todas las apps de Linux, con la potencia de tu ordenador. Es <b>software libre</b> (licencia GPL-3.0): puedes usarlo, estudiarlo, compartirlo y mejorarlo.</p></div>`;
       }
       content.innerHTML = html;

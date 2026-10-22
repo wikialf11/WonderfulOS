@@ -1,7 +1,7 @@
 {
   "name": "nubeos",
   "productName": "WonderfulOS",
-  "version": "0.16.7",
+  "version": "0.16.8",
   "license": "GPL-3.0-or-later",
   "description": "WonderfulOS en tu ordenador: el sistema de WonderfulOS con la potencia real de tu Mac, PC o Linux.",
   "main": "main.mjs",
@@ -17,6 +17,10 @@
   "build": {
     "appId": "life.nubeos.escritorio",
     "productName": "WonderfulOS",
+    "electronLanguages": [
+      "es",
+      "en-US"
+    ],
     "files": [
       "main.mjs",
       "preload.cjs",

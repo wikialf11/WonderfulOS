@@ -49,7 +49,7 @@ export function events(user, req, res) {
   res.write('retry: 3000\n\n');
   if (!streams.has(user)) streams.set(user, new Set());
   streams.get(user).add(res);
-  const ping = setInterval(() => res.write(': ping\n\n'), 25000);
+  const ping = setInterval(() => res.write(': ping\n\n'), 60000);
   req.on('close', () => { clearInterval(ping); streams.get(user)?.delete(res); });
 }
 function broadcast(d, type = 'doc') {

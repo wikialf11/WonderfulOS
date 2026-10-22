@@ -35,7 +35,7 @@ export const WALLPAPERS = {
     dark: 'radial-gradient(80vw 80vw at 30% 20%, #374151 0%, transparent 60%), linear-gradient(160deg, #0b0c0f, #1f2937)' },
 };
 
-const DEFAULTS = { theme: 'auto', accent: '#8b5cf6', wallpaper: 'indigo', wallpaperColor: '#4f46e5', dockSize: 58, magnify: true, dim: 0, night: false, focus: false, userName: 'Usuario', textScale: 1, contrast: false, reduceMotion: false };
+const DEFAULTS = { theme: 'auto', accent: '#8b5cf6', wallpaper: 'indigo', wallpaperColor: '#4f46e5', dockSize: 58, magnify: true, dim: 0, night: false, focus: false, userName: 'Usuario', textScale: 1, contrast: false, reduceMotion: false, light: true };
 const listeners = new Set();
 
 export const settings = {
@@ -66,6 +66,9 @@ export const settings = {
     // Accesibilidad: alto contraste, menos movimiento y tamaño del texto (zoom de todo el sistema).
     root.toggleAttribute('data-contrast', !!s.contrast);
     root.toggleAttribute('data-reduce-motion', !!s.reduceMotion);
+    // Modo ligero (activado por defecto): sin desenfoques ni sombras costosas. Se puede
+    // desactivar en Ajustes para recuperar el efecto de vidrio.
+    root.toggleAttribute('data-light', s.light !== false);
     const z = Number(s.textScale) || 1;
     if (window.nubeosDesktop?.setZoom) window.nubeosDesktop.setZoom(z);
     else root.style.zoom = z === 1 ? '' : String(z);

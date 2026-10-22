@@ -122,6 +122,7 @@ function makeDraggable(win) {
     let startX = e.clientX - el.offsetLeft;
     let startY = e.clientY - el.offsetTop;
     let snap = null;
+    const pending = { x: 0, y: 0, raf: 0 };
     // Si estaba maximizada o colocada, se "despega" al arrastrar.
     if (el.matches('.maximized, .snapped-left, .snapped-right')) {
       const ratio = (e.clientX - area.left) / area.width;
@@ -130,13 +131,21 @@ function makeDraggable(win) {
       startY = 16;
     }
     const move = (ev) => {
-      el.style.left = `${ev.clientX - area.left - startX}px`;
-      el.style.top = `${Math.max(0, ev.clientY - area.top - startY)}px`;
-      const x = ev.clientX - area.left, y = ev.clientY - area.top;
-      snap = y < 4 ? 'max' : x < 6 ? 'left' : x > area.width - 6 ? 'right' : null;
-      preview.className = snap ? `show ${snap}` : '';
+      pending.x = ev.clientX;
+      pending.y = ev.clientY;
+      if (pending.raf) return;
+      pending.raf = requestAnimationFrame(() => {
+        pending.raf = 0;
+        el.style.left = `${pending.x - area.left - startX}px`;
+        el.style.top = `${Math.max(0, pending.y - area.top - startY)}px`;
+        const x = pending.x - area.left, y = pending.y - area.top;
+        snap = y < 4 ? 'max' : x < 6 ? 'left' : x > area.width - 6 ? 'right' : null;
+        preview.className = snap ? `show ${snap}` : '';
+      });
     };
     const up = () => {
+      if (pending.raf) cancelAnimationFrame(pending.raf);
+      pending.raf = 0;
       handle.removeEventListener('pointermove', move);
       handle.removeEventListener('pointerup', up);
       preview.className = '';
@@ -157,11 +166,23 @@ function makeResizable(el, handle) {
   handle.addEventListener('pointerdown', (e) => {
     e.stopPropagation();
     const sx = e.clientX, sy = e.clientY, sw = el.offsetWidth, sh = el.offsetHeight;
+    const pending = { x: 0, y: 0, raf: 0 };
     const move = (ev) => {
-      el.style.width = `${Math.max(340, sw + ev.clientX - sx)}px`;
-      el.style.height = `${Math.max(220, sh + ev.clientY - sy)}px`;
+      pending.x = ev.clientX;
+      pending.y = ev.clientY;
+      if (pending.raf) return;
+      pending.raf = requestAnimationFrame(() => {
+        pending.raf = 0;
+        el.style.width = `${Math.max(340, sw + pending.x - sx)}px`;
+        el.style.height = `${Math.max(220, sh + pending.y - sy)}px`;
+      });
     };
-    const up = () => { handle.removeEventListener('pointermove', move); handle.removeEventListener('pointerup', up); };
+    const up = () => {
+      if (pending.raf) cancelAnimationFrame(pending.raf);
+      pending.raf = 0;
+      handle.removeEventListener('pointermove', move);
+      handle.removeEventListener('pointerup', up);
+    };
     handle.setPointerCapture(e.pointerId);
     handle.addEventListener('pointermove', move);
     handle.addEventListener('pointerup', up);
