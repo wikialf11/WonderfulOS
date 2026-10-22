@@ -1,7 +1,6 @@
-// Fotos: todas las imágenes de tu nube (y las que te comparten) en una galería.
-// Las fotos son archivos normales de Archivos: se comparten igual que una carpeta.
+// Fotos: todas las imágenes guardadas en este ordenador, en una galería.
 import { ICONS, GLYPHS } from '../shell/icons.js';
-import { extname, basename, dirname, isCloud, SHARED_ROOT } from '../fs.js';
+import { extname, basename, dirname, isCloud } from '../fs.js';
 import { emptyState } from '../cloud.js';
 import { esc } from '../util.js';
 
@@ -20,8 +19,6 @@ export default {
       <aside class="cl-side">
         <nav class="cl-items">
           <button class="cl-item on" data-f="all">${GLYPHS.image}<span class="name">Todas</span></button>
-          <button class="cl-item" data-f="mine">${GLYPHS.user}<span class="name">Mías</span></button>
-          <button class="cl-item" data-f="shared">${GLYPHS.share}<span class="name">Compartidas conmigo</span></button>
         </nav>
       </aside>
       <section class="cl-main">
@@ -31,29 +28,19 @@ export default {
       </section>
       <input type="file" accept="image/*" multiple hidden>`;
     const $ = (s) => win.body.querySelector(s);
-    let filter = 'all';
 
-    const photos = () => {
-      const all = [...ctx.fs.find((n) => n.type === 'file' && !!n.blob), ...collectShared()];
-      return [...new Set(all)].filter((p) => IMG.includes(extname(p)))
-        .filter((p) => filter === 'all' || (filter === 'shared') === p.startsWith(SHARED_ROOT))
-        .map((p) => ({ path: p, node: ctx.fs.stat(p) }))
-        .filter((x) => x.node?.blob && (x.node.progress ?? 1) >= 1)
-        .sort((a, b) => (b.node.mtime || 0) - (a.node.mtime || 0));
-    };
-    // Lo compartido no está en fs.find (que solo mira lo propio): lo recorremos.
-    function collectShared(dir = SHARED_ROOT, out = []) {
-      if (!ctx.fs.exists(dir)) return out;
-      for (const e of ctx.fs.list(dir)) e.type === 'dir' ? collectShared(e.path, out) : out.push(e.path);
-      return out;
-    }
+    const photos = () => ctx.fs.find((n) => n.type === 'file' && !!n.blob)
+      .filter((p) => IMG.includes(extname(p)))
+      .map((p) => ({ path: p, node: ctx.fs.stat(p) }))
+      .filter((x) => x.node?.blob && (x.node.progress ?? 1) >= 1)
+      .sort((a, b) => (b.node.mtime || 0) - (a.node.mtime || 0));
 
     function render() {
       const list = photos();
       const grid = $('.photo-grid');
       grid.innerHTML = '';
       if (!list.length) {
-        grid.innerHTML = emptyState(ICONS.fotos, 'Aún no hay fotos', isCloud() ? 'Pulsa «Añadir fotos» o arrástralas aquí. Se guardan en Archivos › Imágenes.' : 'Inicia sesión para guardar fotos en la nube.');
+        grid.innerHTML = emptyState(ICONS.fotos, 'Aún no hay fotos', isCloud() ? 'Pulsa «Añadir fotos» o arrástralas aquí. Se guardan en Archivos › Imágenes.' : 'Añade fotos desde Archivos › Imágenes.');
         return;
       }
       let lastMonth = '';
@@ -85,9 +72,6 @@ export default {
       }
       ctx.refreshAccount?.();
     }
-    win.body.querySelectorAll('[data-f]').forEach((b) => {
-      b.onclick = () => { filter = b.dataset.f; win.body.querySelectorAll('[data-f]').forEach((x) => x.classList.toggle('on', x === b)); render(); };
-    });
     const picker = win.body.querySelector('input[type=file]');
     $('.upload').onclick = () => picker.click();
     picker.onchange = () => { upload([...picker.files]); picker.value = ''; };

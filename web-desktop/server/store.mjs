@@ -1,7 +1,6 @@
-// Almacenamiento de WonderfulOS en el servidor: cuentas, sesiones, archivos de cada
-// usuario, archivos grandes (blobs) y elementos compartidos.
-// Todo vive en una carpeta de datos (NUBEOS_DATA, por defecto ~/.nubeos), que en
-// producción es el volumen persistente de la nube.
+// Almacenamiento local de WonderfulOS: cuentas, sesiones, archivos de cada
+// usuario y archivos grandes (blobs).
+// Todo vive en una carpeta de datos (NUBEOS_DATA, por defecto ~/.nubeos).
 
 import { readFileSync, mkdirSync, writeFileSync, renameSync, existsSync, statSync, statfsSync } from 'node:fs';
 import { unlink } from 'node:fs/promises';
@@ -138,7 +137,7 @@ function seedTree() {
     '/': dir, '/Documentos': dir, '/Descargas': dir, '/Imágenes': dir,
     '/Documentos/Bienvenida.txt': {
       type: 'file', mtime: now,
-      content: 'Bienvenido a tu WonderfulOS.\n\nTus archivos viven en la nube: los verás igual desde cualquier equipo con tu cuenta.\n\n· Crea documentos, hojas de cálculo y presentaciones desde el dock (funcionan con LibreOffice y abren archivos de Word, Excel y PowerPoint).\n· En Archivos puedes subir archivos de tu ordenador (o arrastrarlos a la ventana).\n· Selecciona un archivo o una carpeta y pulsa «Compartir» para trabajar con otra persona de WonderfulOS.\n',
+      content: 'Bienvenido a tu WonderfulOS.\n\nTus archivos viven en este ordenador: nada sale de aquí.\n\n· Crea documentos, hojas de cálculo y presentaciones desde el dock (funcionan con LibreOffice y abren archivos de Word, Excel y PowerPoint).\n· En Archivos puedes subir archivos de tu ordenador (o arrastrarlos a la ventana).\n',
     },
   };
 }

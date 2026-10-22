@@ -38,7 +38,7 @@ export function unlockDialog(win) {
 export default {
   id: 'navegador',
   name: 'Navegador',
-  description: 'Navega por internet y descarga a tu nube',
+  description: 'Navega por internet y descarga a Archivos',
 
   async launch(ctx, startUrl) {
     // WonderfulOS instalado en el ordenador: el Navegador es el Chromium de la propia app.

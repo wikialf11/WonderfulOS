@@ -1,10 +1,10 @@
-// Escritorio de WonderfulOS en la nube: barra superior, dock, Launchpad, buscador,
-// Centro de control y notificaciones. Las apps de oficina funcionan en el
-// navegador del usuario; los archivos viven en su cuenta (server/api.mjs).
+// Escritorio de WonderfulOS: barra superior, dock, Launchpad, buscador,
+// Centro de control y notificaciones. Todo funciona en local: las apps de
+// oficina en el navegador y los archivos en el disco de este ordenador.
 import { createWindow, allWindows, focusedWindow, onWindowsChange, toggleOverview, closeOverview } from './shell/wm.js';
 import { ICONS, GLYPHS, fileIcon } from './shell/icons.js';
 import { settings, ACCENTS } from './shell/settings.js';
-import { fs, extname, basename, initFs, isCloud, refreshShares } from './fs.js';
+import { fs, extname, basename, initFs, isCloud } from './fs.js';
 import { createEvaluator, formatValue } from './apps/formulas.js';
 import { showLogin, logout, currentUser } from './login.js';
 import { api } from './api.js';
@@ -16,7 +16,6 @@ import visor from './apps/visor.js';
 import listas from './apps/listas.js';
 import notas from './apps/notas.js';
 import calendario from './apps/calendario.js';
-import mensajes, { unread, chatName } from './apps/mensajes.js';
 import { cloud } from './cloud.js';
 import navegador from './apps/navegador.js';
 import llavero from './apps/llavero.js';
@@ -40,7 +39,7 @@ const esc = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<
 
 // ---------- Apps ----------
 // Solo apps de trabajo (decisión del usuario): sin Fotos, Tienda ni Recordatorios.
-const APPS = [navegador, archivos, listas, mensajes, notas, calendario, llavero, texto, calculo, diapositivas, ajustes, visor];
+const APPS = [navegador, archivos, listas, notas, calendario, llavero, texto, calculo, diapositivas, ajustes, visor];
 const VISIBLE = APPS.filter((a) => !a.hidden);
 const appById = (id) => APPS.find((a) => a.id === id);
 const iconOf = (id) => ICONS[id] || ICONS.app;
@@ -210,7 +209,6 @@ function openMenu(btn, kind, e) {
     ],
     user: [
       { label: 'Cuenta y espacio…', run: () => launch('ajustes', 'cuenta') },
-      { label: 'Compartido conmigo', run: () => launch('archivos', '/Compartido conmigo') },
       '-',
       { label: 'Cerrar sesión', run: logout },
     ],
@@ -219,8 +217,8 @@ function openMenu(btn, kind, e) {
 }
 
 // ---------- Dock (con efecto lupa) ----------
-const DOCK = ['launchpad', 'navegador', 'archivos', 'mensajes', 'listas', 'notas', 'calendario', 'texto', 'calculo', 'diapositivas', 'llavero', 'ajustes'];
-const MOBILE_DOCK = ['navegador', 'archivos', 'mensajes', 'listas'];
+const DOCK = ['launchpad', 'navegador', 'archivos', 'listas', 'notas', 'calendario', 'texto', 'calculo', 'diapositivas', 'llavero', 'ajustes'];
+const MOBILE_DOCK = ['navegador', 'archivos', 'listas', 'notas'];
 function renderDock() {
   const dock = $('#dock');
   dock.innerHTML = '';
@@ -542,28 +540,14 @@ if (isCloud()) {
   await refreshAccount();
   let t;
   fs.onChange(() => { clearTimeout(t); t = setTimeout(refreshAccount, 1500); });
-  // Avisamos cuando alguien comparte algo contigo.
-  setInterval(async () => {
-    try {
-      for (const s of await refreshShares()) {
-        if (s.kind === 'app') continue;
-        notify(`${s.owner} ha compartido contigo «${s.path.split('/').pop()}».`, 8000, {
-          title: 'Nuevo compartido', icon: 'archivos',
-          action: { label: 'Ver', run: () => launch('archivos', '/Compartido conmigo') },
-        });
-      }
-    } catch { /* sin conexión: se reintenta */ }
-  }, 10000);
 
   // Navegador: ficha para el proxy (caduca, se renueva) y descargas que seguían en curso.
   await refreshProxyToken();
   setInterval(refreshProxyToken, 3600e3);
   resumeDownloads(ctx);
 
-  // Apps de la nube: avisos de mensajes nuevos, de recordatorios y de cosas compartidas.
-  const NAMES = { listas: 'una lista', notas: 'una nota', calendario: 'un calendario', recordatorios: 'una lista de recordatorios', mensajes: 'una conversación' };
   cloud.onNotice((n) => {
-    // Algo descargado con el Navegador ya está en tu nube.
+    // Algo descargado con el Navegador ya está en Archivos.
     // Has iniciado sesión en una web desde el Navegador: ofrecer guardarla en el Llavero.
     if (n.kind === 'login') return offerToSave(n);
     if (n.kind === 'download') {
@@ -571,51 +555,16 @@ if (isCloud()) {
       return notify(`${n.path.split('/').pop()} está en Archivos › Descargas.`, 8000, { title: 'Descarga terminada', icon: 'navegador', action: { label: 'Abrir', run: () => ctx.openFile(n.path) } });
     }
     if (n.kind === 'download-error') return notify(`${n.name}: ${n.error}`, 10000, { title: 'No se pudo guardar la descarga', icon: 'navegador', action: { label: 'Ver mi espacio', run: () => launch('ajustes', 'cuenta') } });
-    if (n.app === 'mensajes') return;
-    notify(`${n.from} ha compartido contigo ${NAMES[n.app] || 'algo'}${n.title ? ` «${n.title}»` : ''}.`, 8000, { title: 'Compartido contigo', icon: n.app, action: { label: 'Abrir', run: () => launch(n.app) } });
   });
-  const seenMsg = new Map();
-  const badge = () => {
-    const n = cloud.docs('mensajes').reduce((s, d) => s + unread(d, account.user), 0);
-    const item = document.querySelector('.dock-item[data-app="mensajes"]');
-    if (!item) return;
-    item.querySelector('.count')?.remove();
-    if (n) item.insertAdjacentHTML('beforeend', `<span class="count">${n > 99 ? '99+' : n}</span>`);
-  };
-  cloud.load('mensajes').then((docs) => {
-    for (const d of docs) seenMsg.set(d.id, (d.data.messages || []).length);
-    badge();
-    cloud.subscribe('mensajes', (all) => {
-      for (const d of all) {
-        const msgs = d.data.messages || [];
-        const before = seenMsg.get(d.id) ?? 0;
-        seenMsg.set(d.id, msgs.length);
-        const fresh = msgs.slice(before).filter((m) => m.from !== account.user);
-        const chatOpen = allWindows().some((w) => w.appId === 'mensajes' && !w.minimized && w.el.classList.contains('focused'));
-        if (fresh.length && !chatOpen) {
-          const m = fresh.at(-1);
-          notify(m.text, 7000, { title: `${m.from}${chatName(d, account.user) !== m.from ? ` · ${chatName(d, account.user)}` : ''}`, icon: 'mensajes', action: { label: 'Responder', run: () => launch('mensajes', d.id) } });
-        }
-      }
-      badge();
-    });
-  }).catch(() => {});
 }
 renderMenubar();
 renderDock();
 renderHome();
 setInterval(() => { tick(); if (isMobile() && !document.body.classList.contains('app-open')) renderHome(); }, 10000);
 
-const pago = new URLSearchParams(location.search).get('pago');
-if (pago) {
-  history.replaceState(null, '', location.pathname);
-  if (pago === 'ok') notify('Pago recibido. En unos segundos tendrás el espacio nuevo.', 8000, { title: '¡Gracias!' });
-  else notify('Pago cancelado. No se ha cobrado nada.', 6000, { title: 'Pago' });
-  setTimeout(refreshAccount, 4000);
-}
 if (!sessionStorage.getItem('nubeos.welcome')) {
   sessionStorage.setItem('nubeos.welcome', '1');
   setTimeout(() => notify(isCloud()
-    ? 'Tus archivos se guardan en tu cuenta. Arrastra archivos de tu ordenador a la pantalla para subirlos.'
+    ? 'Tus archivos se guardan en este ordenador. Arrastra archivos a la pantalla para subirlos.'
     : 'Modo local: tus archivos se guardan solo en este navegador.', 7000, { title: `Hola, ${settings.get().userName}` }), 600);
 }

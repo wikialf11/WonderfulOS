@@ -1,6 +1,5 @@
-// Recordatorios: avisos con fecha y hora. WonderfulOS te avisa cuando llega el momento
-// (en cualquier dispositivo donde tengas WonderfulOS abierto). Las listas se pueden compartir.
-import { cloud, uid, avatar, people, shareDialog, emptyState } from '../cloud.js';
+// Recordatorios: avisos con fecha y hora guardados en este ordenador.
+import { cloud, uid, emptyState } from '../cloud.js';
 import { ICONS, GLYPHS } from '../shell/icons.js';
 import { prompt, confirm } from '../dialogs.js';
 import { esc } from '../util.js';
@@ -23,7 +22,6 @@ export function startReminderAlerts(ctx) {
   const seen = new Set((() => { try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; } })());
   const check = () => {
     for (const d of cloud.docs(APP)) {
-      const canEdit = ['owner', 'edit'].includes(d.role);
       for (const [id, r] of Object.entries(d.data.items || {})) {
         const key = `${id}|${r.at}`; // cada repetición avisa de nuevo
         if (r.done || !r.at || seen.has(key) || new Date(r.at) > Date.now()) continue;
@@ -34,7 +32,7 @@ export function startReminderAlerts(ctx) {
             action: r.repeat ? undefined : { label: 'Hecho', run: () => cloud.ops(APP, d.id, [{ op: 'set', path: ['items', id, 'done'], value: true }]) } });
         }
         // Los que se repiten (cumpleaños, pagos…) pasan solos a la siguiente vez.
-        if (r.repeat && canEdit) cloud.ops(APP, d.id, [{ op: 'set', path: ['items', id, 'at'], value: nextDate(r.at, r.repeat) }]).catch(() => {});
+        if (r.repeat) cloud.ops(APP, d.id, [{ op: 'set', path: ['items', id, 'at'], value: nextDate(r.at, r.repeat) }]).catch(() => {});
       }
     }
     try { localStorage.setItem(key, JSON.stringify([...seen].slice(-500))); } catch { /* sin persistencia */ }
@@ -61,7 +59,7 @@ export default {
     let current = null;
     try {
       await cloud.load(APP);
-      if (!cloud.docs(APP).some((d) => d.role === 'owner')) await cloud.create(APP, { name: 'Recordatorios', color: COLORS[0], items: {} });
+      if (!cloud.docs(APP).length) await cloud.create(APP, { name: 'Recordatorios', color: COLORS[0], items: {} });
     } catch (e) { $('.cl-main').innerHTML = emptyState(ICONS.recordatorios, 'Sin conexión', e.message); return; }
 
     function renderSide() {
@@ -72,8 +70,7 @@ export default {
         const n = Object.values(d.data.items || {}).filter((r) => !r.done).length;
         const b = document.createElement('button');
         b.className = `cl-item${d.id === current ? ' on' : ''}`;
-        b.innerHTML = `<span class="dot" style="background:${d.data.color}"></span><span class="name">${esc(d.data.name)}</span>
-          ${people(d).length > 1 ? `<span class="mini-people">${people(d).slice(0, 3).map((u) => avatar(u, 16)).join('')}</span>` : ''}<span class="count">${n || ''}</span>`;
+        b.innerHTML = `<span class="dot" style="background:${d.data.color}"></span><span class="name">${esc(d.data.name)}</span><span class="count">${n || ''}</span>`;
         b.onclick = () => { current = d.id; render(); };
         $('.cl-items').appendChild(b);
       }
@@ -84,16 +81,13 @@ export default {
       const d = cloud.get(APP, current);
       const main = $('.cl-main');
       if (!d) { main.innerHTML = emptyState(ICONS.recordatorios, 'Sin listas', 'Crea una lista con +.'); return; }
-      const canEdit = ['owner', 'edit'].includes(d.role);
       const items = Object.entries(d.data.items || {}).map(([id, r]) => ({ id, ...r }))
         .sort((a, b) => (a.done - b.done) || ((a.at ? new Date(a.at) : Infinity) - (b.at ? new Date(b.at) : Infinity)));
       main.innerHTML = `
         <header class="cl-head"><h2 class="title" style="color:${d.data.color}">${esc(d.data.name)}</h2><span class="grow"></span>
-          <span class="people">${people(d).length > 1 ? people(d).map((u) => avatar(u, 26)).join('') : ''}</span>
-          ${d.role === 'owner' ? `<button class="icon-btn share" title="Compartir">${GLYPHS.share}</button>` : ''}
           <button class="icon-btn del" title="Eliminar lista">${GLYPHS.trash}</button></header>
-        ${canEdit ? `<form class="cl-add"><span class="plus">${GLYPHS.plus}</span><input class="text" placeholder="Nuevo recordatorio" autocomplete="off">
-          ${whenControls(GLYPHS)}</form>` : ''}
+        <form class="cl-add"><span class="plus">${GLYPHS.plus}</span><input class="text" placeholder="Nuevo recordatorio" autocomplete="off">
+          ${whenControls(GLYPHS)}</form>
         <div class="cl-tasks"></div>`;
       const box = main.querySelector('.cl-tasks');
       if (!items.length) box.innerHTML = '<div class="cl-hint">Nada pendiente.</div>';
@@ -101,9 +95,9 @@ export default {
         const late = !r.done && r.at && new Date(r.at) < Date.now();
         const el = document.createElement('div');
         el.className = `task${r.done ? ' done' : ''}`;
-        el.innerHTML = `<button class="check round" style="--c:${d.data.color}" ${canEdit ? '' : 'disabled'}>${r.done ? GLYPHS.check : ''}</button>
+        el.innerHTML = `<button class="check round" style="--c:${d.data.color}">${r.done ? GLYPHS.check : ''}</button>
           <div class="body"><div class="text">${esc(r.text)}</div>${r.at ? `<div class="meta"><span class="due ${late ? 'late' : ''}">${GLYPHS.clock}${when(r.at)}</span>${r.repeat ? `<span class="rep">${GLYPHS.repeat}${repeatText(r.repeat)}</span>` : ''}</div>` : ''}</div>
-          ${canEdit ? `<button class="icon-btn rm" title="Eliminar">${GLYPHS.trash}</button>` : ''}`;
+          <button class="icon-btn rm" title="Eliminar">${GLYPHS.trash}</button>`;
         el.querySelector('.check').onclick = () => {
           // Completar uno que se repite lo pasa a la próxima vez en lugar de tacharlo.
           if (r.repeat && !r.done) {
@@ -131,8 +125,7 @@ export default {
         };
         form.querySelector('.text').onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); form.requestSubmit(); } };
       }
-      main.querySelector('.share')?.addEventListener('click', () => shareDialog(win, ctx, APP, d, { title: d.data.name }));
-      main.querySelector('.del').onclick = async () => { if (await confirm(win, `¿${d.role === 'owner' ? 'Eliminar' : 'Dejar de ver'} «${d.data.name}»?`)) cloud.remove(APP, d.id); };
+      main.querySelector('.del').onclick = async () => { if (await confirm(win, `¿Eliminar «${d.data.name}»?`)) cloud.remove(APP, d.id); };
     }
 
     $('.add-list').onclick = async () => {

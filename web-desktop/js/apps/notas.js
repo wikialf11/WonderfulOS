@@ -1,5 +1,5 @@
-// Notas: notas rápidas en la nube, fijables, con color y compartibles una a una.
-import { cloud, avatar, people, shareDialog, emptyState } from '../cloud.js';
+// Notas: notas rápidas locales, fijables y con color.
+import { cloud, emptyState } from '../cloud.js';
 import { ICONS, GLYPHS } from '../shell/icons.js';
 import { confirm } from '../dialogs.js';
 import { esc } from '../util.js';
@@ -10,7 +10,7 @@ const COLORS = ['#fde68a', '#bbf7d0', '#bfdbfe', '#fbcfe8', '#ddd6fe', '#fed7aa'
 export default {
   id: APP,
   name: 'Notas',
-  description: 'Notas rápidas sincronizadas',
+  description: 'Notas rápidas guardadas en este ordenador',
 
   async launch(ctx) {
     const win = ctx.createWindow({ title: 'Notas', width: 900, height: 580 });
@@ -39,7 +39,7 @@ export default {
         const first = (d.data.body || '').split('\n').find((l) => l.trim()) || 'Sin texto';
         b.innerHTML = `<span class="swatch" style="background:${d.data.color || COLORS[0]}"></span>
           <span class="name"><strong>${esc(d.data.title || 'Nota nueva')}</strong><small>${new Date(d.updated).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} · ${esc(first.slice(0, 50))}</small></span>
-          ${d.data.pinned ? `<span class="pinned">${GLYPHS.pin}</span>` : ''}${people(d).length > 1 ? `<span class="mini-people">${avatar(people(d).find((u) => u !== ctx.account.user) || d.owner, 16)}</span>` : ''}`;
+          ${d.data.pinned ? `<span class="pinned">${GLYPHS.pin}</span>` : ''}`;
         b.onclick = () => { current = d.id; render(); };
         $('.cl-items').appendChild(b);
       }
@@ -55,19 +55,16 @@ export default {
         return;
       }
       win.setTitle(d.data.title || 'Notas');
-      const canEdit = ['owner', 'edit'].includes(d.role);
       main.innerHTML = `
         <header class="cl-head note-head">
-          <div class="colors">${COLORS.map((c) => `<button class="color${c === (d.data.color || COLORS[0]) ? ' on' : ''}" data-c="${c}" style="background:${c}" ${canEdit ? '' : 'disabled'}></button>`).join('')}</div>
+          <div class="colors">${COLORS.map((c) => `<button class="color${c === (d.data.color || COLORS[0]) ? ' on' : ''}" data-c="${c}" style="background:${c}"></button>`).join('')}</div>
           <span class="grow"></span>
-          <span class="people">${people(d).length > 1 ? people(d).map((u) => avatar(u, 26)).join('') : ''}</span>
-          <button class="icon-btn pin${d.data.pinned ? ' on' : ''}" title="Fijar arriba" ${canEdit ? '' : 'disabled'}>${GLYPHS.pin}</button>
-          ${d.role === 'owner' ? `<button class="icon-btn share" title="Compartir">${GLYPHS.share}</button>` : ''}
-          <button class="icon-btn del" title="${d.role === 'owner' ? 'Eliminar' : 'Dejar de ver'}">${GLYPHS.trash}</button>
+          <button class="icon-btn pin${d.data.pinned ? ' on' : ''}" title="Fijar arriba">${GLYPHS.pin}</button>
+          <button class="icon-btn del" title="Eliminar">${GLYPHS.trash}</button>
         </header>
         <div class="note-paper" style="--note:${d.data.color || COLORS[0]}">
-          <input class="note-title" placeholder="Título" value="${esc(d.data.title || '')}" ${canEdit ? '' : 'readonly'}>
-          <textarea class="note-body" placeholder="Escribe aquí…" ${canEdit ? '' : 'readonly'}>${esc(d.data.body || '')}</textarea>
+          <input class="note-title" placeholder="Título" value="${esc(d.data.title || '')}">
+          <textarea class="note-body" placeholder="Escribe aquí…">${esc(d.data.body || '')}</textarea>
         </div>`;
       const save = (field, value) => {
         clearTimeout(timers[field]);
@@ -77,9 +74,8 @@ export default {
       main.querySelector('.note-body').oninput = (e) => save('body', e.target.value);
       main.querySelectorAll('.color').forEach((b) => { b.onclick = () => cloud.ops(APP, d.id, [{ op: 'set', path: ['color'], value: b.dataset.c }]); });
       main.querySelector('.pin').onclick = () => cloud.ops(APP, d.id, [{ op: 'set', path: ['pinned'], value: !d.data.pinned }]);
-      main.querySelector('.share')?.addEventListener('click', () => shareDialog(win, ctx, APP, d, { title: d.data.title || 'Nota' }));
       main.querySelector('.del').onclick = async () => {
-        if (await confirm(win, d.role === 'owner' ? '¿Eliminar esta nota?' : '¿Dejar de ver esta nota compartida?')) cloud.remove(APP, d.id);
+        if (await confirm(win, '¿Eliminar esta nota?')) cloud.remove(APP, d.id);
       };
     }
 

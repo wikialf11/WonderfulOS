@@ -1,14 +1,12 @@
-// Listas (Wonderful Lists dentro de WonderfulOS): listas de tareas compartidas en tiempo
-// real, con cuenta atrás en cada tarea, recurrencias y permisos claros
-// («Puede editar», «Solo completar tareas», «Solo ver»).
-import { cloud, uid, avatar, people, shareDialog, emptyState } from '../cloud.js';
+// Listas (Wonderful Lists dentro de WonderfulOS): tareas con cuenta atrás,
+// recurrencias y recordatorios. Los datos se guardan en este ordenador.
+import { cloud, uid, emptyState } from '../cloud.js';
 import { ICONS, GLYPHS } from '../shell/icons.js';
 import { prompt, confirm } from '../dialogs.js';
 import { esc } from '../util.js';
 import { parseRepeat, nextDate, repeatText, whenControls, wireWhen } from '../repeat.js';
 
 const APP = 'listas';
-const ROLES = [['edit', 'Puede editar'], ['complete', 'Solo completar tareas'], ['read', 'Solo ver']];
 const EMOJIS = ['🏠', '🛒', '💼', '✈️', '🎉', '📚', '💪', '🧹', '🎯', '❤️'];
 
 // ---------- Tiempo ----------
@@ -26,7 +24,7 @@ const toLocalInput = (iso) => { if (!iso) return ''; const d = new Date(iso); d.
 export default {
   id: APP,
   name: 'Listas',
-  description: 'Listas de tareas compartidas en tiempo real',
+  description: 'Listas de tareas guardadas en este ordenador',
 
   async launch(ctx) {
     const win = ctx.createWindow({ title: 'Listas', width: 980, height: 620 });
@@ -54,7 +52,6 @@ export default {
         const b = document.createElement('button');
         b.className = `cl-item${d.id === current ? ' on' : ''}`;
         b.innerHTML = `<span class="emoji">${esc(d.data.emoji || '📝')}</span><span class="name">${esc(d.data.title || 'Sin nombre')}</span>
-          ${people(d).length > 1 ? `<span class="mini-people">${people(d).slice(0, 3).map((u) => avatar(u, 16)).join('')}</span>` : ''}
           <span class="count${late ? ' late' : ''}">${pending || ''}</span>`;
         b.onclick = () => { current = d.id; showDone = false; render(); };
         $('.cl-items').appendChild(b);
@@ -66,33 +63,27 @@ export default {
       const main = $('.cl-main');
       const d = current && cloud.get(APP, current);
       if (!d) {
-        main.innerHTML = emptyState(ICONS.listas, 'Crea tu primera lista', 'La compra, las tareas de casa, un viaje… e invita a quien quieras para hacerla juntos.');
+        main.innerHTML = emptyState(ICONS.listas, 'Crea tu primera lista', 'La compra, las tareas de casa, un viaje… todo en tu ordenador.');
         main.insertAdjacentHTML('beforeend', '<div style="text-align:center"><button class="btn primary first">Nueva lista</button></div>');
         main.querySelector('.first').onclick = newList;
         return;
       }
       win.setTitle(d.data.title || 'Listas');
-      const canEdit = ['owner', 'edit'].includes(d.role);
-      const canComplete = canEdit || d.role === 'complete';
       const tasks = Object.entries(d.data.tasks || {}).map(([id, t]) => ({ id, ...t }));
       const pending = tasks.filter((t) => !t.done).sort((a, b) => (a.due ? new Date(a.due) : Infinity) - (b.due ? new Date(b.due) : Infinity) || (a.created || 0) - (b.created || 0));
       const done = tasks.filter((t) => t.done).sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0));
-      const roleLabel = { owner: '', edit: '', complete: 'Puedes completar tareas', read: 'Solo lectura' }[d.role];
 
       main.innerHTML = `
         <header class="cl-head">
-          <button class="emoji-btn" ${canEdit ? '' : 'disabled'}>${esc(d.data.emoji || '📝')}</button>
-          <h2 class="title" ${canEdit ? 'contenteditable="plaintext-only" spellcheck="false"' : ''}>${esc(d.data.title || '')}</h2>
-          ${roleLabel ? `<span class="chip">${roleLabel}</span>` : ''}
-          <span class="people">${people(d).map((u) => avatar(u, 28)).join('')}</span>
-          ${d.role === 'owner' ? `<button class="pill share">${GLYPHS.share}<span>Compartir</span></button>` : ''}
+          <button class="emoji-btn">${esc(d.data.emoji || '📝')}</button>
+          <h2 class="title" contenteditable="plaintext-only" spellcheck="false">${esc(d.data.title || '')}</h2>
           <button class="icon-btn more" title="Más">${GLYPHS.more}</button>
         </header>
-        ${canEdit ? `<form class="cl-add">
+        <form class="cl-add">
           <span class="plus">${GLYPHS.plus}</span>
           <input class="text" placeholder="Añadir una tarea" autocomplete="off">
           ${whenControls(GLYPHS)}
-        </form>` : ''}
+        </form>
         <div class="cl-tasks"></div>`;
       const box = main.querySelector('.cl-tasks');
       const row = (t) => {
@@ -100,27 +91,24 @@ export default {
         el.className = `task${t.done ? ' done' : ''}`;
         const cd = countdown(t.due, t.done);
         el.innerHTML = `
-          <button class="check" ${canComplete ? '' : 'disabled'} title="${t.done ? 'Marcar como pendiente' : 'Completar'}">${t.done ? GLYPHS.check : ''}</button>
+          <button class="check" title="${t.done ? 'Marcar como pendiente' : 'Completar'}">${t.done ? GLYPHS.check : ''}</button>
           <div class="body">
-            <div class="text" ${canEdit ? 'contenteditable="plaintext-only" spellcheck="false"' : ''}>${esc(t.text)}</div>
+            <div class="text" contenteditable="plaintext-only" spellcheck="false">${esc(t.text)}</div>
             <div class="meta">
               ${cd ? `<span class="due ${cd.cls}">${GLYPHS.clock}${cd.text}</span>` : ''}
               ${t.repeat ? `<span class="rep">${GLYPHS.repeat}${repeatText(t.repeat)}</span>` : ''}
               ${t.done && t.doneBy ? `<span>Hecha por ${esc(t.doneBy)}</span>` : ''}
             </div>
           </div>
-          ${t.assignee ? avatar(t.assignee, 24) : ''}
-          ${canEdit ? `<button class="icon-btn menu" title="Opciones">${GLYPHS.more}</button>` : ''}`;
+          <button class="icon-btn menu" title="Opciones">${GLYPHS.more}</button>`;
         el.querySelector('.check').onclick = () => toggle(d, t);
         const text = el.querySelector('.text');
-        if (canEdit) {
-          text.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); text.blur(); } };
-          text.onblur = () => { const v = text.textContent.trim(); if (v && v !== t.text) change(d, [{ op: 'set', path: ['tasks', t.id, 'text'], value: v }]); else text.textContent = t.text; };
-          el.querySelector('.menu').onclick = (e) => taskMenu(d, t, e);
-        }
+        text.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); text.blur(); } };
+        text.onblur = () => { const v = text.textContent.trim(); if (v && v !== t.text) change(d, [{ op: 'set', path: ['tasks', t.id, 'text'], value: v }]); else text.textContent = t.text; };
+        el.querySelector('.menu').onclick = (e) => taskMenu(d, t, e);
         return el;
       };
-      if (!tasks.length) box.innerHTML = `<div class="cl-hint">${canEdit ? 'Escribe arriba tu primera tarea y pulsa Intro.' : 'Esta lista aún no tiene tareas.'}</div>`;
+      if (!tasks.length) box.innerHTML = '<div class="cl-hint">Escribe arriba tu primera tarea y pulsa Intro.</div>';
       pending.forEach((t) => box.appendChild(row(t)));
       if (done.length) {
         const b = document.createElement('button');
@@ -133,23 +121,19 @@ export default {
 
       // Cabecera
       const title = main.querySelector('.title');
-      if (canEdit) {
-        title.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); title.blur(); } };
-        title.onblur = () => { const v = title.textContent.trim(); if (v && v !== d.data.title) change(d, [{ op: 'set', path: ['title'], value: v }]); };
-        main.querySelector('.emoji-btn').onclick = (e) => {
-          const r = e.currentTarget.getBoundingClientRect();
-          ctx.menu(EMOJIS.map((em) => ({ label: em, run: () => change(d, [{ op: 'set', path: ['emoji'], value: em }]) })), r.left, r.bottom + 6);
-        };
-      }
-      main.querySelector('.share')?.addEventListener('click', () => shareDialog(win, ctx, APP, d, { title: d.data.title, roles: ROLES }));
+      title.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); title.blur(); } };
+      title.onblur = () => { const v = title.textContent.trim(); if (v && v !== d.data.title) change(d, [{ op: 'set', path: ['title'], value: v }]); };
+      main.querySelector('.emoji-btn').onclick = (e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        ctx.menu(EMOJIS.map((em) => ({ label: em, run: () => change(d, [{ op: 'set', path: ['emoji'], value: em }]) })), r.left, r.bottom + 6);
+      };
       main.querySelector('.more').onclick = (e) => {
         const r = e.currentTarget.getBoundingClientRect();
         ctx.menu([
-          ...(d.role === 'owner' ? [{ label: 'Compartir…', run: () => shareDialog(win, ctx, APP, d, { title: d.data.title, roles: ROLES }) }] : []),
-          ...(done.length && canEdit ? [{ label: 'Borrar completadas', run: () => change(d, done.map((t) => ({ op: 'del', path: ['tasks', t.id] }))) }] : []),
+          ...(done.length ? [{ label: 'Borrar completadas', run: () => change(d, done.map((t) => ({ op: 'del', path: ['tasks', t.id] }))) }] : []),
           '-',
-          { label: d.role === 'owner' ? 'Eliminar lista' : 'Salir de la lista', run: async () => {
-            if (await confirm(win, d.role === 'owner' ? `¿Eliminar «${d.data.title}» para todos?` : `¿Salir de «${d.data.title}»?`)) cloud.remove(APP, d.id).catch((er) => ctx.notify(er.message));
+          { label: 'Eliminar lista', run: async () => {
+            if (await confirm(win, `¿Eliminar «${d.data.title}»?`)) cloud.remove(APP, d.id).catch((er) => ctx.notify(er.message));
           } },
         ], r.right - 220, r.bottom + 6);
       };
@@ -193,7 +177,6 @@ export default {
     }
     function taskMenu(d, t, e) {
       const r = e.currentTarget.getBoundingClientRect();
-      const members = people(d);
       ctx.menu([
         { label: 'Cambiar fecha límite…', run: async () => {
           const v = await prompt(win, 'Fecha límite (AAAA-MM-DD HH:MM, vacío para quitarla)', toLocalInput(t.due).replace('T', ' '));
@@ -203,7 +186,6 @@ export default {
           change(d, [{ op: 'set', path: ['tasks', t.id, 'due'], value: due ? due.toISOString() : null }]);
         } },
         { label: t.repeat ? 'Dejar de repetir' : 'Repetir cada semana', run: () => change(d, [{ op: 'set', path: ['tasks', t.id, 'repeat'], value: t.repeat ? null : { unit: 'week', n: 1 } }]) },
-        ...(members.length > 1 ? ['-', ...members.map((u) => ({ label: `${t.assignee === u ? '✓ ' : ''}Asignar a ${u}`, run: () => change(d, [{ op: 'set', path: ['tasks', t.id, 'assignee'], value: t.assignee === u ? null : u }]) }))] : []),
         '-',
         { label: 'Eliminar tarea', run: () => change(d, [{ op: 'del', path: ['tasks', t.id] }]) },
       ], r.right - 220, r.bottom + 6);

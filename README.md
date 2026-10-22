@@ -1,8 +1,8 @@
 # WonderfulOS
 
 Un sistema operativo sencillo y bonito, basado en Linux, para trabajar: Navegador, Archivos,
-Mensajes, Listas, Notas, Calendario, Texto, Cálculo, Presentaciones (LibreOffice vía Collabora
-Online), Llavero y Ajustes. Es **software libre** (GPL-3.0-or-later).
+Listas, Notas, Calendario, Texto, Cálculo, Presentaciones (LibreOffice), Llavero y Ajustes.
+Es **software libre** (GPL-3.0-or-later).
 
 - **Funciona en tu ordenador**: se instala como app en Mac, Windows y Linux (`desktop/`), o como
   sistema completo en un PC (`os/iso`, Debian + labwc).
@@ -11,7 +11,7 @@ Online), Llavero y Ajustes. Es **software libre** (GPL-3.0-or-later).
 
 Partes del proyecto:
 - `desktop/`: la app de escritorio (Electron): servicio local, oficina y motor Linux en Mac.
-- `web-desktop/`: el escritorio y sus apps (HTML/JS) y su servidor (cuentas, archivos, datos en tiempo real).
+- `web-desktop/`: el escritorio y sus apps (HTML/JS) y su servicio local (archivos, datos y apps).
 - `os/`: la ISO para instalar WonderfulOS como sistema de un PC.
 - `docs/`: arquitectura y notas.
 
@@ -32,23 +32,22 @@ No necesita dependencias ni compilación, solo Node.js. Desde la carpeta del pro
 cd web-desktop && node server.mjs
 ```
 
-y abre <http://127.0.0.1:4310>. El servidor también arranca, en el puerto 4311,
-el proxy de navegación que permite al Navegador mostrar cualquier web y buscar
-sin salir del escritorio (en producción lo hará la máquina en la nube de cada
-usuario).
+y abre <http://127.0.0.1:4310>. El servicio también arranca, en el puerto 4311,
+el proxy local de navegación que permite al Navegador mostrar webs y buscar sin
+salir del escritorio. Todo se queda en tu equipo.
 
 Qué incluye el MVP:
 
 | | |
 |---|---|
 | **Escritorio** | Ventanas que se mueven, redimensionan, minimizan y maximizan; barra de tareas; menú Inicio con búsqueda; notificaciones; tema claro/oscuro y fondos. |
-| **Cuentas** | Inicio de sesión y registro. Cada usuario tiene sus archivos y apps en la nube y los ve igual desde cualquier equipo. |
-| **Archivos** | Como un disco en línea: carpetas, crear, renombrar, eliminar y **👥 Compartir** archivos, carpetas y apps con otros usuarios (solo ver o editar). Lo que te comparten aparece en **Compartido conmigo**; las apps compartidas se instalan con un doble clic. Los datos viven en el servidor (`~/.nubeos` en desarrollo, `NUBEOS_DATA` en producción). Sin servidor, funciona en modo local guardando en el navegador. |
+| **Cuentas** | Inicio de sesión local para separar perfiles. Los datos se guardan en este ordenador (`~/.nubeos` o `NUBEOS_DATA`), no en un servidor externo. |
+| **Archivos** | Disco local: carpetas, crear, renombrar, eliminar, subir y descargar archivos y documentos. Sin carpetas compartidas ni funciones sociales. Si arrancas sin el servicio local, funciona en modo navegador con `localStorage`. |
 | **Texto** | Editor `.txt`/`.md` con Abrir/Guardar (Ctrl+O / Ctrl+S), recuento de palabras y descarga. |
 | **Cálculo** | Hoja de cálculo con fórmulas (`=SUMA(A1:A5)`, `PROMEDIO`, `MIN`, `MAX`, `CONTAR`, `SI`, `REDONDEAR`…), autosuma e importación/exportación CSV. |
 | **Diapositivas** | Presentaciones con miniaturas, temas, reordenación y modo presentación a pantalla completa. |
-| **Navegador** | Busca y abre cualquier web dentro del escritorio (a través del proxy de navegación), con atrás/adelante y la **Tienda de apps**. Instala apps de terceros desde la Tienda o cualquier web con **⊕ Instalar app**; aparecen en el escritorio y en Inicio y se ejecutan en una ventana aislada. Las direcciones locales (p. ej. ComfyUI en `127.0.0.1:8188`) se abren directamente. Las **descargas** se guardan en la carpeta Descargas de WonderfulOS, no en la del equipo. |
-| **Ajustes** | Apariencia, selector de plan (Gratis, Básico, Pro, Ultra) como demostración y desinstalación de apps de terceros. |
+| **Navegador** | Busca y abre webs dentro del escritorio (a través del proxy local de navegación), con atrás/adelante. Las direcciones locales (p. ej. ComfyUI en `127.0.0.1:8188`) se abren directamente. Las **descargas** se guardan en Archivos › Descargas, en este equipo. |
+| **Ajustes** | Apariencia, fondo, dock, pantalla, accesibilidad, almacenamiento local y apps de terceros. |
 
 Pruebas del motor de fórmulas:
 
@@ -62,8 +61,8 @@ cd web-desktop && node --test tests/*.test.mjs
 docs/ARQUITECTURA.md     Visión, componentes, planes, seguridad y hoja de ruta
 web-desktop/             Escritorio en el navegador (HTML/CSS/JS sin dependencias)
   server.mjs             Servidor: escritorio, API y proxy
-  server/api.mjs         API: cuentas, archivos, compartir, descargas
-  server/store.mjs       Datos en disco: usuarios, sesiones, archivos, compartidos
+  server/api.mjs         API local: cuentas, archivos y descargas
+  server/store.mjs       Datos en disco: usuarios, sesiones y archivos
   server/proxy.mjs       Proxy de navegación y búsqueda
   js/wm.js               Gestor de ventanas
   js/fs.js               Sistema de archivos virtual

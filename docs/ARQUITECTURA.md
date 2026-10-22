@@ -1,208 +1,145 @@
 # WonderfulOS — Arquitectura
 
-WonderfulOS es un sistema operativo en la nube basado en Linux. Cada usuario tiene
-una máquina Linux propia que vive en un centro de datos y a la que accede de
-dos formas:
+WonderfulOS es un sistema operativo personal y local basado en Linux. La app de
+escritorio (Electron) y el escritorio web comparten la misma interfaz y las
+mismas apps, pero todos los datos se quedan en el ordenador del usuario.
 
-1. **Desde el navegador**: abre `app.nubeos.com`, inicia sesión y ve su
-   escritorio.
-2. **Como SO instalado en un PC**: una imagen Linux mínima que arranca
-   directamente en el escritorio de WonderfulOS (cliente ligero), con modo offline
-   limitado.
-
-Encima corre un escritorio propio con apps nativas (editor de texto, hoja de
-cálculo, presentaciones), una tienda de apps de terceros compatibles y una
-suscripción mensual cuyo nivel decide la potencia de la máquina en la nube.
+No hay P2P, servidor de equipo, mensajería, compartición de archivos, cuentas
+externas ni planes en la nube. El único servicio que se ejecuta es local y
+escucha en `127.0.0.1`.
 
 ---
 
 ## 1. Visión de conjunto
 
 ```
-┌──────────────────────── Cliente ────────────────────────┐
-│  Navegador web            │  PC con imagen WonderfulOS        │
-│  (escritorio web)         │  (kiosko Linux + escritorio) │
-└──────────────┬────────────┴───────────────┬─────────────┘
-               │ HTTPS / WebSocket / WebRTC │
-┌──────────────▼────────────────────────────▼─────────────┐
-│                  Plano de control (API)                  │
-│  Auth · Cuentas · Facturación · Tienda · Orquestador     │
-└──────────────┬──────────────────────────────────────────┘
-               │ crea / arranca / para / redimensiona
-┌──────────────▼──────────────────────────────────────────┐
-│                 Plano de datos (cómputo)                 │
-│  Nodos KVM/Firecracker → una microVM Linux por usuario   │
-│  ├─ nubeos-agent (API local del escritorio)              │
-│  ├─ apps nativas (servidor) + contenedores de terceros   │
-│  └─ volumen persistente del usuario (/home)              │
-└─────────────────────────────────────────────────────────┘
+┌────────────────────────── Este ordenador ──────────────────────────┐
+│                                                                   │
+│  WonderfulOS (Electron)          Navegador del usuario            │
+│  ├─ ventana + Chromium           └─ http://127.0.0.1:4310          │
+│  ├─ servicio local (Node)                                          │
+│  │   ├─ API de archivos y apps                                     │
+│  │   ├─ datos de Listas, Notas y Calendario                        │
+│  │   └─ proxy de navegación (127.0.0.1:4311)                       │
+│  ├─ oficina (LibreOffice / motor local)                            │
+│  └─ Llavero cifrado                                                │
+│                                                                   │
+│  Disco: ~/.nubeos o NUBEOS_DATA                                    │
+└───────────────────────────────────────────────────────────────────┘
 ```
 
 ### Decisiones clave
 
 | Tema | Decisión | Motivo |
 |---|---|---|
-| Aislamiento por usuario | **microVM** (Firecracker o Cloud Hypervisor) | Aislamiento de kernel real con arranque en < 1 s; más seguro que contenedores compartidos. |
-| SO invitado | Debian estable mínima | Paquetes estables, ecosistema amplio, fácil de construir con `mmdebstrap`. |
-| Escritorio | **Web nativo** (HTML/JS) servido por la VM | Funciona igual en navegador y en el PC instalado; no requiere streaming de píxeles para las apps propias. |
-| Apps de terceros Linux (GUI clásica) | Contenedor + **streaming** (Xpra/Wayland → WebRTC) en una ventana del escritorio | Compatibilidad con apps existentes sin reescribirlas. |
-| Apps de terceros web | Paquetes `.nubeapp` (manifiesto + bundle web + backend opcional en contenedor) | Integración perfecta, ligera y segura. |
-| Almacenamiento | Volumen de bloque por usuario + snapshots en almacenamiento de objetos (S3) | Persistencia, copias de seguridad y migración entre nodos. |
-| Facturación | Stripe Billing con suscripciones por niveles | Estándar, gestiona impuestos y prorrateos. |
+| Privacidad | Todo se guarda en el disco local | Los datos no salen del equipo. |
+| Servicio | Node sin dependencias en `web-desktop/server.mjs` | Sirve la interfaz, los archivos y los datos de las apps. |
+| Acceso | Solo `127.0.0.1` | El servicio no se expone a la red local ni a internet. |
+| Archivos | Árbol JSON por usuario + blobs en disco | Sencillo, rápido y fácil de copiar o hacer copia de seguridad. |
+| Apps | HTML/JS sin compilación, API común `ctx` | Mismo código en Electron y en el navegador. |
+| Oficina | LibreOffice del equipo o motor Linux local | Documentos reales sin depender de un servicio externo. |
+| Llavero | AES-GCM + PBKDF2, sin cuenta ni sincronización | Solo el usuario puede descifrarlo. |
+| Navegador | Chromium de Electron o proxy local | Navegar por internet es una acción voluntaria del usuario. |
 
 ---
 
 ## 2. Componentes
 
-### 2.1 Escritorio (`web-desktop/`)
-Shell gráfico en el navegador: barra de tareas, menú de inicio, gestor de
-ventanas (mover, redimensionar, minimizar, maximizar, foco), notificaciones y
-sistema de archivos virtual.
+### 2.1 App de escritorio (`desktop/`)
 
-- **MVP actual**: JavaScript sin dependencias ni paso de compilación, sistema
-  de archivos guardado en `localStorage`.
-- **Siguiente paso**: el sistema de archivos pasa a ser una API del
-  `nubeos-agent` en la VM (`/api/fs`), con caché local (IndexedDB) para el modo
-  offline.
-- Las apps se registran con un manifiesto (`id`, nombre, icono, tipos de
-  archivo que abren) y reciben una API común (`ctx.fs`, `ctx.window`,
-  `ctx.notify`). Las apps de terceros usan exactamente la misma API, dentro de
-  un `iframe` aislado con `postMessage`.
+Electron arranca el servicio local y abre la interfaz. En macOS puede usar un
+motor Linux (Lima) para la oficina y las apps de Linux. En Windows y Linux usa
+las aplicaciones del propio sistema cuando están disponibles.
 
-### 2.1.0 Cuentas, archivos y compartir (implementado)
-El servidor guarda por usuario su árbol de archivos (JSON por usuario, con los
-archivos grandes aparte en el disco) y una lista de compartidos
-`{propietario, destinatario, ruta | app, permiso}`. El escritorio carga el árbol
-al iniciar sesión, aplica los cambios al momento y los envía en segundo plano.
-Lo compartido contigo se monta en `/Compartido conmigo`; con permiso de edición
-los cambios se escriben en los archivos del propietario. Sesión por cookie
-`HttpOnly`; la API exige la cabecera `x-nubeos` y comprueba el `Origin`.
-En producción este almacenamiento pasa al plano de control + volúmenes de cada VM.
+- `main.mjs`: ventana, menús, IPC y ciclo de vida.
+- `local.mjs`: arranque del servicio local y de la oficina.
+- `linux.mjs`: motor Linux opcional.
+- `preload.cjs`: puente seguro entre la interfaz y Electron.
+- `office-engine.mjs`: documentos y conversiones locales.
 
-### 2.1.1 Navegador y Tienda
-El Navegador es una app nativa más y la puerta de entrada a las apps de
-terceros: abre la Tienda de WonderfulOS (catálogo revisado) y permite instalar
-cualquier web como app. Una app instalada se guarda en el registro del usuario
-y se abre en su propia ventana dentro de un `iframe` con `sandbox`. La Tienda
-habla con el escritorio por `postMessage`, aceptado solo desde su origen.
+El Llavero usa IPC (`nubeos:llavero-load/save`) y guarda `datos/llavero.json`
+con permisos `0600`.
 
-En el MVP las apps de ejemplo se sirven desde el mismo origen que el
-escritorio; en producción cada app de terceros se servirá desde un origen
-propio (`<app>.apps.nubeos.com`) para que el `sandbox` la aísle de verdad. Muchos
-sitios prohíben mostrarse dentro de otra página (`X-Frame-Options`, CSP). Por
-eso el Navegador carga las páginas a través de un **proxy de navegación** que,
-en producción, corre en la máquina en la nube del usuario: descarga la página,
-quita esas cabeceras e inyecta un script que mantiene los enlaces, formularios
-y el historial dentro del proxy. Las búsquedas se muestran en una página de
-resultados propia. El proxy se sirve desde otro origen que el escritorio y
-rechaza direcciones de la red local.
+### 2.2 Escritorio web (`web-desktop/`)
 
-Límites conocidos del proxy: no conserva sesiones (cookies), así que no sirve
-para iniciar sesión en sitios, y las webs con mucho JavaScript pueden fallar.
-La solución completa es un Chromium real en la VM transmitido a la ventana
-(WebRTC), igual que las apps Linux GUI (fase 3).
+Shell gráfico en HTML/CSS/JS: barra superior, dock, Launchpad, ventanas,
+buscador, centro de control, notificaciones y ajustes.
 
-### 2.2 Apps nativas
-| App | Formato propio | Importa / exporta |
-|---|---|---|
-| **Texto** (editor) | `.txt`, `.md` | `.docx`, `.odt`, `.pdf` (fase 2, conversión en servidor con LibreOffice headless) |
-| **Cálculo** (hoja de cálculo) | `.nsheet` (JSON) | `.csv` ya en el MVP; `.xlsx`, `.ods` en fase 2 |
-| **Diapositivas** (presentaciones) | `.nslides` (JSON) | `.pptx`, `.pdf` en fase 2 |
+- **Sin compilación**: se sirve tal cual.
+- **Servicio local**: `server.mjs` en el puerto 4310.
+- **Proxy**: `server/proxy.mjs` en el puerto 4311, separado a propósito para que
+  las webs visitadas no puedan leer los datos del escritorio.
+- **Modo sin servicio**: si la API no está disponible, los archivos se guardan
+  en `localStorage` y la oficina muestra un aviso.
 
-Fase 3: edición colaborativa en tiempo real con CRDT (Yjs) sincronizado por el
-agente.
+Las apps se registran con un manifiesto (`id`, nombre, icono, extensiones) y
+reciben una API común (`ctx.fs`, `ctx.createWindow`, `ctx.notify`, `ctx.launch`).
 
-### 2.3 `nubeos-agent` (en cada VM)
-Servicio (Go o Rust) que corre dentro de la VM del usuario:
-- sirve el escritorio web y la API local (`/api/fs`, `/api/apps`, `/api/sys`);
-- instala y lanza apps de terceros (contenedores con Podman sin root);
-- hace de pasarela del streaming de apps Linux GUI (Xpra → WebRTC);
-- reporta métricas (CPU, RAM, disco) al plano de control.
+### 2.3 Archivos
 
-### 2.4 Plano de control
-Servicios en Kubernetes (o, al principio, un monolito modular):
-- **Auth**: OIDC (correo + contraseña, Google, passkeys).
-- **Cuentas y suscripciones**: usuario ↔ nivel ↔ VM.
-- **Orquestador**: decide en qué nodo vive cada VM; arranca VMs al iniciar
-  sesión y las suspende tras inactividad (snapshot de memoria) para abaratar.
-- **Pasarela**: proxy inverso con TLS que enruta `usuario.nubeos.com` a su VM.
-- **Tienda**: catálogo, revisión y firma de apps de terceros.
-- **Facturación**: webhooks de Stripe → cambios de nivel → redimensionado de VM.
+`web-desktop/js/fs.js` ofrece una API síncrona para las apps. En modo local
+escribe en `localStorage`; con el servicio local carga el árbol del usuario y
+envía los cambios en segundo plano.
 
-### 2.5 Imagen instalable (`image/`)
-Ver [image/README.md](../image/README.md). Debian mínima + Wayland kiosko
-(`cage`) + navegador en modo app que abre el escritorio de WonderfulOS. Dos modos:
-- **Cliente ligero** (por defecto): todo corre en la nube.
-- **Local** (fase 3): ejecuta el `nubeos-agent` en el propio PC y sincroniza
-  con la nube; útil sin conexión.
+- Carpetas: `/Documentos`, `/Descargas`, `/Imágenes`.
+- Operaciones: listar, leer, escribir, crear, renombrar, eliminar, subir y
+  descargar.
+- Archivos grandes: se guardan como blobs en el disco y se sirven por
+  `api/blobs/…`.
+- No existen mounts, carpetas compartidas ni permisos entre usuarios.
+
+### 2.4 Datos de las apps
+
+Listas, Notas y Calendario usan `web-desktop/js/cloud.js` contra la API local de
+`server/appdata.mjs`. La caché es local y los cambios se aplican al instante;
+el servicio confirma la escritura en el disco.
+
+- Cada usuario local tiene sus propios documentos.
+- No hay invitaciones, miembros, roles ni avisos de compartición.
+- El Llavero es independiente: no usa esta API.
+
+### 2.5 Oficina
+
+Texto, Cálculo y Presentaciones abren documentos reales mediante LibreOffice o
+el motor local. En el navegador sin app de escritorio se usa el servicio WOPI
+local de `server/office.mjs`. Los archivos se leen y guardan en el sistema de
+archivos local.
+
+### 2.6 Navegador
+
+En Electron se usa un Chromium real dentro de la app. En el escritorio web se
+usa el proxy local: descarga la página, elimina las cabeceras que impiden
+mostrarla en un `iframe` e inyecta la navegación. Las descargas se guardan en
+`/Descargas` del sistema local.
+
+El proxy no conserva cookies de sesión de terceros. Las webs con mucho
+JavaScript pueden no funcionar; en ese caso se abre la dirección en el
+navegador del sistema.
+
+### 2.7 Imagen instalable (`os/`)
+
+Imagen Debian mínima con labwc que abre WonderfulOS como sistema completo. Usa
+el mismo escritorio y el mismo servicio local; no hay cliente ligero ni
+sincronización con una nube.
 
 ---
 
-## 3. Suscripción por niveles
+## 3. Seguridad y privacidad
 
-La potencia de la VM depende del plan. Precios orientativos, a validar con
-costes reales de infraestructura.
-
-| Plan | vCPU | RAM | Disco | GPU | Horas activas/mes | Precio orientativo |
-|---|---|---|---|---|---|---|
-| **Gratis** | 1 compartida | 2 GB | 10 GB | — | 40 h | 0 € |
-| **Básico** | 2 | 4 GB | 50 GB | — | ilimitadas* | 9 €/mes |
-| **Pro** | 4 | 16 GB | 200 GB | — | ilimitadas* | 29 €/mes |
-| **Ultra** | 8 | 32 GB | 500 GB | GPU fraccional | ilimitadas* | 79 €/mes |
-
-\* Con suspensión automática tras 30 min de inactividad, que es lo que hace
-viable el precio.
-
-### 3.1 Planes por tipo de uso (precio fijo mensual)
-
-Precio fijo al mes, sin cobros por hora. Cada plan es el coste del proveedor
-más ~25 % de comisión. En los planes con GPU las horas incluidas son un límite:
-al agotarlas la GPU se pausa hasta el mes siguiente (el escritorio sigue
-funcionando) o el usuario sube de plan. Costes orientativos de octubre de 2026
-(Hostinger VPS, RunPod, Hetzner); revisar antes de lanzar.
-
-**Planes principales**
-
-| Plan | Para | Máquina | Coste aprox. | Precio |
-|---|---|---|---|---|
-| Básico | Ofimática | Parte de un VPS compartido | ~4,5 € | 9 €/mes |
-| Creativo | Diseño gráfico, foto | Parte de un KVM 4 (3–4 usuarios) | ~10 € | 19 €/mes |
-| Pro GPU | 3D y ComfyUI | RTX 4090 24 GB, 40 h/mes, 200 GB | ~37 € | 49 €/mes |
-
-**Otros planes**
-
-| Plan | Para | Máquina | Coste aprox. | Precio |
-|---|---|---|---|---|
-| Gratis | Probar | 1 vCPU compartida, 10 GB | ~1 € | 0 € |
-| Pro GPU+ | 3D/ComfyUI intensivo | RTX 4090, 80 h/mes, 300 GB | ~62 € | 79 €/mes |
-| Estudio IA | Flux, vídeo con IA | L40S 48 GB, 60 h/mes, 500 GB | ~70 € | 89 €/mes |
-| Dedicada | GPU propia 24 h | Hetzner GEX44 (RTX 4000 Ada) | ~234 € | 295 €/mes |
-| A medida | Lo que elija el usuario | Coste del proveedor | — | coste + 25 % |
-
-Cambio de plan: el orquestador redimensiona la VM en el siguiente arranque
-(o en caliente si el hipervisor lo permite). Al bajar de plan, se avisa si el
-disco usado supera el nuevo límite.
+- El servicio escucha solo en loopback (`127.0.0.1`).
+- La API exige la cabecera `x-nubeos` y comprueba el origen.
+- Las sesiones son cookies `HttpOnly` y separan perfiles en el mismo equipo;
+  no son cuentas remotas.
+- Los blobs y los datos de las apps viven en `~/.nubeos` o en el directorio
+  indicado por `NUBEOS_DATA`.
+- El Llavero cifra con AES-GCM y deriva la clave con PBKDF2. No hay recuperación
+  si se pierde la contraseña maestra.
+- No hay telemetría, P2P, servidor de equipo ni funciones sociales.
 
 ---
 
-## 4. Seguridad
+## 4. Copias de seguridad
 
-- Cada usuario en su propia microVM; nada de procesos de varios usuarios en el
-  mismo kernel.
-- Apps de terceros: permisos declarados en el manifiesto (archivos, red,
-  notificaciones) y concedidos por el usuario; web en `iframe` con `sandbox`,
-  nativas en contenedor sin root.
-- Volúmenes cifrados en reposo; TLS en todo el tráfico.
-- Imagen instalable con arranque seguro (UEFI Secure Boot) y actualizaciones
-  atómicas A/B.
-
----
-
-## 5. Hoja de ruta
-
-| Fase | Contenido |
-|---|---|
-| **0 — MVP (este repo)** | Escritorio web con ventanas, editor de texto, hoja de cálculo, presentaciones y archivos en el navegador. Esbozo de la imagen instalable. |
-| **1 — Backend** | `nubeos-agent`, una VM por usuario en un solo servidor, login, sistema de archivos real. |
-| **2 — Producto** | Stripe con niveles, orquestador multi-nodo, importación/exportación de formatos Office, tienda con primeras apps web de terceros. |
-| **3 — Ecosistema** | Streaming de apps Linux GUI, colaboración en tiempo real, imagen instalable con modo local/offline, GPU. |
+Basta con copiar el directorio de datos (`~/.nubeos` por defecto). Incluye
+usuarios, archivos, documentos de las apps y el Llavero cifrado. Para restaurar,
+se copia de nuevo antes de arrancar WonderfulOS.

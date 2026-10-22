@@ -296,30 +296,13 @@ export async function apiHandler(req, res, url) {
     // --- Subir archivos del ordenador ---
     if (route === 'POST /upload') return send(200, { node: await upload(req, user, url) });
 
-    // --- Datos de las apps (Listas, Notas, Calendario, Recordatorios, Mensajes) ---
+    // --- Datos de las apps (Listas, Notas, Calendario y Recordatorios) ---
     if (parts[0] === 'apps' && parts[1]) {
-      const [, app, id, sub, who] = parts;
+      const [, app, id, sub] = parts;
       if (req.method === 'GET' && !id) return send(200, { docs: appdata.list(user, app) });
       if (req.method === 'POST' && !id) return send(200, { doc: appdata.create(user, app, (await readJson(req)).data) });
       if (req.method === 'POST' && sub === 'ops') return send(200, { doc: appdata.patch(user, app, id, (await readJson(req)).ops) });
-      if (req.method === 'POST' && sub === 'members') {
-        const { to, role } = await readJson(req, 2000);
-        return send(200, { doc: appdata.share(user, app, id, to, role) });
-      }
-      if (req.method === 'DELETE' && sub === 'members') return send(200, appdata.unshare(user, app, id, decodeURIComponent(who || '')));
       if (req.method === 'DELETE' && id && !sub) return send(200, appdata.remove(user, app, id));
-    }
-
-    // --- Usuarios (para elegir con quién compartir) ---
-    if (route === 'GET /users') return send(200, { users: store.searchUsers(url.searchParams.get('q'), user) });
-
-    // --- Compartir ---
-    if (route === 'GET /shares') return send(200, { incoming: store.incomingShares(user), outgoing: store.outgoingShares(user) });
-    if (route === 'POST /shares' && !parts[1]) return send(200, { share: store.createShare(user, await readJson(req, 20000)) });
-    if (req.method === 'DELETE' && parts[0] === 'shares' && parts[1]) { store.deleteShare(user, parts[1]); return send(200, { ok: true }); }
-    if (req.method === 'POST' && parts[0] === 'shares' && parts[2] === 'ops') {
-      store.applyShareOps(user, parts[1], (await readJson(req)).ops);
-      return send(200, { ok: true });
     }
 
     fail(404, 'No encontrado');

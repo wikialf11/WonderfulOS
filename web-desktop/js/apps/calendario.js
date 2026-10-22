@@ -1,5 +1,5 @@
-// Calendario: vista de mes con varios calendarios (propios y compartidos).
-import { cloud, uid, avatar, people, shareDialog, emptyState } from '../cloud.js';
+// Calendario: vista de mes con varios calendarios locales.
+import { cloud, uid, emptyState } from '../cloud.js';
 import { ICONS, GLYPHS } from '../shell/icons.js';
 import { prompt, confirm } from '../dialogs.js';
 import { esc } from '../util.js';
@@ -32,10 +32,10 @@ export default {
     const hidden = new Set();
     try {
       await cloud.load(APP);
-      if (!cloud.docs(APP).some((d) => d.role === 'owner')) await cloud.create(APP, { name: 'Personal', color: COLORS[0], events: {} });
+      if (!cloud.docs(APP).length) await cloud.create(APP, { name: 'Personal', color: COLORS[0], events: {} });
     } catch (e) { $('.cl-main').innerHTML = emptyState(ICONS.calendario, 'Sin conexión', e.message); return; }
 
-    const cals = () => cloud.docs(APP).sort((a, b) => (a.role === 'owner' ? 0 : 1) - (b.role === 'owner' ? 0 : 1));
+    const cals = () => cloud.docs(APP);
     const eventsOn = (day) => cals().filter((c) => !hidden.has(c.id)).flatMap((c) =>
       Object.entries(c.data.events || {}).filter(([, e]) => e.date === day).map(([id, e]) => ({ id, cal: c, ...e })))
       .sort((a, b) => (a.start || '00:00').localeCompare(b.start || '00:00'));
@@ -48,20 +48,16 @@ export default {
         const b = document.createElement('div');
         b.className = 'cl-item cal-item';
         b.innerHTML = `<input type="checkbox" ${hidden.has(c.id) ? '' : 'checked'} style="accent-color:${c.data.color}">
-          <span class="name">${esc(c.data.name)}${c.role !== 'owner' ? ` <small>de ${esc(c.owner)}</small>` : ''}</span>
-          ${people(c).length > 1 ? `<span class="mini-people">${people(c).slice(0, 3).map((u) => avatar(u, 16)).join('')}</span>` : ''}
+          <span class="name">${esc(c.data.name)}</span>
           <button class="icon-btn more" title="Opciones">${GLYPHS.more}</button>`;
         b.querySelector('input').onchange = (e) => { e.target.checked ? hidden.delete(c.id) : hidden.add(c.id); render(); };
         b.querySelector('.more').onclick = (e) => {
           const r = e.currentTarget.getBoundingClientRect();
           ctx.menu([
-            ...(c.role === 'owner' ? [
-              { label: 'Compartir…', run: () => shareDialog(win, ctx, APP, c, { title: c.data.name }) },
-              { label: 'Cambiar nombre…', run: async () => { const n = await prompt(win, 'Nombre del calendario', c.data.name); if (n) cloud.ops(APP, c.id, [{ op: 'set', path: ['name'], value: n }]); } },
-              ...COLORS.map((col) => ({ label: `${col === c.data.color ? '● ' : '○ '}Color`, run: () => cloud.ops(APP, c.id, [{ op: 'set', path: ['color'], value: col }]) })),
-            ] : []),
+            { label: 'Cambiar nombre…', run: async () => { const n = await prompt(win, 'Nombre del calendario', c.data.name); if (n) cloud.ops(APP, c.id, [{ op: 'set', path: ['name'], value: n }]); } },
+            ...COLORS.map((col) => ({ label: `${col === c.data.color ? '● ' : '○ '}Color`, run: () => cloud.ops(APP, c.id, [{ op: 'set', path: ['color'], value: col }]) })),
             '-',
-            { label: c.role === 'owner' ? 'Eliminar calendario' : 'Dejar de ver', run: async () => { if (await confirm(win, `¿${c.role === 'owner' ? 'Eliminar' : 'Dejar de ver'} «${c.data.name}»?`)) cloud.remove(APP, c.id); } },
+            { label: 'Eliminar calendario', run: async () => { if (await confirm(win, `¿Eliminar «${c.data.name}»?`)) cloud.remove(APP, c.id); } },
           ], r.right - 200, r.bottom + 4);
         };
         $('.cl-items').appendChild(b);
@@ -110,19 +106,18 @@ export default {
 
     // Crear o editar un evento en un diálogo.
     function editEvent(cal, day, id) {
-      const writable = cals().filter((c) => ['owner', 'edit'].includes(c.role));
+      const writable = cals();
       const ev = id ? cal.data.events[id] : null;
-      const canEdit = !ev || ['owner', 'edit'].includes(cal.role);
       const back = document.createElement('div');
       back.className = 'dialog-backdrop';
       back.innerHTML = `<form class="dialog ev-dialog">
-        <h3>${ev ? (canEdit ? 'Editar evento' : esc(ev.title)) : 'Nuevo evento'}</h3>
-        <input name="title" placeholder="Título" value="${esc(ev?.title || '')}" ${canEdit ? '' : 'readonly'} required>
-        <div class="row"><input type="date" name="date" value="${ev?.date || day}" ${canEdit ? '' : 'readonly'}>
-          <input type="time" name="start" value="${ev?.start || ''}" ${canEdit ? '' : 'readonly'}><input type="time" name="end" value="${ev?.end || ''}" ${canEdit ? '' : 'readonly'}></div>
+        <h3>${ev ? 'Editar evento' : 'Nuevo evento'}</h3>
+        <input name="title" placeholder="Título" value="${esc(ev?.title || '')}" required>
+        <div class="row"><input type="date" name="date" value="${ev?.date || day}">
+          <input type="time" name="start" value="${ev?.start || ''}"><input type="time" name="end" value="${ev?.end || ''}"></div>
         <select name="cal" ${ev ? 'disabled' : ''}>${(ev ? [cal] : writable).map((c) => `<option value="${c.id}">${esc(c.data.name)}</option>`).join('')}</select>
-        <textarea name="notes" placeholder="Notas" rows="3" ${canEdit ? '' : 'readonly'}>${esc(ev?.notes || '')}</textarea>
-        <div class="actions">${ev && canEdit ? '<button type="button" class="btn del" style="margin-right:auto">Eliminar</button>' : ''}<button type="button" class="btn cancel">Cerrar</button>${canEdit ? '<button class="btn primary">Guardar</button>' : ''}</div>
+        <textarea name="notes" placeholder="Notas" rows="3">${esc(ev?.notes || '')}</textarea>
+        <div class="actions">${ev ? '<button type="button" class="btn del" style="margin-right:auto">Eliminar</button>' : ''}<button type="button" class="btn cancel">Cerrar</button><button class="btn primary">Guardar</button></div>
       </form>`;
       win.body.appendChild(back);
       const form = back.querySelector('form');

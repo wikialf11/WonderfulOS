@@ -1,11 +1,10 @@
-// Datos de las apps de WonderfulOS (Listas, Notas, Calendario, Recordatorios, Mensajes):
-// documentos JSON en la nube, compartidos entre cuentas y sincronizados al momento.
+// Datos de las apps de WonderfulOS (Listas, Notas, Calendario y Recordatorios):
+// documentos JSON guardados en el disco local y sincronizados al momento con
+// las ventanas abiertas del mismo usuario.
 //
-// Cada documento: { id, app, owner, members: { usuario: rol }, data, version, updated }.
-// Roles: owner (todo), edit (cambiar el contenido), complete (solo marcar tareas),
-// read (solo ver). Los cambios llegan como operaciones pequeñas sobre `data`
-// (set / del / push), así dos personas pueden tocar el mismo documento a la vez
-// sin pisarse; cada cambio se envía al instante a los miembros conectados (SSE).
+// Cada documento: { id, app, owner, data, version, updated }.
+// Los cambios llegan como operaciones pequeñas sobre `data` (set / del / push).
+// No hay miembros, invitaciones, roles ni documentos compartidos.
 
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, renameSync, unlinkSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
@@ -15,8 +14,7 @@ import * as store from './store.mjs';
 const { HttpError } = store;
 const fail = (status, message) => { throw new HttpError(status, message); };
 
-export const APPS = ['listas', 'notas', 'calendario', 'recordatorios', 'mensajes', 'llavero'];
-const ROLES = ['read', 'complete', 'edit'];
+export const APPS = ['listas', 'notas', 'calendario', 'recordatorios', 'llavero'];
 const MAX_DOC = 2 * 1024 * 1024;
 const DIR = path.join(store.DATA, 'apps');
 mkdirSync(DIR, { recursive: true });
@@ -32,12 +30,15 @@ function save(d) {
   writeFileSync(`${file}.tmp`, JSON.stringify(d));
   renameSync(`${file}.tmp`, file);
 }
-const roleOf = (d, user) => (d.owner === user ? 'owner' : d.members[user] || null);
-const view = (d, user) => ({ ...d, role: roleOf(d, user) });
+const isOwner = (d, user) => d.owner === user;
+const view = (d) => {
+  const { members, ...rest } = d;
+  return { ...rest, role: 'owner' };
+};
 
 function get(user, app, id) {
   const d = docs.get(id);
-  if (!d || d.app !== app || !roleOf(d, user)) fail(404, 'No encontrado');
+  if (!d || d.app !== app || !isOwner(d, user)) fail(404, 'No encontrado');
   return d;
 }
 
@@ -51,14 +52,13 @@ export function events(user, req, res) {
   const ping = setInterval(() => res.write(': ping\n\n'), 25000);
   req.on('close', () => { clearInterval(ping); streams.get(user)?.delete(res); });
 }
-function broadcast(d, type = 'doc', extra = []) {
-  const users = new Set([d.owner, ...Object.keys(d.members), ...extra]);
-  for (const u of users) {
-    const payload = type === 'removed' || !roleOf(d, u) ? { type: 'removed', app: d.app, id: d.id } : { type, doc: view(d, u) };
-    for (const res of streams.get(u) || []) res.write(`data: ${JSON.stringify(payload)}\n\n`);
-  }
+function broadcast(d, type = 'doc') {
+  const payload = type === 'removed'
+    ? { type: 'removed', app: d.app, id: d.id }
+    : { type, doc: view(d) };
+  for (const res of streams.get(d.owner) || []) res.write(`data: ${JSON.stringify(payload)}\n\n`);
 }
-/** Aviso a una cuenta (p. ej. «te han compartido una lista»), si está conectada. */
+/** Aviso a una cuenta (descargas, inicio de sesión del Navegador), si está conectada. */
 export function notifyUser(user, payload) {
   for (const res of streams.get(user) || []) res.write(`data: ${JSON.stringify({ type: 'notice', ...payload })}\n\n`);
 }
@@ -66,17 +66,17 @@ export function notifyUser(user, payload) {
 // ---------- Operaciones ----------
 export function list(user, app) {
   if (!APPS.includes(app)) fail(404, 'App desconocida');
-  return [...docs.values()].filter((d) => d.app === app && roleOf(d, user)).map((d) => view(d, user));
+  return [...docs.values()].filter((d) => d.app === app && isOwner(d, user)).map(view);
 }
 
 export function create(user, app, data = {}) {
   if (!APPS.includes(app)) fail(404, 'App desconocida');
   if (JSON.stringify(data).length > MAX_DOC) fail(413, 'Demasiado grande');
-  const d = { id: randomUUID(), app, owner: user, members: {}, data, version: 1, updated: Date.now() };
+  const d = { id: randomUUID(), app, owner: user, data, version: 1, updated: Date.now() };
   docs.set(d.id, d);
   save(d);
   broadcast(d);
-  return view(d, user);
+  return view(d);
 }
 
 // Ruta dentro de data: lista de claves (texto o número). Nada de __proto__ y compañía.
@@ -104,68 +104,22 @@ function applyOp(data, op) {
   } else fail(400, 'Operación desconocida');
 }
 
-// Qué puede tocar cada rol. «complete» solo marca tareas: tasks.<id>.done / doneAt / doneBy / due.
-function allowed(role, app, ops) {
-  if (role === 'owner' || role === 'edit') return true;
-  if (role === 'complete' && app === 'listas') {
-    return ops.every((o) => o.op === 'set' && o.path?.[0] === 'tasks' && o.path.length === 3 && ['done', 'doneAt', 'doneBy', 'due'].includes(o.path[2]));
-  }
-  // En Mensajes cualquiera de la conversación escribe (añadir mensajes y marcar leído).
-  if (app === 'mensajes' && role) return ops.every((o) => (o.op === 'push' && o.path?.[0] === 'messages') || (o.op === 'set' && o.path?.[0] === 'read'));
-  return false;
-}
-
 export function patch(user, app, id, ops) {
   const d = get(user, app, id);
   if (!Array.isArray(ops) || !ops.length || ops.length > 200) fail(400, 'Operaciones no válidas');
-  const role = roleOf(d, user);
-  if (!allowed(role, app, ops)) fail(403, role === 'complete' ? 'Solo puedes marcar tareas en esta lista' : 'Solo puedes ver este elemento');
   const next = structuredClone(d.data);
-  for (const op of ops) {
-    // Los mensajes los firma el servidor: nadie escribe en nombre de otro.
-    if (app === 'mensajes' && op.op === 'push' && op.path[0] === 'messages') op.value = { ...op.value, from: user, at: Date.now(), text: String(op.value?.text || '').slice(0, 5000) };
-    applyOp(next, op);
-  }
+  for (const op of ops) applyOp(next, op);
   if (JSON.stringify(next).length > MAX_DOC) fail(413, 'Demasiado grande');
   d.data = next;
   d.version++;
   d.updated = Date.now();
   save(d);
   broadcast(d);
-  return view(d, user);
-}
-
-export function share(user, app, id, to, role) {
-  const d = get(user, app, id);
-  if (app === 'llavero') fail(400, 'El llavero es personal: está cifrado con tu contraseña maestra');
-  if (roleOf(d, user) !== 'owner' && app !== 'mensajes') fail(403, 'Solo quien lo creó puede invitar');
-  to = String(to || '').trim().toLowerCase();
-  if (!store.userExists(to)) fail(404, `No existe el usuario ${to}`);
-  if (to === d.owner) fail(400, 'Ya es el dueño');
-  if (!ROLES.includes(role)) role = 'edit';
-  const isNew = !d.members[to];
-  d.members[to] = role;
-  d.updated = Date.now();
-  save(d);
-  broadcast(d);
-  if (isNew) notifyUser(to, { app, id, from: user, title: d.data?.title || d.data?.name || '' });
-  return view(d, user);
-}
-
-export function unshare(user, app, id, who) {
-  const d = get(user, app, id);
-  who = String(who || '').toLowerCase();
-  if (roleOf(d, user) !== 'owner' && who !== user) fail(403, 'Solo quien lo creó puede quitar a otros');
-  delete d.members[who];
-  d.updated = Date.now();
-  save(d);
-  broadcast(d, 'doc', [who]);
-  return { ok: true };
+  return view(d);
 }
 
 export function remove(user, app, id) {
   const d = get(user, app, id);
-  if (roleOf(d, user) !== 'owner') return unshare(user, app, id, user); // salir de algo compartido
   docs.delete(id);
   try { unlinkSync(path.join(DIR, `${id}.json`)); } catch { /* ya no estaba */ }
   broadcast(d, 'removed');

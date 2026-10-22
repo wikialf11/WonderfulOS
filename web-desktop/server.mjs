@@ -1,12 +1,11 @@
-// Servidor de WonderfulOS (sin dependencias):
-//  - Escritorio web + API (cuentas, archivos, subidas, compartir, apps, planes): puerto 4310.
+// Servicio local de WonderfulOS (sin dependencias):
+//  - Escritorio web + API (cuentas locales, archivos, subidas y apps): puerto 4310.
 //  - Proxy del Navegador (server/proxy.mjs): puerto 4311, u otro dominio si se define
 //    PROXY_HOST. Va aparte a propósito: es otro origen y las webs visitadas no pueden
 //    leer los datos del escritorio.
 //
 // Variables: PORT, PROXY_PORT, HOST, PROXY_HOST, PUBLIC_PROXY_ORIGIN, NUBEOS_ROLE (proxy),
-// NUBEOS_PROXY_SECRET, NUBEOS_DATA, NUBEOS_INVITE_CODE, NUBEOS_MAX_UPLOAD_MB,
-// STRIPE_WEBHOOK_SECRET, STRIPE_SECRET_KEY, NUBEOS_STRIPE_PORTAL, COLLABORA_URL (ver docs/DESPLIEGUE.md).
+// NUBEOS_PROXY_SECRET, NUBEOS_DATA, NUBEOS_INVITE_CODE y NUBEOS_MAX_UPLOAD_MB.
 
 import http from 'node:http';
 import { readFile, stat } from 'node:fs/promises';

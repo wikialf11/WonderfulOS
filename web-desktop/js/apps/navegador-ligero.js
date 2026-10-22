@@ -1,6 +1,6 @@
 // Navegador: busca y visita webs dentro de WonderfulOS. Las páginas pasan por el proxy
 // de WonderfulOS (server/proxy.mjs, en otro origen) para poder mostrarse en la ventana;
-// lo que descargas se guarda en tu nube (Archivos › Descargas), no en el equipo.
+// lo que descargas se guarda en Archivos › Descargas, en este equipo.
 import { GLYPHS } from '../shell/icons.js';
 import { initProxy, proxify, searchUrl, getProxyOrigin, isLocalAddress } from '../proxy.js';
 import { normalize } from '../fs.js';
@@ -28,7 +28,7 @@ function toUrl(input) {
 export default {
   id: 'navegador-ligero',
   name: 'Navegador',
-  description: 'Busca en internet y descarga a tu nube',
+  description: 'Busca en internet y descarga a Archivos',
 
   async launch(ctx, startUrl = null) {
     const win = ctx.createWindow({ title: 'Navegador', width: 1080, height: 680 });

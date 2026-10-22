@@ -295,7 +295,7 @@ textarea { outline: none; }
 #launchpad .grid { display: flex; flex-wrap: wrap; justify-content: center; }
 #launchpad .app { width: 130px; }
 
-/* ---------- Archivos: extras de la nube ---------- */
+/* ---------- Archivos: extras ---------- */
 .files-side { display: flex; flex-direction: column; }
 .files-side .grow { flex: 1; }
 .storage { padding: 12px 10px 4px; font-size: 12px; color: var(--muted); }
@@ -318,21 +318,6 @@ textarea { outline: none; }
 .progress-row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
 .progress-row .bar { flex: 1; height: 4px; border-radius: 9px; background: color-mix(in srgb, var(--text) 10%, transparent); overflow: hidden; }
 .progress-row .bar span { display: block; height: 100%; background: var(--accent); transition: width .2s; }
-
-/* Diálogo de compartir */
-.share-dialog { width: min(460px, 94%) !important; gap: 14px !important; }
-.share-dialog .head { display: flex; align-items: center; gap: 12px; }
-.share-dialog .head svg { width: 40px; height: 40px; flex: none; }
-.share-dialog .head small { display: block; color: var(--muted); font-weight: 400; }
-.share-dialog .row { display: flex; gap: 8px; }
-.share-dialog .row input { flex: 1; }
-.share-dialog .people { display: flex; flex-direction: column; gap: 4px; }
-.share-dialog .person { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 10px; background: color-mix(in srgb, var(--text) 4%, transparent); }
-.share-dialog .avatar { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 600; font-size: 13px; background: linear-gradient(135deg, #818cf8, #ec4899); }
-.share-dialog .person span { flex: 1; }
-.share-dialog .person small { color: var(--muted); }
-.share-dialog .suggest { display: flex; flex-wrap: wrap; gap: 6px; }
-.share-dialog .suggest button { border: 0; border-radius: 99px; padding: 4px 10px; font-size: 12px; background: var(--accent-soft); color: var(--text); }
 
 /* Apps de oficina */
 .window textarea.doc { flex: 1; border: 0; resize: none; padding: 34px max(28px, calc((100% - 760px) / 2)); font: 16px/1.7 "Inter", system-ui, sans-serif;
@@ -396,7 +381,7 @@ textarea { outline: none; }
   background: color-mix(in srgb, var(--accent) 18%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 70%, transparent); }
 #screen .rubber-band { position: fixed; }
 
-/* ===================== Apps de la nube (Listas, Notas, Mensajes…) ===================== */
+/* ===================== Apps con panel lateral (Listas, Notas, Calendario…) ===================== */
 .app-cloud { flex-direction: row !important; background: transparent !important; }
 .cl-side { width: 240px; flex: none; display: flex; flex-direction: column; gap: 4px; padding: 14px 10px;
   background: color-mix(in srgb, var(--panel-solid) 30%, transparent); border-right: .5px solid var(--border); overflow: auto; }
@@ -413,8 +398,6 @@ textarea { outline: none; }
 .cl-item .count.late { color: #ef4444; font-weight: 700; }
 .cl-item .dot { width: 12px; height: 12px; border-radius: 50%; flex: none; }
 .cl-item svg { color: var(--accent); flex: none; }
-.mini-people { display: flex; }
-.mini-people .avatar + .avatar { margin-left: -5px; }
 .cl-search { flex: 1; display: flex; align-items: center; gap: 6px; padding: 5px 9px; border-radius: 9px; background: color-mix(in srgb, var(--text) 6%, transparent); text-transform: none; font-weight: 400; letter-spacing: 0; }
 .cl-search input { border: 0; background: none; outline: none; width: 100%; font-size: 13px; color: var(--text); }
 .cl-main { flex: 1; min-width: 0; display: flex; flex-direction: column; background: color-mix(in srgb, var(--panel-solid) 72%, transparent); }
@@ -422,8 +405,6 @@ textarea { outline: none; }
 .cl-head .title { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -.4px; outline: none; border-radius: 8px; padding: 2px 4px; }
 .cl-head .title[contenteditable]:focus { background: color-mix(in srgb, var(--text) 5%, transparent); }
 .cl-head .grow { flex: 1; }
-.cl-head .people { display: flex; margin-left: auto; }
-.cl-head .people .avatar { border: 2px solid var(--panel-solid); margin-left: -7px; }
 .cl-head .chip { font-size: 11.5px; padding: 3px 9px; border-radius: 99px; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--muted); }
 .cl-head .pill { display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 14px; border: 0; border-radius: 10px; background: var(--accent); color: #fff; font-weight: 500; }
 .emoji-btn { font-size: 26px; border: 0; background: none; padding: 2px 6px; border-radius: 10px; }
@@ -474,28 +455,6 @@ textarea { outline: none; }
   box-shadow: 0 14px 40px -18px rgba(15,23,42,.4); }
 .note-title { border: 0; background: none; outline: none; font-size: 24px; font-weight: 700; color: #1f2937; padding: 0 0 10px; }
 .note-body { flex: 1; border: 0; background: none; outline: none; resize: none; font: 15.5px/1.7 inherit; color: #1f2937; }
-
-/* Mensajes */
-.chat-item .when { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; font-size: 11px; color: var(--muted); }
-.group-av { display: flex; width: 36px; }
-.group-av .avatar + .avatar { margin-left: -10px; margin-top: 12px; }
-.badge-n, .dock-item .count { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 99px; background: #ef4444; color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; }
-.dock-item .count { position: absolute; top: -4px; right: -4px; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
-.chat-head { border-bottom: .5px solid var(--border); padding-bottom: 12px; }
-.chat-head .people { margin-left: 0; }
-.chat-head .title { font-size: 17px; }
-.chat-log { flex: 1; overflow: auto; padding: 18px 26px; display: flex; flex-direction: column; gap: 3px; }
-.chat-log .day { align-self: center; font-size: 11.5px; color: var(--muted); margin: 14px 0 8px; text-transform: capitalize; }
-.msg { display: flex; flex-direction: column; align-items: flex-start; max-width: 72%; }
-.msg.mine { align-self: flex-end; align-items: flex-end; }
-.msg:not(.cont) { margin-top: 8px; }
-.msg .from { color: var(--muted); font-size: 11.5px; margin: 0 0 2px 10px; }
-.bubble { padding: 8px 12px 8px 14px; border-radius: 18px; background: color-mix(in srgb, var(--text) 8%, var(--panel-solid)); font-size: 14.5px; line-height: 1.4; white-space: pre-wrap; word-break: break-word; }
-.msg.mine .bubble { background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #ec4899)); color: #fff; }
-.bubble .t { font-size: 10.5px; opacity: .65; margin-left: 8px; float: right; margin-top: 6px; }
-.chat-input { display: flex; gap: 8px; padding: 10px 18px 90px; }
-.chat-input input { flex: 1; border: 0; outline: 0; padding: 11px 16px; border-radius: 99px; background: var(--panel-solid); color: var(--text); box-shadow: 0 0 0 .5px var(--border); font-size: 14px; }
-.chat-input .send { width: 42px; border: 0; border-radius: 50%; background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #ec4899)); color: #fff; display: grid; place-items: center; }
 
 /* Calendario */
 .app-calendario .cl-side { width: 260px; }
@@ -596,11 +555,10 @@ body.mobile .cl-side::-webkit-scrollbar, body.mobile .files-side::-webkit-scroll
 body.mobile .cl-items, body.mobile .places { flex-direction: row; gap: 6px; }
 body.mobile .cl-item, body.mobile .place, body.mobile .window-body > nav.side > button { width: auto !important; flex: none; white-space: nowrap; padding: 7px 12px !important; border-radius: 99px !important;
   background: color-mix(in srgb, var(--text) 6%, transparent); }
-body.mobile .cl-item .name small, body.mobile .mini-people, body.mobile .files-side-title, body.mobile .files-side .grow, body.mobile .storage { display: none !important; }
+body.mobile .cl-item .name small, body.mobile .files-side-title, body.mobile .files-side .grow, body.mobile .storage { display: none !important; }
 body.mobile .cl-side-head { padding: 0; flex: none; }
 body.mobile .cl-side-head > span { display: none; }
 body.mobile .cl-search input { width: 90px; }
-body.mobile .chat-item .when, body.mobile .group-av { display: none; }
 body.mobile .mini-today, body.mobile .day-list { display: none; }
 body.mobile .cl-head { padding: 14px 16px 10px; flex-wrap: wrap; }
 body.mobile .cl-head .title { font-size: 21px; }
@@ -610,9 +568,6 @@ body.mobile .cl-add .text { flex-basis: 100%; }
 body.mobile .cl-tasks { padding: 4px 12px 20px; }
 body.mobile .task .menu, body.mobile .task .rm { opacity: 1; }
 body.mobile .note-paper { margin: 0 12px 12px; padding: 18px; }
-body.mobile .chat-log { padding: 12px; }
-body.mobile .msg { max-width: 86%; }
-body.mobile .chat-input { padding: 8px 10px; }
 body.mobile .cal-grid { margin: 0 8px 8px; }
 body.mobile .cal-grid .ev { font-size: 0; padding: 0; height: 5px; border-radius: 3px; border: 0; background: var(--c); }
 body.mobile .cal-grid .more-ev { display: none; }

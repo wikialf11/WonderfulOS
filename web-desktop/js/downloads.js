@@ -1,12 +1,12 @@
-// Descargas del Navegador: el archivo lo baja el servidor de WonderfulOS directamente a tu
-// nube; el escritorio solo guarda la referencia y muestra el progreso.
+// Descargas del Navegador: el archivo lo baja el servicio local directamente a
+// Archivos › Descargas; el escritorio solo guarda la referencia y muestra el progreso.
 import { fs, basename, isCloud } from './fs.js';
 import { api } from './api.js';
 
 export const humanSize = (n) => !n ? '' : n < 1024 ** 2 ? `${Math.max(1, Math.round(n / 1024))} KB` : n < 1024 ** 3 ? `${(n / 1024 ** 2).toFixed(1)} MB` : `${(n / 1024 ** 3).toFixed(2)} GB`;
 
 export async function startDownload(ctx, { url, path, size = 0, mime = '' }) {
-  if (!isCloud()) throw new Error('Para descargar necesitas iniciar sesión en WonderfulOS');
+  if (!isCloud()) throw new Error('Para descargar necesitas el servicio local de WonderfulOS');
   const { id } = await api('downloads', { method: 'POST', body: { url } });
   fs.setBlob(path, { blob: id, size, mime, progress: 0, source: url });
   ctx.notify(`Guardando ${basename(path)} en Descargas…`, 3000, { title: 'Descarga', icon: 'navegador' });

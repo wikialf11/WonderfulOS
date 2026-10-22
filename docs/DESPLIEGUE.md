@@ -1,4 +1,8 @@
-# Despliegue de WonderfulOS (en la nube, solo ofimática)
+# Despliegue de WonderfulOS (histórico, en la nube)
+
+> **Nota:** este documento describe un despliegue antiguo en la nube. La versión
+> actual es privada y local: no usa Stripe, ni servidores externos, ni planes de
+> espacio. Se conserva solo como referencia histórica.
 
 WonderfulOS se usa desde el navegador. Las apps (Texto, Cálculo, Presentaciones) se
 ejecutan en el ordenador de cada usuario, así que el servidor solo guarda

@@ -43,7 +43,7 @@ function makeApp(id, name, description, kind) {
     id, name, description,
     extensions: EXTS[id],
     async launch(ctx, path) {
-      if (!isCloud()) return ctx.notify('La oficina funciona con tu cuenta de WonderfulOS: inicia sesión.', 5000, { title: name, icon: id });
+      if (!isCloud()) return ctx.notify('La oficina necesita el servicio local de WonderfulOS.', 5000, { title: name, icon: id });
       // WonderfulOS instalado en el ordenador. En el Mac, la misma oficina que la versión online
       // (dentro del motor Linux); en los demás, LibreOffice de escritorio del propio equipo.
       const d = window.nubeosDesktop;
@@ -145,7 +145,7 @@ export function openEditor(ctx, app, path, prepare = null) {
   });
   start();
 
-  // Mensajes de LibreOffice: listo, cambios sin guardar y cerrar.
+  // Avisos de LibreOffice: listo, cambios sin guardar y cerrar.
   const send = (MessageId, Values = {}) => iframe.contentWindow?.postMessage(JSON.stringify({ MessageId, SendTime: Date.now(), Values }), origin);
   // El documento está listo. Se quita el aviso con la primera señal fiable: según la versión de
   // Collabora, Document_Loaded puede no llegar (alguna ventana suya bloquea la inicialización),

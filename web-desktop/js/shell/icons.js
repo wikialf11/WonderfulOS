@@ -133,12 +133,6 @@ export const ICONS = {
     <circle cx="38" cy="44" r="6" fill="#ea580c" fill-opacity=".55"/>
     <path d="M50 52l22 22M62 64l6-6M68 70l5-5" stroke="#fff" stroke-width="8" stroke-linecap="round"/>`),
 
-  // Mensajes: dos burbujas superpuestas, violeta.
-  mensajes: base('#8B5CF6', `
-    <rect x="18" y="24" width="44" height="32" rx="12" fill="#fff" fill-opacity=".45"/>
-    <path d="M44 38h26a12 12 0 0 1 12 12v8a12 12 0 0 1-12 12h-4l2 9-11-9H44a12 12 0 0 1-12-12v-8a12 12 0 0 1 12-12Z" fill="W"/>
-    <circle cx="48" cy="54" r="3" fill="#6d28d9"/><circle cx="57" cy="54" r="3" fill="#6d28d9"/><circle cx="66" cy="54" r="3" fill="#6d28d9"/>`),
-
   correo: base('#4F46E5', `
     <rect x="18" y="28" width="64" height="46" rx="9" fill="W"/>
     <path d="M22 33l28 21 28-21" fill="none" stroke="#5b6cff" stroke-opacity=".8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`),
@@ -161,7 +155,6 @@ const folderSvg = (c1, c2) => `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org
 
 export const FILE_ICONS = {
   folder: folderSvg('#7cc0ff', '#3b82f6'),
-  sharedFolder: folderSvg('#c4b5fd', '#8b5cf6'),
   text: page('#f59e0b', '<path d="M20 30h24M20 37h24M20 44h16" stroke="#f59e0b" stroke-width="3" stroke-linecap="round"/>'),
   sheet: page('#16a34a', '<rect x="19" y="28" width="26" height="20" rx="3" fill="none" stroke="#16a34a" stroke-width="2.5"/><path d="M19 35h26M19 41h26M28 28v20" stroke="#16a34a" stroke-width="2"/>'),
   slides: page('#e11d48', '<rect x="18" y="29" width="28" height="18" rx="3" fill="#e11d48" fill-opacity=".85"/>'),
@@ -214,7 +207,6 @@ export const GLYPHS = {
   dock: line('<rect x="3" y="14" width="18" height="6" rx="2.5"/><path d="M7 17h.01M12 17h.01M17 17h.01"/>'),
   user: line('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'),
   info: line('<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/>'),
-  share: line('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18.5 14a6.5 6.5 0 0 1 3 6"/>'),
   upload: line('<path d="M12 16V5M7 10l5-5 5 5M5 20h14"/>'),
   cloud: line('<path d="M7 18a5 5 0 0 1-.6-9.96A6.5 6.5 0 0 1 19 9.5a4.25 4.25 0 0 1-.5 8.5Z"/>'),
   plusDoc: line('<path d="M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M12 11v6M9 14h6"/>'),
