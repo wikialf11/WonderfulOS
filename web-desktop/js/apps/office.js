@@ -1,8 +1,8 @@
 // Texto, Cálculo y Presentaciones: LibreOffice (vía Collabora Online) dentro de
 // una ventana de WonderfulOS, con los colores, la forma y el tema del sistema.
-// El servidor de WonderfulOS entrega y guarda los archivos (server/office.mjs).
+// El servicio local entrega y guarda los archivos (server/office.mjs).
 import { api } from '../api.js';
-import { basename, isCloud } from '../fs.js';
+import { basename, isLocalService } from '../fs.js';
 import { settings } from '../shell/settings.js';
 
 const EXTS = {
@@ -43,9 +43,9 @@ function makeApp(id, name, description, kind) {
     id, name, description,
     extensions: EXTS[id],
     async launch(ctx, path) {
-      if (!isCloud()) return ctx.notify('La oficina necesita el servicio local de WonderfulOS.', 5000, { title: name, icon: id });
-      // WonderfulOS instalado en el ordenador. En el Mac, la misma oficina que la versión online
-      // (dentro del motor Linux); en los demás, LibreOffice de escritorio del propio equipo.
+      if (!isLocalService()) return ctx.notify('La oficina necesita el servicio local de WonderfulOS.', 5000, { title: name, icon: id });
+      // WonderfulOS instalado en el ordenador. En el Mac, la oficina dentro del motor Linux;
+      // en los demás, LibreOffice de escritorio del propio equipo.
       const d = window.nubeosDesktop;
       const engine = d && (await d.office.mode?.().catch(() => '')) === 'motor';
       if (d && !engine) return openLocal(ctx, { id, name }, kind, path);
@@ -108,7 +108,7 @@ export function openEditor(ctx, app, path, prepare = null) {
   const iframe = win.body.querySelector('iframe');
   const loading = win.body.querySelector('.office-loading');
 
-  const target = node.share ? { share: node.share, rel: node.rel || '/' } : { path };
+  const target = { path };
   let origin = '';
   let tries = 0, retryTimer = null, revealTimer = null;
   // En el Mac la oficina vive en el motor Linux: se enciende (y la primera vez se instala) antes.

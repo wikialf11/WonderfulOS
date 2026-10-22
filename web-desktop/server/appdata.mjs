@@ -1,6 +1,6 @@
-// Datos de las apps de WonderfulOS (Listas, Notas, Calendario y Recordatorios):
+// Datos de las apps de WonderfulOS (Listas, Notas, Calendario y Llavero):
 // documentos JSON guardados en el disco local y sincronizados al momento con
-// las ventanas abiertas del mismo usuario.
+// las ventanas abiertas.
 //
 // Cada documento: { id, app, owner, data, version, updated }.
 // Los cambios llegan como operaciones pequeñas sobre `data` (set / del / push).
@@ -14,7 +14,7 @@ import * as store from './store.mjs';
 const { HttpError } = store;
 const fail = (status, message) => { throw new HttpError(status, message); };
 
-export const APPS = ['listas', 'notas', 'calendario', 'recordatorios', 'llavero'];
+export const APPS = ['listas', 'notas', 'calendario', 'llavero'];
 const MAX_DOC = 2 * 1024 * 1024;
 const DIR = path.join(store.DATA, 'apps');
 mkdirSync(DIR, { recursive: true });
@@ -31,10 +31,7 @@ function save(d) {
   renameSync(`${file}.tmp`, file);
 }
 const isOwner = (d, user) => d.owner === user;
-const view = (d) => {
-  const { members, ...rest } = d;
-  return { ...rest, role: 'owner' };
-};
+const view = (d) => d;
 
 function get(user, app, id) {
   const d = docs.get(id);
@@ -58,11 +55,6 @@ function broadcast(d, type = 'doc') {
     : { type, doc: view(d) };
   for (const res of streams.get(d.owner) || []) res.write(`data: ${JSON.stringify(payload)}\n\n`);
 }
-/** Aviso a una cuenta (descargas, inicio de sesión del Navegador), si está conectada. */
-export function notifyUser(user, payload) {
-  for (const res of streams.get(user) || []) res.write(`data: ${JSON.stringify({ type: 'notice', ...payload })}\n\n`);
-}
-
 // ---------- Operaciones ----------
 export function list(user, app) {
   if (!APPS.includes(app)) fail(404, 'App desconocida');

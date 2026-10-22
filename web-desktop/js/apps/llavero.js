@@ -2,7 +2,7 @@
 import { keychain, generatePassword, strength, hostOf } from '../keychain.js';
 import { ICONS, GLYPHS } from '../shell/icons.js';
 import { confirm } from '../dialogs.js';
-import { avatarColor, emptyState } from '../cloud.js';
+import { avatarColor, emptyState } from '../appdata.js';
 import { esc } from '../util.js';
 
 const STRENGTH = [['Muy débil', '#ef4444'], ['Débil', '#f97316'], ['Aceptable', '#eab308'], ['Fuerte', '#22c55e'], ['Muy fuerte', '#10b981']];
@@ -22,7 +22,7 @@ export default {
 
   async launch(ctx, opts = {}) {
     const win = ctx.createWindow({ title: 'Llavero', width: 880, height: 580 });
-    win.body.classList.add('app-cloud', 'app-llavero');
+    win.body.classList.add('app-workspace', 'app-llavero');
     const $ = (s) => win.body.querySelector(s);
     let current = null, query = '', editing = null, reveal = false;
     try { await keychain.init(); } catch (e) { win.body.innerHTML = emptyState(ICONS.llavero, 'No se pudo abrir el llavero', e.message); return; }
@@ -32,7 +32,7 @@ export default {
       win.body.innerHTML = `<form class="kc-lock">
         <div class="kc-icon">${ICONS.llavero}</div>
         <h2>${first ? 'Crea tu llavero' : 'Llavero bloqueado'}</h2>
-        <p>${first ? 'Elige una contraseña maestra. Tus contraseñas se guardan cifradas en este dispositivo, sin cuenta ni conexión: nadie más puede leerlas, ni siquiera WonderfulOS. <strong>Si la olvidas, no se pueden recuperar.</strong>' : 'Escribe tu contraseña maestra para ver tus contraseñas.'}</p>
+        <p>${first ? 'Elige una contraseña maestra. Tus contraseñas se guardan cifradas en este dispositivo, sin conexión: nadie más puede leerlas, ni siquiera WonderfulOS. <strong>Si la olvidas, no se pueden recuperar.</strong>' : 'Escribe tu contraseña maestra para ver tus contraseñas.'}</p>
         <input type="password" name="p1" placeholder="Contraseña maestra" autocomplete="${first ? 'new-password' : 'current-password'}" required>
         ${first ? '<input type="password" name="p2" placeholder="Repítela" autocomplete="new-password" required>' : ''}
         <p class="err" hidden></p>
@@ -83,7 +83,7 @@ export default {
       const main = $('.cl-main');
       if (editing) return editForm(main, editing);
       const e = keychain.entries().find((x) => x.id === current);
-      if (!e) { main.innerHTML = emptyState(ICONS.llavero, 'Sin contraseñas', 'Pulsa + para guardar la primera, o guárdalas al iniciar sesión desde el Navegador.'); return; }
+      if (!e) { main.innerHTML = emptyState(ICONS.llavero, 'Sin contraseñas', 'Pulsa + para guardar la primera.'); return; }
       const [sLabel, sColor] = STRENGTH[strength(e.pass)];
       main.innerHTML = `
         <header class="cl-head"><span class="site-av big" style="background:${avatarColor(e.site || e.name)}">${esc((e.name || e.site || '?')[0].toUpperCase())}</span>

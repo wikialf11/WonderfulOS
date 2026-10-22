@@ -3,10 +3,10 @@
 // Uso: node os/iso/tools/gen-assets.mjs
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { ICONS, FILE_ICONS } from '../../shell/icons.js';
+import { ICONS, FILE_ICONS } from '../../../web-desktop/js/shell/icons.js';
 
 const root = fileURLToPath(new URL('../config/includes.chroot/usr/share/', import.meta.url));
-const theme = `${root}icons/WonderfulOS/`;
+const theme = `${root}icons/NubeOS/`;
 const put = (dir, names, svg) => {
   mkdirSync(theme + dir, { recursive: true });
   for (const n of names) writeFileSync(`${theme}${dir}/${n}.svg`, svg);
@@ -16,7 +16,6 @@ const put = (dir, names, svg) => {
 put('scalable/apps', ['nubeos-navegador', 'firefox-esr', 'firefox', 'web-browser'], ICONS.navegador);
 put('scalable/apps', ['nubeos-archivos', 'org.kde.dolphin', 'system-file-manager'], ICONS.archivos);
 put('scalable/apps', ['nubeos-ajustes', 'systemsettings', 'preferences-system'], ICONS.ajustes);
-put('scalable/apps', ['nubeos-tienda', 'org.kde.discover', 'plasmadiscover'], ICONS.tienda);
 put('scalable/apps', ['nubeos-launchpad', 'start-here-kde', 'start-here-kde-plasma', 'start-here-kde-symbolic', 'start-here-kde-plasma-symbolic', 'start-here-symbolic', 'start-here-debian', 'debian-logo', 'kde', 'plasma', 'org.kde.plasma.kickerdash', 'applications-all'], ICONS.launchpad);
 put('scalable/apps', ['nubeos-logo', 'start-here', 'distributor-logo', 'install-debian', 'calamares', 'system-software-install'], ICONS.logo);
 put('scalable/apps', ['nubeos-buscar', 'krunner', 'system-search'], ICONS.buscar);
@@ -58,20 +57,4 @@ Type=Scalable
 Context=MimeTypes
 `);
 
-// Fondo de pantalla "Aurora" (claro) como SVG. Se pasa a JPG 3840x2160 con build.sh (macOS: qlmanage + sips).
-const wp = `${root}wallpapers/WonderfulOS/`;
-mkdirSync(`${wp}contents/images`, { recursive: true });
-writeFileSync(`${wp}aurora.svg`, `<svg xmlns="http://www.w3.org/2000/svg" width="3840" height="2160" viewBox="0 0 3840 2160">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#eef2ff"/><stop offset="1" stop-color="#fdf2f8"/></linearGradient>
-    <radialGradient id="a" cx=".12" cy=".18" r=".6"><stop offset="0" stop-color="#7dd3fc"/><stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/></radialGradient>
-    <radialGradient id="b" cx=".88" cy=".22" r=".55"><stop offset="0" stop-color="#c4b5fd"/><stop offset="1" stop-color="#c4b5fd" stop-opacity="0"/></radialGradient>
-    <radialGradient id="c" cx=".7" cy=".95" r=".7"><stop offset="0" stop-color="#f9a8d4"/><stop offset="1" stop-color="#f9a8d4" stop-opacity="0"/></radialGradient>
-    <radialGradient id="d" cx=".15" cy=".9" r=".6"><stop offset="0" stop-color="#a5b4fc"/><stop offset="1" stop-color="#a5b4fc" stop-opacity="0"/></radialGradient>
-  </defs>
-  <rect width="3840" height="2160" fill="url(#bg)"/>
-  <rect width="3840" height="2160" fill="url(#a)"/><rect width="3840" height="2160" fill="url(#b)"/>
-  <rect width="3840" height="2160" fill="url(#c)"/><rect width="3840" height="2160" fill="url(#d)"/>
-</svg>`);
-writeFileSync(`${wp}metadata.json`, JSON.stringify({ KPlugin: { Id: 'WonderfulOS', Name: 'WonderfulOS Aurora', Authors: [{ Name: 'WonderfulOS' }], License: 'CC-BY-SA-4.0' } }, null, 2));
 console.log('Recursos generados en', root);

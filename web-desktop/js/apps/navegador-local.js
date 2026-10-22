@@ -46,7 +46,7 @@ export default {
       for (const t of tabs) {
         const el = document.createElement('div');
         el.className = `tab${t === active ? ' on' : ''}`;
-        el.innerHTML = `${t.favicon ? `<img src="${esc(t.favicon)}" alt="">` : `<span class="dot">${GLYPHS.cloud}</span>`}<span class="t">${esc(t.title || 'Pestaña nueva')}</span><button class="x" title="Cerrar pestaña">×</button>`;
+        el.innerHTML = `${t.favicon ? `<img src="${esc(t.favicon)}" alt="">` : `<span class="dot">${GLYPHS.logo}</span>`}<span class="t">${esc(t.title || 'Pestaña nueva')}</span><button class="x" title="Cerrar pestaña">×</button>`;
         el.onclick = () => select(t);
         el.querySelector('.x').onclick = (e) => { e.stopPropagation(); closeTab(t); };
         box.appendChild(el);

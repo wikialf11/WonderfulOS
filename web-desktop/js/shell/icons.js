@@ -1,18 +1,12 @@
 // Iconos de WonderfulOS. Estilo plano y minimalista: fondo de un único color sólido
-// muy saturado, formas blancas y sombra propia.
+// muy saturado y formas blancas, sin degradados ni sombras.
 
 const SQ = 'M3 3H97V97H3Z'; // cuadrado con esquinas en pico
 
-let uid = 0;
 function base(bg, body) {
-  const id = `i${++uid}`;
   return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-  <defs>
-    <linearGradient id="${id}w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity=".82"/></linearGradient>
-    <filter id="${id}s" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2.5" stdDeviation="2.5" flood-color="#0b1020" flood-opacity=".22"/></filter>
-  </defs>
   <path d="${SQ}" fill="${bg}"/>
-  <g filter="url(#${id}s)">${body.replaceAll('W', `url(#${id}w)`)}</g>
+  <g>${body.replaceAll('W', '#fff')}</g>
 </svg>`;
 }
 
@@ -61,11 +55,6 @@ export const ICONS = {
     <rect x="42" y="24" width="16" height="7" rx="3.5" fill="#8a94a8"/>
     <path d="M44 46v24M56 46v24" stroke="#c9d0dd" stroke-width="3" stroke-linecap="round"/>`),
 
-  tienda: base('#FF7A00', `
-    <path d="M28 40h44l-4 34a6 6 0 0 1-6 5H38a6 6 0 0 1-6-5Z" fill="W"/>
-    <path d="M40 40v-6a10 10 0 0 1 20 0v6" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
-    <circle cx="42" cy="52" r="3" fill="#ff5f6d"/><circle cx="58" cy="52" r="3" fill="#ff5f6d"/>`),
-
   // WonderfulOS: tres círculos de color que se mezclan.
   logo: base('#5B21B6', `
     <circle cx="50" cy="39" r="17" fill="#ff5f6d" fill-opacity=".9"/>
@@ -107,12 +96,6 @@ export const ICONS = {
     <path d="M62 22v8a4 4 0 0 0 4 4h8Z" fill="#0e7490" fill-opacity=".35"/>
     <path d="M31 46h30M31 55h30M31 64h18" stroke="#0e7490" stroke-opacity=".5" stroke-width="4" stroke-linecap="round"/>`),
 
-  // Fotos: paisaje (sol y montañas) sobre fondo coral.
-  fotos: base('#F43F5E', `
-    <rect x="20" y="24" width="60" height="52" rx="10" fill="#fff" fill-opacity=".28"/>
-    <circle cx="62" cy="40" r="7" fill="W"/>
-    <path d="M20 70l18-22 12 14 8-9 22 23v0a10 10 0 0 1-10 10H30a10 10 0 0 1-10-10Z" fill="W"/>`),
-
   // Calendario: tarjeta con una semana de puntos y el día marcado.
   calendario: base('#EC4899', `
     <rect x="20" y="24" width="60" height="54" rx="11" fill="W"/>
@@ -121,21 +104,12 @@ export const ICONS = {
     ${[0, 1, 2, 3].map((c) => [0, 1, 2].map((r) => `<circle cx="${33 + c * 11.3}" cy="${48 + r * 10}" r="3" fill="#be185d" fill-opacity=".3"/>`).join('')).join('')}
     <circle cx="55.6" cy="58" r="6" fill="#be185d"/>`),
 
-  // Recordatorios: campana con un destello.
-  recordatorios: base('#3B82F6', `
-    <path d="M50 22a18 18 0 0 0-18 18v12l-7 10h50l-7-10V40a18 18 0 0 0-18-18Z" fill="W"/>
-    <path d="M42 68a8 8 0 0 0 16 0Z" fill="W"/>
-    <circle cx="68" cy="28" r="7" fill="#fde047"/>`),
-
   // Llavero: llave sobre fondo naranja.
   llavero: base('#F97316', `
     <circle cx="38" cy="44" r="15" fill="W"/>
     <circle cx="38" cy="44" r="6" fill="#ea580c" fill-opacity=".55"/>
     <path d="M50 52l22 22M62 64l6-6M68 70l5-5" stroke="#fff" stroke-width="8" stroke-linecap="round"/>`),
 
-  correo: base('#4F46E5', `
-    <rect x="18" y="28" width="64" height="46" rx="9" fill="W"/>
-    <path d="M22 33l28 21 28-21" fill="none" stroke="#5b6cff" stroke-opacity=".8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`),
 };
 
 // ---------- Iconos de archivos (planos, sin fondo) ----------
@@ -146,15 +120,14 @@ function page(color, mark) {
     ${mark}
   </svg>`;
 }
-const folderSvg = (c1, c2) => `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-  <defs><linearGradient id="f${++uid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs>
-  <path d="M6 16a5 5 0 0 1 5-5h14l6 6h22a5 5 0 0 1 5 5v4H6Z" fill="${c2}" fill-opacity=".75"/>
-  <rect x="6" y="22" width="52" height="33" rx="6" fill="url(#f${uid})"/>
+const folderSvg = (color) => `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path d="M6 16a5 5 0 0 1 5-5h14l6 6h22a5 5 0 0 1 5 5v4H6Z" fill="${color}" fill-opacity=".8"/>
+  <rect x="6" y="22" width="52" height="33" rx="6" fill="${color}"/>
   <rect x="6" y="22" width="52" height="6" rx="3" fill="#fff" fill-opacity=".35"/>
 </svg>`;
 
 export const FILE_ICONS = {
-  folder: folderSvg('#7cc0ff', '#3b82f6'),
+  folder: folderSvg('#3b82f6'),
   text: page('#f59e0b', '<path d="M20 30h24M20 37h24M20 44h16" stroke="#f59e0b" stroke-width="3" stroke-linecap="round"/>'),
   sheet: page('#16a34a', '<rect x="19" y="28" width="26" height="20" rx="3" fill="none" stroke="#16a34a" stroke-width="2.5"/><path d="M19 35h26M19 41h26M28 28v20" stroke="#16a34a" stroke-width="2"/>'),
   slides: page('#e11d48', '<rect x="18" y="29" width="28" height="18" rx="3" fill="#e11d48" fill-opacity=".85"/>'),
@@ -205,12 +178,9 @@ export const GLYPHS = {
   gridView: line('<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>'),
   palette: line('<path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.5-.8 1.2-1.6-.4-1 .3-2.4 1.6-2.4H17a4 4 0 0 0 4-4c0-5.5-4-10-9-10Z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/>'),
   dock: line('<rect x="3" y="14" width="18" height="6" rx="2.5"/><path d="M7 17h.01M12 17h.01M17 17h.01"/>'),
-  user: line('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'),
   info: line('<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/>'),
   upload: line('<path d="M12 16V5M7 10l5-5 5 5M5 20h14"/>'),
-  cloud: line('<path d="M7 18a5 5 0 0 1-.6-9.96A6.5 6.5 0 0 1 19 9.5a4.25 4.25 0 0 1-.5 8.5Z"/>'),
   plusDoc: line('<path d="M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M12 11v6M9 14h6"/>'),
-  logout: line('<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H4"/>'),
   plus: line('<path d="M12 5v14M5 12h14"/>'),
   check: line('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),
   repeat: line('<path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/>', 14),

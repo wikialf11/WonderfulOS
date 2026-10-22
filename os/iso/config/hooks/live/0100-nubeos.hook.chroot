@@ -37,7 +37,7 @@ NUBEOS=1
 OS
 sed -i 's/^PRETTY_NAME=.*/PRETTY_NAME="WonderfulOS 1.0 (Debian 13)"/' /usr/lib/os-release
 
-# ---- Oficina: la misma que la versión online (Collabora), en el propio PC y sin servidores ----
+# ---- Oficina: Collabora en el propio PC ----
 NUBEOS_NO_START=1 bash /usr/share/nubeos/office-setup.sh /usr/share/nubeos/nubeos-office.css
 # No se enciende al arrancar: se inicia solo al abrir Texto, Cálculo o Presentaciones.
 systemctl disable coolwsd 2>/dev/null || true

@@ -21,14 +21,6 @@ contextBridge.exposeInMainWorld('nubeosDesktop', {
     install: () => call('office-install'),
     open: (path, theme) => call('office-open', path, theme),
   },
-  apps: {
-    search: (q) => call('apps-search', q),
-    installed: () => call('apps-installed'),
-    install: (id) => call('apps-install', id),
-    uninstall: (id) => call('apps-uninstall', id),
-    open: (id) => call('apps-open', id),
-  },
-  mail: { start: () => call('mail-start') },
   llavero: {
     load: () => call('llavero-load'),
     save: (data) => call('llavero-save', data),

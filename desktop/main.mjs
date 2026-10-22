@@ -1,15 +1,14 @@
 // WonderfulOS en tu ordenador (Mac, Windows y Linux).
 //
 // Ocupa toda la pantalla y se usa como el sistema: el mismo escritorio de WonderfulOS,
-// pero con la potencia real del equipo. Dentro corre el servidor de WonderfulOS en modo
-// local (archivos en este disco, sin internet obligatorio) y el equipo aporta:
+// pero con la potencia real del equipo. Dentro corre el servicio local de WonderfulOS
+// (archivos en este disco, sin internet obligatorio) y el equipo aporta:
 //  - Navegador: Chromium de verdad (el de esta app), con descargas a tus Descargas.
 //  - Oficina: LibreOffice de escritorio con el aspecto de WonderfulOS (perfil propio).
-//  - Tienda: programas del sistema (Homebrew en Mac, winget en Windows, Flathub en Linux).
+//  - Apps de Linux: se abren en ventanas de WonderfulOS.
 import { app, BrowserWindow, ipcMain, session, shell, dialog, Menu, clipboard } from 'electron';
 import { spawn } from 'node:child_process';
-import { randomBytes } from 'node:crypto';
-import { readFileSync, writeFileSync, mkdirSync, existsSync, renameSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, renameSync, readdirSync, unlinkSync } from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -74,30 +73,34 @@ ipcMain.handle = (ch, fn) => rawHandle(ch, (e, ...args) => {
   return fn(e, ...args);
 });
 async function start() {
+  // Perfil local: sin cuentas ni contraseñas. Se conserva el nombre de perfil de
+  // versiones anteriores para que los archivos ya guardados sigan apareciendo.
+  const profileFile = path.join(DATA, 'perfil.json');
+  let profile = null;
+  try { profile = existsSync(profileFile) ? JSON.parse(readFileSync(profileFile, 'utf8')) : null; } catch { /* perfil dañado */ }
+  if (!profile) {
+    const legacy = path.join(DATA, 'cuenta-local.json');
+    try {
+      const old = existsSync(legacy) ? JSON.parse(readFileSync(legacy, 'utf8')) : null;
+      if (old?.user) profile = { user: old.user };
+    } catch { /* cuenta antigua dañada */ }
+  }
+  const name = String(profile?.user || process.env.USER || process.env.USERNAME || 'yo').toLowerCase().replace(/[^a-z0-9_.-]/g, '').padEnd(3, '0').slice(0, 40);
+  try { writeFileSync(profileFile, JSON.stringify({ user: name }), { mode: 0o600 }); } catch { /* solo lectura */ }
+  try { unlinkSync(path.join(DATA, 'cuenta-local.json')); } catch { /* ya no existe */ }
+  LLAVERO_USER = name;
+
   // Servicio local de la interfaz, solo accesible desde este equipo.
   const port = await freePort();
-  Object.assign(process.env, { NUBEOS_DATA: DATA, PORT: String(port), PROXY_PORT: String(await freePort()), HOST: '127.0.0.1', NUBEOS_LOCAL: '1' });
-  // La oficina es la misma que la versión online (Collabora), en este ordenador: ver office-engine.mjs.
+  Object.assign(process.env, { NUBEOS_DATA: DATA, NUBEOS_USER: name, PORT: String(port), PROXY_PORT: String(await freePort()), HOST: '127.0.0.1', NUBEOS_LOCAL: '1' });
+  // La oficina usa Collabora en este ordenador: ver office-engine.mjs.
   Object.assign(process.env, { COLLABORA_URL: office.OFFICE_URL, NUBEOS_PUBLIC_ORIGIN: `http://127.0.0.1:${port}` });
   await import(pathToFileURL(path.join(WEB, 'server.mjs')).href);
   const store = await import(pathToFileURL(path.join(WEB, 'server', 'store.mjs')).href);
   const origin = `http://127.0.0.1:${port}`;
   LOCAL_ORIGIN = origin;
 
-  // Cuenta local (el usuario del sistema); su contraseña la guarda la app.
-  const accountFile = path.join(DATA, 'cuenta-local.json');
-  const name = (process.env.USER || process.env.USERNAME || 'yo').toLowerCase().replace(/[^a-z0-9_.-]/g, '').padEnd(3, '0').slice(0, 30);
-  let acct = existsSync(accountFile) ? JSON.parse(readFileSync(accountFile, 'utf8')) : null;
-  if (!acct) {
-    acct = { user: name, password: randomBytes(24).toString('hex') };
-    try { store.register(acct.user, acct.password); } catch { /* ya existía */ }
-    writeFileSync(accountFile, JSON.stringify(acct), { mode: 0o600 });
-  }
-  const { token } = store.login(acct.user, acct.password);
-  LLAVERO_USER = acct.user;
-  await session.defaultSession.cookies.set({ url: origin, name: 'nubeos_sid', value: token, httpOnly: true, sameSite: 'lax' });
-
-  local.init({ store, user: acct.user, dataDir: DATA, send: (ch, msg) => win?.webContents.send(ch, msg) });
+  local.init({ store, user: name, dataDir: DATA, send: (ch, msg) => win?.webContents.send(ch, msg) });
   office.init({ here: app.isPackaged ? process.resourcesPath : HERE, web: WEB, dataDir: DATA, port, exe: process.execPath, send: (ch, msg) => win?.webContents.send(ch, msg) });
   linux.init({ resources: app.isPackaged ? process.resourcesPath : HERE, dataDir: DATA, here: app.isPackaged ? process.resourcesPath : HERE, web: WEB, send: (ch, msg) => win?.webContents.send(ch, msg) });
 
@@ -202,7 +205,6 @@ ipcMain.handle('nubeos:open-at-login', (e, on) => { app.setLoginItemSettings({ o
 ipcMain.handle('nubeos:fullscreen', (e, on) => { win.setFullScreen(!!on); return win.isFullScreen(); });
 ipcMain.handle('nubeos:llavero-load', () => readLlavero());
 ipcMain.handle('nubeos:llavero-save', (e, data) => { writeLlavero(data); return { ok: true }; });
-ipcMain.handle('nubeos:mail-start', async () => { await office.startMail(); return office.MAIL_URL; });
 ipcMain.handle('nubeos:office-mode', () => (office.supported() ? 'motor' : 'escritorio'));
 ipcMain.handle('nubeos:office-start', async () => { await office.start(); process.env.NUBEOS_WOPI_URL = await office.wopiUrl(); });
 ipcMain.handle('nubeos:office-open', (e, p, theme) => local.openInOffice(p, theme));
@@ -210,11 +212,6 @@ ipcMain.handle('nubeos:office-available', () => local.officeInstalled());
 ipcMain.handle('nubeos:office-install', () => local.installOffice());
 ipcMain.handle('nubeos:show-in-system', (e, p) => local.reveal(p));
 ipcMain.handle('nubeos:open-with-system', (e, p) => local.openWithSystem(p));
-ipcMain.handle('nubeos:apps-search', (e, q) => local.searchApps(q));
-ipcMain.handle('nubeos:apps-installed', () => local.installedApps());
-ipcMain.handle('nubeos:apps-install', (e, id) => local.installApp(id));
-ipcMain.handle('nubeos:apps-uninstall', (e, id) => local.uninstallApp(id));
-ipcMain.handle('nubeos:apps-open', (e, id) => local.openApp(id));
 // Motor Linux (Mac): apps de Linux en ventanas de WonderfulOS.
 ipcMain.handle('nubeos:linux-status', () => linux.status());
 ipcMain.handle('nubeos:linux-start', () => linux.start().then(() => linux.status()));

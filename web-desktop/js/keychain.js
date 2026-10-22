@@ -1,6 +1,6 @@
 // Llavero de WonderfulOS: contraseñas cifradas en tu dispositivo con tu contraseña maestra.
 // En el escritorio se guarda un archivo local (datos/llavero.json) y en la versión web,
-// localStorage. No usa cuentas ni servidores: solo AES-GCM con una clave derivada por PBKDF2.
+// localStorage. No usa conexión: solo AES-GCM con una clave derivada por PBKDF2.
 // Ni WonderfulOS ni nadie con acceso al disco puede leerlas, y si olvidas la contraseña
 // maestra no se pueden recuperar.
 const STORAGE_KEY = 'nubeos.llavero.v1';

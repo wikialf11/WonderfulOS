@@ -4,7 +4,7 @@
 // En Linux no hace falta (las apps van directas) y en Windows se usa el sistema.
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { existsSync, mkdirSync, readFileSync, writeFileSync, copyFileSync, cpSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync, copyFileSync } from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
 import os from 'node:os';
@@ -19,7 +19,7 @@ export function init({ resources, dataDir, here, web, send }) {
   const bundled = process.arch === 'arm64' ? path.join(resources, 'lima', 'bin', 'limactl') : '';
   const limactl = [bundled, '/opt/homebrew/bin/limactl', '/usr/local/bin/limactl'].find((p) => existsSync(p)) || null;
   // Ruta corta: los sockets de Lima no admiten rutas largas (máx. 104 caracteres).
-  cfg = { limactl, home: process.env.NUBEOS_LIMA_HOME || path.join(os.homedir(), '.nubeos', 'lima'), shared: path.join(dataDir, 'linux-compartido'), template: path.join(here, 'linux', 'nubeos-linux.yaml'), officeScript: path.join(here, 'linux', 'office-setup.sh'), mailScript: path.join(here, 'linux', 'mail-setup.sh'), mailDir: path.join(here, 'linux', 'correo'), officeCss: path.join(web, 'agent', 'office', 'nubeos.css'), send };
+  cfg = { limactl, home: process.env.NUBEOS_LIMA_HOME || path.join(os.homedir(), '.nubeos', 'lima'), shared: path.join(dataDir, 'linux-compartido'), template: path.join(here, 'linux', 'nubeos-linux.yaml'), officeScript: path.join(here, 'linux', 'office-setup.sh'), officeCss: path.join(web, 'agent', 'office', 'nubeos.css'), send };
   mkdirSync(cfg.home, { recursive: true });
   mkdirSync(cfg.shared, { recursive: true });
 }
@@ -77,7 +77,7 @@ export function start() {
   })().finally(() => { state.starting = null; });
   return state.starting;
 }
-export async function stop() { await lima(['stop', NAME], { timeout: 120000 }).catch(() => {}); state.ports.clear(); officeReady = null; mailReady = null; }
+export async function stop() { await lima(['stop', NAME], { timeout: 120000 }).catch(() => {}); state.ports.clear(); officeReady = null; }
 
 // ---------- Apps ----------
 const SAFE = /^[A-Za-z0-9_.-]{3,120}$/;
@@ -151,8 +151,8 @@ export async function openFile(file, name) {
   throw new Error('Este archivo no es una app de Linux');
 }
 // ---------- Oficina ----------
-// La misma oficina que la versión online (Collabora con el aspecto de WonderfulOS), dentro del
-// motor Linux; Lima trae su puerto 9980 a este Mac. La primera vez se descarga (~500 MB).
+// La oficina de WonderfulOS (Collabora con su aspecto), dentro del motor Linux; Lima trae
+// su puerto 9980 a este Mac. La primera vez se descarga (~500 MB).
 let officeReady = null;
 export function startOffice() {
   if (officeReady) return officeReady;
@@ -165,20 +165,5 @@ export function startOffice() {
     await sh('sudo bash /mnt/nubeos/office-setup.sh /mnt/nubeos/nubeos-office.css', 3600000);
   })().catch((e) => { officeReady = null; throw e; });
   return officeReady;
-}
-// ---------- Correo ----------
-// Roundcube con el aspecto de WonderfulOS, en el motor Linux (puerto 9990, traído al Mac por Lima).
-let mailReady = null;
-export function startMail() {
-  if (mailReady) return mailReady;
-  mailReady = (async () => {
-    await start();
-    copyFileSync(cfg.mailScript, path.join(cfg.shared, 'mail-setup.sh'));
-    cpSync(cfg.mailDir, path.join(cfg.shared, 'correo'), { recursive: true });
-    const first = !(await sh('test -d /opt/roundcube && echo si || true')).stdout.trim();
-    if (first) cfg.send('nubeos:notice', { kind: 'linux', text: 'Preparando el Correo. La primera vez tarda un momento.' });
-    await sh('sudo bash /mnt/nubeos/mail-setup.sh /mnt/nubeos/correo', 1800000);
-  })().catch((e) => { mailReady = null; throw e; });
-  return mailReady;
 }
 export const isLinuxApp = (name) => /\.(appimage|deb|flatpakref|flatpak)$/i.test(name);

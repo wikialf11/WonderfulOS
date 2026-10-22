@@ -19,7 +19,7 @@ escucha en `127.0.0.1`.
 │  ├─ ventana + Chromium           └─ http://127.0.0.1:4310          │
 │  ├─ servicio local (Node)                                          │
 │  │   ├─ API de archivos y apps                                     │
-│  │   ├─ datos de Listas, Notas y Calendario                        │
+│  │   ├─ datos de Listas, Notas, Calendario y Llavero              │
 │  │   └─ proxy de navegación (127.0.0.1:4311)                       │
 │  ├─ oficina (LibreOffice / motor local)                            │
 │  └─ Llavero cifrado                                                │
@@ -35,10 +35,11 @@ escucha en `127.0.0.1`.
 | Privacidad | Todo se guarda en el disco local | Los datos no salen del equipo. |
 | Servicio | Node sin dependencias en `web-desktop/server.mjs` | Sirve la interfaz, los archivos y los datos de las apps. |
 | Acceso | Solo `127.0.0.1` | El servicio no se expone a la red local ni a internet. |
-| Archivos | Árbol JSON por usuario + blobs en disco | Sencillo, rápido y fácil de copiar o hacer copia de seguridad. |
+| Perfil | Un único perfil local, sin cuentas ni contraseñas de sistema | No hay inicio de sesión ni sesiones que mantener. |
+| Archivos | Árbol JSON del perfil + blobs en disco | Sencillo, rápido y fácil de copiar o hacer copia de seguridad. |
 | Apps | HTML/JS sin compilación, API común `ctx` | Mismo código en Electron y en el navegador. |
 | Oficina | LibreOffice del equipo o motor Linux local | Documentos reales sin depender de un servicio externo. |
-| Llavero | AES-GCM + PBKDF2, sin cuenta ni sincronización | Solo el usuario puede descifrarlo. |
+| Llavero | AES-GCM + PBKDF2, con contraseña maestra propia | Solo el usuario puede descifrarlo. |
 | Navegador | Chromium de Electron o proxy local | Navegar por internet es una acción voluntaria del usuario. |
 
 ---
@@ -51,11 +52,11 @@ Electron arranca el servicio local y abre la interfaz. En macOS puede usar un
 motor Linux (Lima) para la oficina y las apps de Linux. En Windows y Linux usa
 las aplicaciones del propio sistema cuando están disponibles.
 
-- `main.mjs`: ventana, menús, IPC y ciclo de vida.
-- `local.mjs`: arranque del servicio local y de la oficina.
+- `main.mjs`: ventana, menús, IPC, perfil local y ciclo de vida.
+- `local.mjs`: archivos del sistema, oficina del equipo y descargas.
 - `linux.mjs`: motor Linux opcional.
 - `preload.cjs`: puente seguro entre la interfaz y Electron.
-- `office-engine.mjs`: documentos y conversiones locales.
+- `office-engine.mjs`: oficina local y dirección WOPI.
 
 El Llavero usa IPC (`nubeos:llavero-load/save`) y guarda `datos/llavero.json`
 con permisos `0600`.
@@ -78,7 +79,7 @@ reciben una API común (`ctx.fs`, `ctx.createWindow`, `ctx.notify`, `ctx.launch`
 ### 2.3 Archivos
 
 `web-desktop/js/fs.js` ofrece una API síncrona para las apps. En modo local
-escribe en `localStorage`; con el servicio local carga el árbol del usuario y
+escribe en `localStorage`; con el servicio local carga el árbol del perfil y
 envía los cambios en segundo plano.
 
 - Carpetas: `/Documentos`, `/Descargas`, `/Imágenes`.
@@ -90,11 +91,11 @@ envía los cambios en segundo plano.
 
 ### 2.4 Datos de las apps
 
-Listas, Notas y Calendario usan `web-desktop/js/cloud.js` contra la API local de
+Listas, Notas y Calendario usan `web-desktop/js/appdata.js` contra la API local de
 `server/appdata.mjs`. La caché es local y los cambios se aplican al instante;
 el servicio confirma la escritura en el disco.
 
-- Cada usuario local tiene sus propios documentos.
+- Todos los documentos pertenecen al perfil local.
 - No hay invitaciones, miembros, roles ni avisos de compartición.
 - El Llavero es independiente: no usa esta API.
 
@@ -128,8 +129,7 @@ sincronización con una nube.
 
 - El servicio escucha solo en loopback (`127.0.0.1`).
 - La API exige la cabecera `x-nubeos` y comprueba el origen.
-- Las sesiones son cookies `HttpOnly` y separan perfiles en el mismo equipo;
-  no son cuentas remotas.
+- No hay cuentas, contraseñas de sistema, sesiones ni cierre de sesión.
 - Los blobs y los datos de las apps viven en `~/.nubeos` o en el directorio
   indicado por `NUBEOS_DATA`.
 - El Llavero cifra con AES-GCM y deriva la clave con PBKDF2. No hay recuperación
@@ -140,6 +140,6 @@ sincronización con una nube.
 
 ## 4. Copias de seguridad
 
-Basta con copiar el directorio de datos (`~/.nubeos` por defecto). Incluye
-usuarios, archivos, documentos de las apps y el Llavero cifrado. Para restaurar,
-se copia de nuevo antes de arrancar WonderfulOS.
+Basta con copiar el directorio de datos (`~/.nubeos` por defecto). Incluye el
+perfil, los archivos, los documentos de las apps y el Llavero cifrado. Para
+restaurar, se copia de nuevo antes de arrancar WonderfulOS.

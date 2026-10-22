@@ -70,7 +70,7 @@ export default {
         <div class="start-logo"><span>${GLYPHS.logo}</span>Buscar en internet</div>
         <label class="start-search">${GLYPHS.search}<input placeholder="¿Qué quieres buscar?" spellcheck="false"></label>
         <div class="favs">${FAVORITES.map(([n, u, c]) => `<button data-url="${u}"><span style="background:${c}">${esc(n[0])}</span>${esc(n)}</button>`).join('')}</div>
-        ${getProxyOrigin() ? '' : '<p class="start-note">El navegador necesita el servidor de WonderfulOS para mostrar webs.</p>'}`;
+        ${getProxyOrigin() ? '' : '<p class="start-note">El navegador necesita el servicio local de WonderfulOS para mostrar webs.</p>'}`;
       const q = start.querySelector('input');
       q.onkeydown = (e) => { if (e.key === 'Enter' && q.value.trim()) go(toUrl(q.value)); };
       start.querySelectorAll('[data-url]').forEach((b) => { b.onclick = () => go(b.dataset.url); });
@@ -96,7 +96,7 @@ export default {
       show(u);
     }
 
-    // Descargas: se guardan en tu nube, en Descargas, con un nombre libre.
+    // Descargas: se guardan en Descargas, con un nombre libre.
     async function save({ url, name, size, mime }) {
       let file = String(name || 'descarga').replace(/[\\/]/g, '-').slice(0, 200) || 'descarga';
       const [, stem, ext] = file.match(/^(.*?)(\.[^.]*)?$/);

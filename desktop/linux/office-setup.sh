@@ -1,6 +1,6 @@
 #!/bin/bash
-# Oficina de WonderfulOS dentro del motor Linux: la misma que la versión online (Collabora
-# Online, LibreOffice en el navegador) con el aspecto de WonderfulOS. Uso: office-setup.sh CSS
+# Oficina de WonderfulOS dentro del motor Linux: Collabora Online (LibreOffice en el
+# navegador) con el aspecto de WonderfulOS. Uso: office-setup.sh CSS
 # Se ejecuta como root; es idempotente (solo instala la primera vez). Sirve para el motor
 # Linux del Mac, para WSL en Windows (sin systemd) y para Linux (Debian/Ubuntu).
 set -eu

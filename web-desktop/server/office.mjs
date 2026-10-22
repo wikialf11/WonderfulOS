@@ -1,12 +1,12 @@
 // Oficina de WonderfulOS: LibreOffice en el navegador mediante Collabora Online.
 //
 // WonderfulOS hace de «anfitrión WOPI»: Collabora pide el archivo a /wopi/files/<id>,
-// lo edita con LibreOffice en su servidor y lo devuelve guardado. Cada acceso va
-// firmado (access_token) con el usuario, el dueño, la ruta y si puede escribir.
+// lo edita con LibreOffice en este ordenador y lo devuelve guardado. Cada acceso va
+// firmado (access_token) con el dueño, la ruta y si puede escribir.
 //
 // Variables:
-//   COLLABORA_URL     Dirección de Collabora que ve el navegador (https://office.ejemplo.com).
-//   COLLABORA_INTERNAL_URL  Opcional: dirección desde la que este servidor lee /hosting/discovery.
+//   COLLABORA_URL     Dirección de Collabora que ve el navegador (http://127.0.0.1:9980).
+//   COLLABORA_INTERNAL_URL  Opcional: dirección desde la que el servicio local lee /hosting/discovery.
 //   NUBEOS_WOPI_URL   Dirección de WonderfulOS que ve Collabora (por defecto, la pública del escritorio).
 //   NUBEOS_OFFICE_SECRET  Clave para firmar los accesos (si falta, se genera y guarda en los datos).
 
@@ -16,7 +16,6 @@ import { stat } from 'node:fs/promises';
 import { pipeline } from 'node:stream/promises';
 import path from 'node:path';
 import * as store from './store.mjs';
-import { machineMode, machineHost } from './provision.mjs';
 
 const { HttpError } = store;
 const fail = (status, message) => { throw new HttpError(status, message); };
@@ -41,15 +40,12 @@ export const KINDS = {
 };
 const template = (ext) => new URL(`./templates/vacio.${ext}`, import.meta.url);
 
-// LibreOffice de cada usuario: el de su ordenador (VPS) o, en pruebas, el de este servidor.
-function officeBase(user) {
-  const mode = machineMode(user);
-  if (mode === 'remoto') return { browser: `https://${machineHost(user)}`, internal: `https://${machineHost(user)}` };
-  // LibreOffice compartido de este servidor (versión web), si está configurado.
+// LibreOffice de este ordenador (Collabora), si está configurado.
+function officeBase() {
   if (COLLABORA_URL) return { browser: COLLABORA_URL, internal: DISCOVERY_URL };
   return null;
 }
-export const officeAvailable = (user) => !!officeBase(user);
+export const officeAvailable = () => !!officeBase();
 
 // ---------- Discovery: qué dirección de Collabora abre cada extensión ----------
 const discoveries = new Map(); // base -> { at, map }
@@ -96,25 +92,19 @@ function readToken(token, fileId) {
 const fileIdOf = (owner, p) => b64(`${owner}\n${p}`);
 
 // ---------- Abrir un documento ----------
-/** target: { path } (propio) o { share, rel } (compartido contigo). */
-export async function open(user, target, publicOrigin) {
-  const base = officeBase(user);
-  if (!base) fail(503, 'En la versión web la oficina no está disponible ahora mismo. Con WonderfulOS instalado en tu ordenador se abre con LibreOffice.');
-  let owner = user, p, canWrite = true;
-  if (target.share) {
-    const s = store.getShare(String(target.share));
-    if (!s || s.to !== user || s.kind === 'app') fail(404, 'No encontrado');
-    p = s.kind === 'file' ? s.path : store.normalize(s.path + store.normalize(String(target.rel || '/')));
-    owner = s.owner;
-    canWrite = s.perm === 'edit';
-  } else p = store.normalize(String(target.path || ''));
+/** target: { path } */
+export async function open(target, publicOrigin) {
+  const base = officeBase();
+  if (!base) fail(503, 'La oficina no está disponible ahora mismo. Con WonderfulOS instalado en tu ordenador se abre con LibreOffice.');
+  const owner = store.USER;
+  const p = store.normalize(String(target.path || ''));
   const node = store.tree(owner)[p];
   if (!node || node.type !== 'file') fail(404, 'No existe ese archivo');
   const ext = (p.match(/\.([^./]+)$/) || [])[1]?.toLowerCase() || '';
   const action = (await actions(base))[ext];
   if (!action) fail(415, `La oficina no abre archivos .${ext || '?'}`);
   const fileId = fileIdOf(owner, p);
-  const token = makeToken({ f: fileId, u: user, o: owner, p, w: canWrite && action.name === 'edit' });
+  const token = makeToken({ f: fileId, u: owner, o: owner, p, w: action.name === 'edit' });
   const wopiBase = (process.env.NUBEOS_WOPI_URL || publicOrigin).replace(/\/$/, '');
   const url = new URL(action.url.replace(/<[^>]*>/g, '').replace(/[?&]$/, ''));
   url.searchParams.set('WOPISrc', `${wopiBase}/wopi/files/${fileId}`);
@@ -126,21 +116,21 @@ export async function open(user, target, publicOrigin) {
 }
 
 /** Crea un documento vacío (docx/xlsx/pptx) en una carpeta propia. */
-export function create(user, dir, kind, name) {
+export function create(dir, kind, name) {
   const k = KINDS[kind];
   if (!k) fail(400, 'Tipo de documento no válido');
   const base = String(name || k.name).replace(/[/\\]/g, '-').replace(/\.[^.]+$/, '') || k.name;
-  const t = store.tree(user);
+  const t = store.tree(store.USER);
   dir = store.normalize(String(dir || '/Documentos'));
   let p = `${dir === '/' ? '' : dir}/${base}.${k.ext}`;
   for (let i = 2; t[p]; i++) p = `${dir === '/' ? '' : dir}/${base} ${i}.${k.ext}`;
   const bytes = readFileSync(template(k.ext));
-  const { id } = store.prepareUpload(user, p, bytes.length);
+  const { id } = store.prepareUpload(store.USER, p, bytes.length);
   writeFileSync(store.blobPath(id), bytes);
-  return { path: p, node: store.finishUpload(user, p, id, bytes.length, '') };
+  return { path: p, node: store.finishUpload(store.USER, p, id, bytes.length, '') };
 }
 
-// ---------- Rutas WOPI (las llama el servidor de Collabora) ----------
+// ---------- Rutas WOPI (las llama Collabora) ----------
 export async function wopiHandler(req, res, url) {
   const send = (status, obj, headers = {}) => {
     res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store', ...headers });

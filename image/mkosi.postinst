@@ -1,7 +1,0 @@
-#!/bin/sh
-# Se ejecuta dentro de la imagen al final de la construcción.
-set -eu
-useradd --create-home --shell /usr/sbin/nologin --groups video,audio,input,render nubeos || true
-systemctl enable NetworkManager.service
-systemctl enable nubeos-kiosk.service
-systemctl set-default graphical.target

@@ -1,6 +1,6 @@
 // Listas (Wonderful Lists dentro de WonderfulOS): tareas con cuenta atrás,
 // recurrencias y recordatorios. Los datos se guardan en este ordenador.
-import { cloud, uid, emptyState } from '../cloud.js';
+import { appdata, uid, emptyState } from '../appdata.js';
 import { ICONS, GLYPHS } from '../shell/icons.js';
 import { prompt, confirm } from '../dialogs.js';
 import { esc } from '../util.js';
@@ -28,7 +28,7 @@ export default {
 
   async launch(ctx) {
     const win = ctx.createWindow({ title: 'Listas', width: 980, height: 620 });
-    win.body.classList.add('app-cloud', 'app-listas');
+    win.body.classList.add('app-workspace', 'app-listas');
     win.body.innerHTML = `
       <aside class="cl-side">
         <div class="cl-side-head"><span>Mis listas</span><button class="icon-btn add-list" title="Nueva lista">${GLYPHS.plus}</button></div>
@@ -38,12 +38,12 @@ export default {
     const $ = (s) => win.body.querySelector(s);
     let current = null, showDone = false;
 
-    try { await cloud.load(APP); } catch (e) { $('.cl-main').innerHTML = emptyState(ICONS.listas, 'Sin conexión', e.message); return; }
+    try { await appdata.load(APP); } catch (e) { $('.cl-main').innerHTML = emptyState(ICONS.listas, 'No se pudo cargar', e.message); return; }
 
     const sortLists = (a, b) => (a.data.created || 0) - (b.data.created || 0);
     function renderSide() {
-      const lists = cloud.docs(APP).sort(sortLists);
-      if (!current || !cloud.get(APP, current)) current = lists[0]?.id || null;
+      const lists = appdata.docs(APP).sort(sortLists);
+      if (!current || !appdata.get(APP, current)) current = lists[0]?.id || null;
       $('.cl-items').innerHTML = '';
       for (const d of lists) {
         const tasks = Object.values(d.data.tasks || {});
@@ -61,9 +61,9 @@ export default {
     function render() {
       renderSide();
       const main = $('.cl-main');
-      const d = current && cloud.get(APP, current);
+      const d = current && appdata.get(APP, current);
       if (!d) {
-        main.innerHTML = emptyState(ICONS.listas, 'Crea tu primera lista', 'La compra, las tareas de casa, un viaje… todo en tu ordenador.');
+        main.innerHTML = emptyState(ICONS.listas, 'Crea tu primera lista', 'El supermercado, las tareas de casa, un viaje… todo en tu ordenador.');
         main.insertAdjacentHTML('beforeend', '<div style="text-align:center"><button class="btn primary first">Nueva lista</button></div>');
         main.querySelector('.first').onclick = newList;
         return;
@@ -133,7 +133,7 @@ export default {
           ...(done.length ? [{ label: 'Borrar completadas', run: () => change(d, done.map((t) => ({ op: 'del', path: ['tasks', t.id] }))) }] : []),
           '-',
           { label: 'Eliminar lista', run: async () => {
-            if (await confirm(win, `¿Eliminar «${d.data.title}»?`)) cloud.remove(APP, d.id).catch((er) => ctx.notify(er.message));
+            if (await confirm(win, `¿Eliminar «${d.data.title}»?`)) appdata.remove(APP, d.id).catch((er) => ctx.notify(er.message));
           } },
         ], r.right - 220, r.bottom + 6);
       };
@@ -149,7 +149,7 @@ export default {
           const dueVal = form.querySelector('.due').value;
           const repeat = await parseRepeat(form.querySelector('.repeat').value, () => prompt(win, '¿Cada cuántos días?', '3'));
           const due = dueVal ? new Date(dueVal).toISOString() : null; // la fecha es opcional
-          change(d, [{ op: 'set', path: ['tasks', uid()], value: { text, done: false, due, repeat, created: Date.now(), by: ctx.account.user } }]);
+          change(d, [{ op: 'set', path: ['tasks', uid()], value: { text, done: false, due, repeat, created: Date.now(), by: ctx.me } }]);
           input.value = '';
           form.querySelector('.due').value = '';
           form.querySelector('.repeat').value = '';
@@ -161,7 +161,7 @@ export default {
       }
     }
 
-    function change(d, ops) { cloud.ops(APP, d.id, ops).catch((e) => ctx.notify(e.message, 5000, { title: 'Listas', icon: APP })); }
+    function change(d, ops) { appdata.ops(APP, d.id, ops).catch((e) => ctx.notify(e.message, 5000, { title: 'Listas', icon: APP })); }
     function toggle(d, t) {
       if (!t.done && t.repeat) {
         // Las tareas recurrentes no se quedan hechas: vuelven con la siguiente fecha.
@@ -172,7 +172,7 @@ export default {
       change(d, [
         { op: 'set', path: ['tasks', t.id, 'done'], value: !t.done },
         { op: 'set', path: ['tasks', t.id, 'doneAt'], value: t.done ? null : Date.now() },
-        { op: 'set', path: ['tasks', t.id, 'doneBy'], value: t.done ? null : ctx.account.user },
+        { op: 'set', path: ['tasks', t.id, 'doneBy'], value: t.done ? null : ctx.me },
       ]);
     }
     function taskMenu(d, t, e) {
@@ -194,14 +194,14 @@ export default {
       const title = await prompt(win, 'Nombre de la lista', 'Lista de casa');
       if (!title) return;
       try {
-        const d = await cloud.create(APP, { title, emoji: EMOJIS[cloud.docs(APP).length % EMOJIS.length], tasks: {}, created: Date.now() });
+        const d = await appdata.create(APP, { title, emoji: EMOJIS[appdata.docs(APP).length % EMOJIS.length], tasks: {}, created: Date.now() });
         current = d.id; render();
       } catch (e) { ctx.notify(e.message); }
     }
     $('.add-list').onclick = newList;
 
     // Tiempo real y cuenta atrás que avanza sola.
-    const off = cloud.subscribe(APP, () => {
+    const off = appdata.subscribe(APP, () => {
       // No repintar mientras escribes en un campo editable.
       const a = document.activeElement;
       if (a && win.body.contains(a) && a.isContentEditable) { renderSide(); return; } // editando un texto

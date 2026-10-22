@@ -2,7 +2,7 @@
 // descárgalos, crea carpetas y documentos. Todo se queda en este equipo.
 import { fileIcon, GLYPHS } from '../shell/icons.js';
 import { prompt, confirm } from '../dialogs.js';
-import { normalize, dirname, basename, isCloud } from '../fs.js';
+import { normalize, dirname, basename, isLocalService } from '../fs.js';
 import { api } from '../api.js';
 import { humanSize, esc } from '../util.js';
 
@@ -83,7 +83,7 @@ export default {
         b.onclick = () => go(p);
         places.appendChild(b);
       }
-      const a = ctx.account?.info;
+      const a = ctx.storage?.info;
       const box = $('.storage');
       box.hidden = !a;
       if (a) {
@@ -111,7 +111,7 @@ export default {
       });
       $('.back').disabled = pos <= 0;
       $('.fwd').disabled = pos >= history.length - 1;
-      $('.upload').hidden = !isCloud();
+      $('.upload').hidden = !isLocalService();
 
       // Elementos
       const all = ctx.fs.exists(dir) ? ctx.fs.list(dir) : [];
@@ -120,7 +120,7 @@ export default {
       items.innerHTML = '';
       if (!list.length) {
         const msg = query ? 'Nada coincide con la búsqueda'
-          : isCloud() ? 'Esta carpeta está vacía. Arrastra archivos aquí o pulsa «Subir».' : 'Esta carpeta está vacía';
+          : isLocalService() ? 'Esta carpeta está vacía. Arrastra archivos aquí o pulsa «Subir».' : 'Esta carpeta está vacía';
         items.innerHTML = `<div class="empty">${esc(msg)}</div>`;
       }
       for (const e of list) {
@@ -190,7 +190,7 @@ export default {
     }
 
     async function uploadFiles(files, target = dir) {
-      if (!isCloud()) return ctx.notify('Para subir archivos necesitas el servicio local de WonderfulOS.');
+      if (!isLocalService()) return ctx.notify('Para subir archivos necesitas el servicio local de WonderfulOS.');
       for (const file of files) {
         uploads.set(file.name, 0);
         render();
@@ -202,7 +202,7 @@ export default {
         uploads.delete(file.name);
         render();
       }
-      ctx.refreshAccount?.();
+      ctx.refreshStorage?.();
     }
 
     // ---- Barra y eventos ----
@@ -227,7 +227,7 @@ export default {
       ctx.menu([
         { label: 'Carpeta', run: () => create('Carpeta', 'Carpeta nueva') },
         '-',
-        ...(isCloud() ? NEW_DOCS.map(([label, def, kind]) => ({ label, run: () => create(label, def, kind) })) : []),
+        ...(isLocalService() ? NEW_DOCS.map(([label, def, kind]) => ({ label, run: () => create(label, def, kind) })) : []),
       ], r.left, r.bottom + 6);
     };
     $('.files-search input').oninput = (e) => { query = e.target.value; render(); };
@@ -271,7 +271,7 @@ export default {
       ev.preventDefault();
       ctx.menu([
         { label: 'Nueva carpeta…', run: () => $('.new').click() },
-        ...(isCloud() ? [{ label: 'Subir archivos…', run: () => picker.click() }] : []),
+        ...(isLocalService() ? [{ label: 'Subir archivos…', run: () => picker.click() }] : []),
       ], ev.clientX, ev.clientY);
     };
     // Arrastrar archivos del ordenador a la ventana.
@@ -289,9 +289,9 @@ export default {
     });
 
     const off = ctx.fs.onChange(() => scheduleRender());
-    const onAccount = () => renderSide();
-    ctx.account?.listeners.add(onAccount);
-    win.onClose(() => { off(); if (renderFrame) cancelAnimationFrame(renderFrame); ctx.account?.listeners.delete(onAccount); return true; });
+    const onStorage = () => renderSide();
+    ctx.storage?.listeners.add(onStorage);
+    win.onClose(() => { off(); if (renderFrame) cancelAnimationFrame(renderFrame); ctx.storage?.listeners.delete(onStorage); return true; });
     go(ctx.fs.isDir(start || '') ? start : '/Documentos');
     if (arg?.upload) uploadFiles(arg.upload, start);
   },

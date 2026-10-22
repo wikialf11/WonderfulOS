@@ -1,20 +1,19 @@
-// Oficina de WonderfulOS en el propio ordenador, sin servidores: la misma que la versión online
-// (Collabora Online con el aspecto de WonderfulOS), funcionando con la potencia del equipo.
+// Oficina de WonderfulOS en el propio ordenador: Collabora Online con el aspecto de
+// WonderfulOS, funcionando con la potencia del equipo.
 //  - Mac (Apple Silicon): dentro del motor Linux (linux.mjs).
 //  - Linux y el sistema WonderfulOS para PC: instalada directamente (en la ISO ya viene).
 //  - Windows: dentro de WSL, el Linux que trae Windows.
-// En todos, Collabora queda en http://127.0.0.1:9980 y pide los archivos al servidor de
-// WonderfulOS de la app (WOPI) por la dirección que devuelve wopiUrl().
+// En todos, Collabora queda en http://127.0.0.1:9980 y pide los archivos al servicio
+// local de WonderfulOS (WOPI) por la dirección que devuelve wopiUrl().
 import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
-import { copyFileSync, cpSync, existsSync, mkdirSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync } from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import * as linux from './linux.mjs';
 
 const run = promisify(execFile);
 export const OFFICE_URL = 'http://127.0.0.1:9980';
-export const MAIL_URL = 'http://127.0.0.1:9990';
 const MAC = process.platform === 'darwin', WIN = process.platform === 'win32';
 let cfg = null; // { here, web, dataDir, port, send, exe }
 let ready = null;
@@ -49,9 +48,8 @@ export function start() {
   return ready;
 }
 export function stop() {
-  ready = null; mailReady = null;
+  ready = null;
   if (winServer) { winServer.kill(); winServer = null; }
-  if (winMail) { winMail.kill(); winMail = null; }
 }
 
 // ---------- Linux ----------
@@ -103,45 +101,7 @@ async function startWindows() {
   await waitUp();
 }
 
-// ---------- Correo (Roundcube con el aspecto de WonderfulOS), igual que la oficina ----------
-let mailReady = null, winMail = null;
-const mailUp = async () => {
-  try { return (await fetch(`${MAIL_URL}/`, { signal: AbortSignal.timeout(3000) })).ok; } catch { return false; }
-};
-function mailFiles() {
-  const dir = path.join(cfg.dataDir, 'correo');
-  mkdirSync(dir, { recursive: true });
-  const script = path.join(dir, 'mail-setup.sh'), assets = path.join(dir, 'correo');
-  copyFileSync(path.join(cfg.here, 'linux', 'mail-setup.sh'), script);
-  cpSync(path.join(cfg.here, 'linux', 'correo'), assets, { recursive: true });
-  return { script, assets };
-}
-export function startMail() {
-  if (mailReady) return mailReady;
-  mailReady = (async () => {
-    if (MAC) return linux.startMail();
-    if (WIN) {
-      if (winMail && await mailUp()) return;
-      await startWindows(); // prepara WSL (la misma distribución que la oficina)
-      const { script, assets } = mailFiles();
-      await wsl(['-d', DISTRO, '-u', 'root', '--', 'env', 'COLORMAIL_NO_START=1', 'bash', toWsl(script), toWsl(assets)], { timeout: 1800000 });
-      if (!winMail) {
-        winMail = spawn('wsl.exe', ['-d', DISTRO, '-u', 'root', '--', 'runuser', '-u', 'colormail', '--', '/usr/bin/php', '-S', '127.0.0.1:9990', '-t', '/opt/roundcube/public_html'], { windowsHide: true, stdio: 'ignore' });
-        winMail.on('exit', () => { winMail = null; mailReady = null; });
-      }
-    } else {
-      if (await mailUp()) return;
-      if (!existsSync('/opt/roundcube')) notice('Preparando el Correo. La primera vez tarda un momento.');
-      const { script, assets } = mailFiles();
-      await run('pkexec', ['bash', script, assets], { timeout: 1800000 });
-    }
-    for (let i = 0; i < 30 && !(await mailUp()); i++) await new Promise((r) => setTimeout(r, 1000));
-    if (!(await mailUp())) throw new Error('El Correo no arrancó. Inténtalo de nuevo.');
-  })().catch((e) => { mailReady = null; throw e; });
-  return mailReady;
-}
-
-// ---------- Dirección por la que Collabora pide los archivos a WonderfulOS ----------
+// ---------- Dirección por la que Collabora pide los archivos al servicio local ----------
 let bridge = null;
 /** Mac: el Mac visto desde Linux. Windows: un puente solo para /wopi/ en la red de WSL. Linux: directo. */
 export async function wopiUrl() {

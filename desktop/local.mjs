@@ -151,64 +151,7 @@ async function openLinuxApp(file) {
   ctx.send('nubeos:notice', { kind: 'linux', text: `Instalando ${path.basename(file)}…` });
   if (ext === 'deb') await run('pkexec', ['apt-get', 'install', '-y', file], { timeout: 1800000 });
   else await run('flatpak', ['install', '-y', '--user', file], { timeout: 1800000 });
-  ctx.send('nubeos:notice', { kind: 'linux', text: `${path.basename(file)} instalado. Lo tienes en la Tienda › Instalados.` });
+  ctx.send('nubeos:notice', { kind: 'linux', text: `${path.basename(file)} instalado. Lo tienes en Ajustes › Apps de Linux.` });
   return { ok: true };
 }
 export function reveal(nubeosPath) { shell.showItemInFolder(realCopy(nubeosPath)); }
-
-// ---------- Tienda: programas del sistema ----------
-const brew = () => ['/opt/homebrew/bin/brew', '/usr/local/bin/brew'].find((b) => existsSync(b));
-export async function searchApps(q) {
-  q = String(q || '').trim();
-  if (!q) return [];
-  if (MAC) {
-    if (!brew()) return [];
-    const { stdout } = await run(brew(), ['search', '--cask', q], { timeout: 60000 }).catch(() => ({ stdout: '' }));
-    return stdout.split('\n').map((s) => s.trim()).filter((s) => s && !s.startsWith('==>')).slice(0, 24).map((id) => ({ id, name: id }));
-  }
-  if (WIN) {
-    const { stdout } = await run('winget', ['search', q, '--source', 'winget', '--accept-source-agreements'], { timeout: 60000 }).catch(() => ({ stdout: '' }));
-    return stdout.split('\n').slice(2).map((l) => l.trim().split(/\s{2,}/)).filter((c) => c.length >= 2).slice(0, 24).map(([name, id]) => ({ id, name }));
-  }
-  const r = await fetch('https://flathub.org/api/v2/search', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ query: q, filters: [] }) }).catch(() => null);
-  const d = r ? await r.json().catch(() => ({})) : {};
-  return (d.hits || []).slice(0, 24).map((h) => ({ id: h.app_id, name: h.name, summary: h.summary, icon: h.icon }));
-}
-export async function installedApps() {
-  if (MAC) {
-    if (!brew()) return [];
-    const { stdout } = await run(brew(), ['list', '--cask'], { timeout: 60000 }).catch(() => ({ stdout: '' }));
-    return stdout.split('\n').filter(Boolean).map((id) => ({ id, name: id }));
-  }
-  if (WIN) return []; // winget no distingue bien lo instalado por WonderfulOS; se muestran los de la búsqueda
-  const { stdout } = await run('flatpak', ['list', '--app', '--columns=application,name']).catch(() => ({ stdout: '' }));
-  return stdout.split('\n').filter(Boolean).map((l) => { const [id, name] = l.split('\t'); return { id, name: name || id }; });
-}
-const SAFE = /^[A-Za-z0-9_.+@-]{2,120}$/;
-export async function installApp(id) {
-  if (!SAFE.test(String(id))) throw new Error('Programa no válido');
-  if (MAC) { if (!brew()) throw new Error('Para instalar programas en el Mac hace falta Homebrew (brew.sh)'); await run(brew(), ['install', '--cask', id], { timeout: 1800000 }); }
-  else if (WIN) await run('winget', ['install', '-e', '--id', id, '--accept-package-agreements', '--accept-source-agreements'], { timeout: 1800000 });
-  else await run('flatpak', ['install', '-y', '--user', 'flathub', id], { timeout: 1800000 });
-  return { ok: true };
-}
-export async function uninstallApp(id) {
-  if (!SAFE.test(String(id))) throw new Error('Programa no válido');
-  if (MAC) await run(brew(), ['uninstall', '--cask', id], { timeout: 600000 });
-  else if (WIN) await run('winget', ['uninstall', '-e', '--id', id], { timeout: 600000 });
-  else await run('flatpak', ['uninstall', '-y', '--user', id], { timeout: 600000 });
-  return { ok: true };
-}
-export async function openApp(id) {
-  if (!SAFE.test(String(id))) throw new Error('Programa no válido');
-  if (MAC) {
-    // El nombre de la app instalada sale de la información de Homebrew.
-    const { stdout } = await run(brew(), ['info', '--cask', '--json=v2', id]).catch(() => ({ stdout: '{}' }));
-    const app = JSON.parse(stdout).casks?.[0]?.artifacts?.flatMap((a) => a.app || []).find((a) => typeof a === 'string');
-    if (app) return shell.openPath(path.join('/Applications', app));
-    throw new Error('No encuentro cómo abrir este programa');
-  }
-  if (WIN) return shell.openExternal(`shell:AppsFolder`);
-  spawn('flatpak', ['run', id], { stdio: 'ignore', detached: true }).unref();
-  return { ok: true };
-}

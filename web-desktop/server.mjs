@@ -1,17 +1,17 @@
 // Servicio local de WonderfulOS (sin dependencias):
-//  - Escritorio web + API (cuentas locales, archivos, subidas y apps): puerto 4310.
+//  - Escritorio + API (archivos, subidas y apps): puerto 4310.
 //  - Proxy del Navegador (server/proxy.mjs): puerto 4311, u otro dominio si se define
 //    PROXY_HOST. Va aparte a propósito: es otro origen y las webs visitadas no pueden
 //    leer los datos del escritorio.
 //
 // Variables: PORT, PROXY_PORT, HOST, PROXY_HOST, PUBLIC_PROXY_ORIGIN, NUBEOS_ROLE (proxy),
-// NUBEOS_PROXY_SECRET, NUBEOS_DATA, NUBEOS_INVITE_CODE y NUBEOS_MAX_UPLOAD_MB.
+// NUBEOS_PROXY_SECRET, NUBEOS_DATA, NUBEOS_USER y NUBEOS_MAX_UPLOAD_MB.
 
 import http from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { apiHandler, inviteRequired } from './server/api.mjs';
+import { apiHandler } from './server/api.mjs';
 import { wopiHandler } from './server/office.mjs';
 import { proxyHandler } from './server/proxy.mjs';
 import { DATA } from './server/store.mjs';
@@ -20,7 +20,7 @@ const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 4310);
 const HOST = process.env.HOST || '127.0.0.1';
 const PROXY_PORT = Number(process.env.PROXY_PORT || PORT + 1);
-const PROXY_HOST = process.env.PROXY_HOST; // p. ej. web.nubeos.ejemplo.com
+const PROXY_HOST = process.env.PROXY_HOST; // p. ej. proxy.local
 const LOCAL = process.env.NUBEOS_LOCAL === '1';
 
 const MIME = {
@@ -39,7 +39,7 @@ async function desktopHandler(req, res) {
     res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
     const proxyOrigin = process.env.PUBLIC_PROXY_ORIGIN || (PROXY_HOST ? `https://${PROXY_HOST}` : null);
     const proxy = proxyOrigin ? { proxyOrigin } : LOCAL ? {} : { proxyPort: PROXY_PORT };
-    return res.end(JSON.stringify({ ...proxy, inviteRequired: inviteRequired() }));
+    return res.end(JSON.stringify(proxy));
   }
   let pathname;
   try { pathname = decodeURIComponent(url.pathname); } catch { res.writeHead(400); return res.end(); }

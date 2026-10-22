@@ -5,12 +5,11 @@ import { esc } from './util.js';
 
 const cache = new Map();     // app -> Map(id -> doc)
 const listeners = new Map(); // app -> Set(fn)
-const noticeListeners = new Set();
 let source = null;
 
 const emit = (app) => listeners.get(app)?.forEach((fn) => fn(docsOf(app)));
 const docsOf = (app) => [...(cache.get(app)?.values() || [])];
-// Guarda un documento solo si es más nuevo. Así el aviso del servidor y la respuesta
+// Guarda un documento solo si es más nuevo. Así el aviso del servicio y la respuesta
 // directa de una misma operación no repintan la app dos veces.
 function put(app, doc) {
   const map = cache.get(app);
@@ -28,17 +27,16 @@ function connect() {
   source.onmessage = (e) => {
     let msg;
     try { msg = JSON.parse(e.data); } catch { return; }
-    if (msg.type === 'notice') return noticeListeners.forEach((fn) => fn(msg));
     const app = msg.doc?.app || msg.app;
     if (!cache.has(app)) return;
     if (msg.type === 'removed') { cache.get(app).delete(msg.id); emit(app); }
     else put(app, msg.doc);
   };
-  // Si se corta (servidor reiniciado, sin red), EventSource reconecta solo; al volver, recargamos.
-  source.onopen = () => { for (const app of cache.keys()) cloud.load(app, true).catch(() => {}); };
+  // Si se corta (servicio reiniciado), EventSource reconecta solo; al volver, recargamos.
+  source.onopen = () => { for (const app of cache.keys()) appdata.load(app, true).catch(() => {}); };
 }
 
-// Aplica operaciones en local (mismo formato que el servidor).
+// Aplica operaciones en local (mismo formato que el servicio).
 function applyOps(data, ops) {
   for (const op of ops) {
     const keys = op.path;
@@ -51,7 +49,7 @@ function applyOps(data, ops) {
   }
 }
 
-export const cloud = {
+export const appdata = {
   async load(app, force = false) {
     connect();
     if (!cache.has(app) || force) {
@@ -68,15 +66,13 @@ export const cloud = {
     listeners.get(app).add(fn);
     return () => listeners.get(app).delete(fn);
   },
-  onNotice(fn) { connect(); noticeListeners.add(fn); return () => noticeListeners.delete(fn); },
-
   async create(app, data) {
     const { doc } = await api(`apps/${app}`, { method: 'POST', body: { data } });
     cache.get(app)?.set(doc.id, doc);
     emit(app);
     return doc;
   },
-  /** Cambia un documento: se ve al instante y luego se confirma con el servidor. */
+  /** Cambia un documento: se ve al instante y luego se confirma con el servicio. */
   async ops(app, id, ops) {
     const doc = cache.get(app)?.get(id);
     if (doc) {
@@ -97,7 +93,7 @@ export const cloud = {
       }
       return saved;
     } catch (e) {
-      await cloud.load(app, true).catch(() => {}); // deshacemos lo optimista
+      await appdata.load(app, true).catch(() => {}); // deshacemos lo optimista
       throw e;
     }
   },

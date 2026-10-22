@@ -1,13 +1,11 @@
-// Ajustes: cuenta y espacio (planes), apariencia, fondo, dock y pantalla.
+// Ajustes: almacenamiento, apariencia, fondo, dock y pantalla.
 import { settings, ACCENTS, WALLPAPERS } from '../shell/settings.js';
 import { GLYPHS, ICONS } from '../shell/icons.js';
-import { api } from '../api.js';
-import { isCloud } from '../fs.js';
-import { humanSize, esc } from '../util.js';
+import { isLocalService } from '../fs.js';
+import { humanSize } from '../util.js';
 
-// Se calcula al abrir: la sesión en la nube se conoce después de cargar el módulo.
 const sections = () => [
-  ...(isCloud() ? [['cuenta', 'cloud', window.nubeosDesktop ? 'Almacenamiento' : 'Cuenta y almacenamiento']] : []),
+  ...(isLocalService() ? [['almacenamiento', 'home', 'Almacenamiento']] : []),
   ['apariencia', 'palette', 'Apariencia'],
   ['fondo', 'image', 'Fondo de pantalla'],
   ['dock', 'dock', 'Dock'],
@@ -22,7 +20,7 @@ export default {
   name: 'Ajustes',
   description: 'Personaliza tu sistema',
 
-  launch(ctx, section = isCloud() ? 'cuenta' : 'apariencia') {
+  launch(ctx, section = isLocalService() ? 'almacenamiento' : 'apariencia') {
     const win = ctx.createWindow({ title: 'Ajustes', width: 820, height: 560 });
     win.body.style.flexDirection = 'row';
     win.body.innerHTML = `
@@ -33,10 +31,10 @@ export default {
     let current = section;
 
     const row = (label, control, hint = '') => `
-      <div style="display:flex;align-items:center;gap:16px;padding:14px 16px;border-radius:14px;background:color-mix(in srgb, var(--text) 4%, transparent);margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:16px;padding:14px 16px;border-radius:14px;background:var(--panel-2);margin-bottom:10px">
         <div style="flex:1"><div style="font-weight:500">${label}</div>${hint ? `<small style="color:var(--muted)">${hint}</small>` : ''}</div>${control}</div>`;
-    const segmented = (name, options, value) => `<div style="display:flex;gap:4px;padding:3px;border-radius:10px;background:color-mix(in srgb, var(--text) 7%, transparent)">
-      ${options.map(([v, l]) => `<button data-${name}="${v}" style="border:0;padding:6px 14px;border-radius:8px;background:${v === value ? 'var(--panel-solid)' : 'transparent'};box-shadow:${v === value ? '0 1px 3px rgba(0,0,0,.15)' : 'none'}">${l}</button>`).join('')}</div>`;
+    const segmented = (name, options, value) => `<div style="display:flex;gap:4px;padding:3px;border-radius:10px;background:var(--panel-2)">
+      ${options.map(([v, l]) => `<button data-${name}="${v}" style="border:0;padding:6px 14px;border-radius:8px;background:${v === value ? 'var(--panel-solid)' : 'transparent'}">${l}</button>`).join('')}</div>`;
 
     const gb = (b) => (b >= 1024 ** 4 ? `${(b / 1024 ** 4).toFixed(1)} TB` : `${Math.round(b / 1024 ** 3)} GB`);
 
@@ -53,24 +51,19 @@ export default {
       const title = (sections().find((x) => x[0] === current) || sections()[0])[2];
       let html = `<h2 style="margin:0 0 18px;font-size:22px;font-weight:650">${title}</h2>`;
 
-      if (current === 'cuenta') {
-        const a = ctx.account?.info;
-        if (!a) html += '<p style="color:var(--muted)">Cargando tu cuenta…</p>';
+      if (current === 'almacenamiento') {
+        const a = ctx.storage?.info;
+        if (!a) html += '<p style="color:var(--muted)">Calculando el espacio…</p>';
         else {
           const pct = Math.min(100, (a.used / a.quota) * 100);
-          html += a.local ? `<div style="padding:20px;border-radius:18px;background:color-mix(in srgb, var(--text) 4%, transparent);margin-bottom:14px">
+          html += `<div style="padding:20px;border-radius:18px;background:var(--panel-2);margin-bottom:14px">
               <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px"><span style="font-size:26px;font-weight:700">${humanSize(a.quota - a.used)}</span><span style="color:var(--muted)">libres de ${gb(a.quota)}</span></div>
               <div class="storage" style="padding:0"><div class="bar${pct > 90 ? ' full' : ''}"><span style="width:${Math.max(pct, 1)}%"></span></div></div>
-              <small style="color:var(--muted);display:block;margin-top:10px">Disco de este ordenador: ${humanSize(a.used)} ocupados. Tus archivos de WonderfulOS ocupan ${humanSize(a.mine || 0)}.</small></div>`
-            : `<div style="display:flex;align-items:center;gap:16px;padding:18px;border-radius:18px;background:color-mix(in srgb, var(--text) 4%, transparent);margin-bottom:18px">
-            <div style="width:56px;height:56px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:22px;font-weight:600;background:linear-gradient(135deg,#818cf8,#ec4899)">${esc(a.user[0].toUpperCase())}</div>
-            <div style="flex:1"><div style="font-size:17px;font-weight:650">${esc(a.user)}</div>
-              <div class="storage" style="padding:6px 0 0"><div class="bar${pct > 90 ? ' full' : ''}"><span style="width:${Math.max(pct, 1)}%"></span></div>${humanSize(a.used)} usados de ${gb(a.quota)}</div></div>
-            <button class="btn" data-logout>Cerrar sesión</button></div>`;
+              <small style="color:var(--muted);display:block;margin-top:10px">Disco de este ordenador: ${humanSize(a.used)} ocupados. Tus archivos de WonderfulOS ocupan ${humanSize(a.mine || 0)}.</small></div>`;
         }
       }
       if (current === 'equipo') {
-        html += row('Abrir WonderfulOS al encender el ordenador', `<input type="checkbox" data-login style="width:20px;height:20px;accent-color:var(--accent)">`, 'WonderfulOS se convierte en lo primero que ves');
+        html += row('Abrir WonderfulOS al encender el ordenador', `<input type="checkbox" data-autostart style="width:20px;height:20px;accent-color:var(--accent)">`, 'WonderfulOS se convierte en lo primero que ves');
         html += row('Pantalla completa', `<input type="checkbox" data-full checked style="width:20px;height:20px;accent-color:var(--accent)">`, 'Usa toda la pantalla, como un sistema operativo');
         html += `<div data-linux-row></div>`;
         html += row('Salir de WonderfulOS', '<button class="btn" data-quit>Salir</button>', 'Vuelves al sistema de tu ordenador');
@@ -78,17 +71,15 @@ export default {
       if (current === 'apariencia') {
         html += row('Tema', segmented('theme', [['light', 'Claro'], ['dark', 'Oscuro'], ['auto', 'Automático']], s.theme), 'Automático sigue la hora del sistema');
         html += row('Color de acento', `<div style="display:flex;gap:8px">${ACCENTS.map((c) => `<button data-accent="${c}" title="${c}" style="width:26px;height:26px;border-radius:50%;border:${c === s.accent ? '3px solid var(--text)' : '0'};background:${c}"></button>`).join('')}</div>`);
-        html += row('Modo ligero', `<input type="checkbox" ${s.light !== false ? 'checked' : ''} data-check="light" style="width:20px;height:20px;accent-color:var(--accent)">`, 'Sin desenfoques, sombras grandes ni adornos: menos consumo y más fluidez');
       }
       if (current === 'fondo') {
         const dark = settings.isDark(s);
         const customColor = /^#[0-9a-f]{6}$/i.test(s.wallpaperColor || '') ? s.wallpaperColor : '#4f46e5';
         const tile = (id, name, bg) => `<button data-wallpaper="${id}" style="border:0;padding:0;background:none;text-align:left">
-          <div style="height:100px;border-radius:14px;background:${bg};box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);outline:${id === s.wallpaper ? '3px solid var(--accent)' : '0'};outline-offset:2px"></div>
+          <div style="height:100px;border-radius:14px;background:${bg};outline:${id === s.wallpaper ? '3px solid var(--accent)' : '1px solid var(--border)'};outline-offset:2px"></div>
           <div style="margin-top:6px;font-size:13px">${name}</div></button>`;
         const grid = (items) => `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px">${items.join('')}</div>`;
-        const solids = Object.entries(WALLPAPERS).filter(([, w]) => w.kind === 'solid');
-        const gradients = Object.entries(WALLPAPERS).filter(([, w]) => w.kind !== 'solid');
+        const solids = Object.entries(WALLPAPERS);
         html += `<h3 style="margin:0 0 10px;font-size:15px">Colores planos</h3>`;
         html += grid([...solids.map(([id, w]) => tile(id, w.name, dark ? w.dark : w.light)), tile('custom', 'Personalizado', customColor)]);
         html += `<div style="display:flex;align-items:center;gap:10px;margin:14px 0 24px;flex-wrap:wrap">
@@ -96,8 +87,6 @@ export default {
             <input type="color" data-wallpaper-color value="${customColor}" style="width:38px;height:30px;padding:2px;border:0;border-radius:8px;background:none;cursor:pointer">
           </label><code data-wallpaper-hex style="font-size:12px;color:var(--muted)">${customColor}</code>
         </div>`;
-        html += `<h3 style="margin:0 0 10px;font-size:15px">Degradados</h3>`;
-        html += grid(gradients.map(([id, w]) => tile(id, w.name, dark ? w.dark : w.light)));
       }
       if (current === 'dock') {
         html += row('Tamaño de los iconos', `<input type="range" min="40" max="80" value="${s.dockSize}" data-range="dockSize" style="width:180px;accent-color:var(--accent)">`);
@@ -109,15 +98,15 @@ export default {
       }
       if (current === 'accesibilidad') {
         html += row('Tamaño del texto', segmented('scale', [['1', 'Normal'], ['1.15', 'Grande'], ['1.3', 'Muy grande']], String(s.textScale || 1)), 'Agranda todo el sistema: textos, iconos y ventanas');
-        html += row('Alto contraste', `<input type="checkbox" ${s.contrast ? 'checked' : ''} data-check="contrast" style="width:20px;height:20px;accent-color:var(--accent)">`, 'Texto más oscuro, bordes marcados y sin transparencias');
+        html += row('Alto contraste', `<input type="checkbox" ${s.contrast ? 'checked' : ''} data-check="contrast" style="width:20px;height:20px;accent-color:var(--accent)">`, 'Texto más marcado y bordes visibles');
         html += row('Reducir el movimiento', `<input type="checkbox" ${s.reduceMotion ? 'checked' : ''} data-check="reduceMotion" style="width:20px;height:20px;accent-color:var(--accent)">`, 'Sin animaciones ni efecto lupa en el dock');
         html += `<small style="color:var(--muted)">Todo se puede usar con el teclado: Tab para moverte, Intro para abrir y Esc para cerrar.</small>`;
       }
       if (current === 'acerca') {
         html += `<div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:30px;text-align:center">
-          <div style="width:96px;height:96px;box-shadow:0 14px 30px rgba(20,22,31,.35)">${ICONS.logo}</div><div style="font-size:26px;font-weight:650">WonderfulOS</div>
-          <div style="color:var(--muted)">Versión 0.16.8 · basado en Linux</div>
-          <p style="max-width:420px;color:var(--muted)">Un sistema operativo basado en Linux, sencillo y bonito: oficina, correo, navegador y todas las apps de Linux, con la potencia de tu ordenador. Es <b>software libre</b> (licencia GPL-3.0): puedes usarlo, estudiarlo, compartirlo y mejorarlo.</p></div>`;
+          <div style="width:96px;height:96px">${ICONS.logo}</div><div style="font-size:26px;font-weight:650">WonderfulOS</div>
+          <div style="color:var(--muted)">Versión 0.17.0 · basado en Linux</div>
+          <p style="max-width:420px;color:var(--muted)">Un sistema operativo sencillo: oficina, navegador y apps de Linux, con la potencia de tu ordenador. Es <b>software libre</b> (licencia GPL-3.0): puedes usarlo, estudiarlo, compartirlo y mejorarlo.</p></div>`;
       }
       content.innerHTML = html;
 
@@ -134,7 +123,10 @@ export default {
         if (hex) hex.textContent = color.value;
         content.querySelectorAll('[data-wallpaper]').forEach((b) => {
           const preview = b.firstElementChild;
-          if (preview) preview.style.outline = b.dataset.wallpaper === 'custom' ? '3px solid var(--accent)' : '0';
+          if (preview) {
+            preview.style.outline = b.dataset.wallpaper === 'custom' ? '3px solid var(--accent)' : '1px solid var(--border)';
+            preview.style.outlineOffset = '2px';
+          }
         });
       };
       content.querySelectorAll('[data-range]').forEach((r) => {
@@ -143,8 +135,8 @@ export default {
       content.querySelectorAll('[data-check]').forEach((c) => { c.onchange = () => settings.set({ [c.dataset.check]: c.checked }); });
       if (current === 'equipo') {
         const d = window.nubeosDesktop;
-        d.info().then((i) => { const c = content.querySelector('[data-login]'); if (c) c.checked = i.openAtLogin; });
-        content.querySelector('[data-login]').onchange = (e) => d.setOpenAtLogin(e.target.checked);
+        d.info().then((i) => { const c = content.querySelector('[data-autostart]'); if (c) c.checked = i.openAtLogin; });
+        content.querySelector('[data-autostart]').onchange = (e) => d.setOpenAtLogin(e.target.checked);
         content.querySelector('[data-full]').onchange = (e) => d.setFullscreen(e.target.checked);
         content.querySelector('[data-quit]').onclick = () => d.quit();
         // Motor Linux (Mac): un Linux pequeño dentro de WonderfulOS para usar apps de Linux.
@@ -156,7 +148,7 @@ export default {
           const btn = st.state === 'preparando' ? '' : st.state === 'encendido' ? '<button class="btn" data-linux="stop">Apagar</button>'
             : `<button class="btn primary" data-linux="start">${st.state === 'apagado' ? 'Encender' : 'Activar'}</button>`;
           slot.innerHTML = row(`Motor Linux · ${LABEL[st.state] || st.state}`, btn,
-            'Usa apps de Linux (también las de Intel) en ventanas de WonderfulOS. Se instalan desde la Tienda › Apps de Linux o abriendo un .AppImage, .deb o .flatpakref. Ocupa unos 4 GB de memoria mientras está encendido.');
+            'Usa apps de Linux (también las de Intel) en ventanas de WonderfulOS. Se instalan desde Ajustes › Apps de Linux o abriendo un .AppImage, .deb o .flatpakref. Ocupa unos 4 GB de memoria mientras está encendido.');
           slot.querySelector('[data-linux]')?.addEventListener('click', async (e) => {
             const act = e.target.dataset.linux;
             const p = act === 'start' ? d.linux.start() : d.linux.stop();
@@ -167,13 +159,11 @@ export default {
         };
         drawLinux();
       }
-      content.querySelector('[data-logout]')?.addEventListener('click', () => ctx.logout());
-      content.querySelectorAll('[data-text]').forEach((i) => { i.onchange = () => settings.set({ [i.dataset.text]: i.value.trim() || 'Usuario' }); });
     }
-    const onAccount = () => current === 'cuenta' && render();
-    ctx.account?.listeners.add(onAccount);
-    win.onClose(() => { ctx.account?.listeners.delete(onAccount); return true; });
-    ctx.refreshAccount?.();
+    const onStorage = () => current === 'almacenamiento' && render();
+    ctx.storage?.listeners.add(onStorage);
+    win.onClose(() => { ctx.storage?.listeners.delete(onStorage); return true; });
+    ctx.refreshStorage?.();
     render();
   },
 };

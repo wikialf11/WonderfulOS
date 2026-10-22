@@ -1,12 +1,11 @@
 <!doctype html>
-<html lang="es" data-light>
+<html lang="es">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
-  <meta name="theme-color" content="#1c1e28">
+  <meta name="theme-color" content="#4f46e5">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>WonderfulOS</title>
-  <script>try { if (JSON.parse(localStorage.getItem('nubeos.shell.v1') || '{}').light === false) document.documentElement.removeAttribute('data-light'); } catch {}</script>
   <link rel="stylesheet" href="css/shell.css">
 </head>
 <body>
@@ -21,20 +20,6 @@
   <div id="control" class="glass-panel" hidden></div>
   <div id="toasts"></div>
   <button id="home-bar" aria-label="Ir al inicio"></button>
-
-  <div id="login" hidden>
-    <form class="login-card glass-panel" autocomplete="on">
-      <div class="logo"></div>
-      <h1>WonderfulOS</h1>
-      <p class="sub">Tus documentos, en tu ordenador. Privado y local.</p>
-      <input name="username" placeholder="Usuario" autocomplete="username" required autocapitalize="none" spellcheck="false">
-      <input name="password" type="password" placeholder="Contraseña" autocomplete="current-password" required>
-      <input name="invite" placeholder="Código de invitación" autocomplete="off" hidden>
-      <p class="error" hidden></p>
-      <button class="btn primary" type="submit">Entrar</button>
-      <button class="link" type="button">¿No tienes cuenta? Crear una</button>
-    </form>
-  </div>
 
   <script type="module" src="js/desktop.js"></script>
 </body>

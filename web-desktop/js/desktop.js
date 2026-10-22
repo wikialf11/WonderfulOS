@@ -4,9 +4,8 @@
 import { createWindow, allWindows, focusedWindow, onWindowsChange, toggleOverview, closeOverview } from './shell/wm.js';
 import { ICONS, GLYPHS, fileIcon } from './shell/icons.js';
 import { settings, ACCENTS } from './shell/settings.js';
-import { fs, extname, basename, initFs, isCloud } from './fs.js';
+import { fs, extname, basename, initFs, isLocalService } from './fs.js';
 import { createEvaluator, formatValue } from './apps/formulas.js';
-import { showLogin, logout, currentUser } from './login.js';
 import { api } from './api.js';
 import { humanSize } from './util.js';
 import archivos from './apps/archivos.js';
@@ -16,10 +15,8 @@ import visor from './apps/visor.js';
 import listas from './apps/listas.js';
 import notas from './apps/notas.js';
 import calendario from './apps/calendario.js';
-import { cloud } from './cloud.js';
 import navegador from './apps/navegador.js';
 import llavero from './apps/llavero.js';
-import { keychain, hostOf } from './keychain.js';
 import { startDownload, resumeDownloads } from './downloads.js';
 import { refreshProxyToken } from './proxy.js';
 
@@ -29,36 +26,33 @@ settings.apply();
 const mobileQuery = matchMedia('(max-width: 760px), (pointer: coarse) and (max-width: 1024px) and (orientation: portrait)');
 const isMobile = () => mobileQuery.matches;
 document.body.classList.toggle('mobile', isMobile());
-if ((await initFs()) === 'login') {
-  await showLogin();
-  await new Promise(() => {}); // el escritorio arranca tras iniciar sesión (recarga la página)
-}
+await initFs();
 
 const $ = (s) => document.querySelector(s);
 const esc = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // ---------- Apps ----------
-// Solo apps de trabajo (decisión del usuario): sin Fotos, Tienda ni Recordatorios.
+// Solo apps de trabajo.
 const APPS = [navegador, archivos, listas, notas, calendario, llavero, texto, calculo, diapositivas, ajustes, visor];
 const VISIBLE = APPS.filter((a) => !a.hidden);
 const appById = (id) => APPS.find((a) => a.id === id);
 const iconOf = (id) => ICONS[id] || ICONS.app;
 
-// Cuenta: plan y espacio ocupado (se refresca al cambiar archivos).
-const account = { user: null, info: null, listeners: new Set() };
-async function refreshAccount() {
-  if (!isCloud()) return null;
-  try { account.info = await api('account'); account.listeners.forEach((fn) => fn(account.info)); } catch { /* sin conexión */ }
-  return account.info;
+// Espacio ocupado en el disco local (se refresca al cambiar archivos).
+const storage = { info: null, listeners: new Set() };
+async function refreshStorage() {
+  if (!isLocalService()) return null;
+  try { storage.info = await api('storage'); storage.listeners.forEach((fn) => fn(storage.info)); } catch { /* servicio no disponible */ }
+  return storage.info;
 }
 
 const ctx = {
   fs,
   apps: VISIBLE,
   notify,
-  account,
-  refreshAccount,
-  logout,
+  storage,
+  refreshStorage,
+  me: 'yo',
   // Cada ventana sabe de qué app es: así el dock muestra el punto y minimiza hacia su icono.
   createWindow(opts) {
     const app = currentLaunch || {};
@@ -142,7 +136,6 @@ function renderMenubar() {
     <span class="spacer"></span>
     <button data-action="search" title="Buscar (Ctrl+Espacio)">${GLYPHS.search}</button>
     <button data-action="control" title="Centro de control">${GLYPHS.sliders}</button>
-    ${account.user && !window.nubeosDesktop ? `<button data-menu="user" title="Tu cuenta">${GLYPHS.user}<span>${esc(account.user)}</span></button>` : ''}
     <button class="clock" data-action="control"></button>`;
   tick();
   $('#menubar').querySelectorAll('[data-menu]').forEach((b) => { b.onclick = (e) => openMenu(b, b.dataset.menu, e); });
@@ -195,7 +188,7 @@ function openMenu(btn, kind, e) {
       ...(desktopSystem.session ? ['-', ...(desktopSystem.live ? [{ label: 'Instalar WonderfulOS en este ordenador…', run: () => window.nubeosDesktop.installSystem() }] : []),
         { label: 'Reiniciar', run: () => window.nubeosDesktop.power('reboot') }, { label: 'Apagar', run: () => window.nubeosDesktop.power('poweroff') }]
         : window.nubeosDesktop ? ['-', { label: 'Salir de WonderfulOS', run: () => window.nubeosDesktop.quit() }]
-        : isCloud() ? ['-', { label: 'Cerrar sesión', run: logout }] : []),
+        : []),
     ],
     app: [
       { label: w ? 'Nueva ventana' : 'Abrir Archivos', run: () => launch(w?.appId || 'archivos') },
@@ -207,13 +200,8 @@ function openMenu(btn, kind, e) {
       '-',
       { label: 'Todas las ventanas', keys: 'F3', run: toggleOverview },
     ],
-    user: [
-      { label: 'Cuenta y espacio…', run: () => launch('ajustes', 'cuenta') },
-      '-',
-      { label: 'Cerrar sesión', run: logout },
-    ],
   };
-  showMenu(menus[kind], kind === 'user' ? r.right - 220 : r.left, r.bottom + 6, btn);
+  showMenu(menus[kind] || [], r.left, r.bottom + 6, btn);
 }
 
 // ---------- Dock (con efecto lupa) ----------
@@ -373,7 +361,7 @@ function toggleControl(force) {
     const s = settings.get();
     const dark = settings.isDark(s);
     const toggle = (key, on, icon, label, hint) => `<div class="tile"><button class="toggle ${on ? 'on' : ''}" data-t="${key}"><span class="ic">${icon}</span><span>${label}<small>${hint}</small></span></button></div>`;
-    const a = account.info;
+    const a = storage.info;
     const pct = a ? Math.min(100, (a.used / a.quota) * 100) : 0;
     cc.innerHTML = `
       ${toggle('dark', dark, GLYPHS.moon, 'Modo oscuro', dark ? 'Activado' : 'Desactivado')}
@@ -489,47 +477,28 @@ function launchWith(appId, fn) { currentLaunch = appById(appId); try { fn(); } f
 ctx.openLinuxWindow = openLinuxWindow;
 async function openLinuxFile(path) {
   const name = path.split('/').pop();
-  notify(`Abriendo ${name} con el motor Linux… la primera vez tarda unos minutos.`, 6000, { title: 'Apps de Linux', icon: 'tienda' });
+  notify(`Abriendo ${name} con el motor Linux… la primera vez tarda unos minutos.`, 6000, { title: 'Apps de Linux', icon: 'ajustes' });
   try {
     const r = await window.nubeosDesktop.linux.openFile(path);
     if (r.url) openLinuxWindow(r.url, name);
-    else notify(`${name} instalado. Lo tienes en Tienda › Apps de Linux.`, 6000, { title: 'Apps de Linux', icon: 'tienda' });
-  } catch (e) { notify(e.message, 8000, { title: 'Apps de Linux', icon: 'tienda' }); }
+    else notify(`${name} instalado. Lo tienes en Ajustes › Apps de Linux.`, 6000, { title: 'Apps de Linux', icon: 'ajustes' });
+  } catch (e) { notify(e.message, 8000, { title: 'Apps de Linux', icon: 'ajustes' }); }
 }
 if (window.nubeosDesktop) {
   window.nubeosDesktop.info().then((i) => { desktopPlatform = i.platform; desktopSystem = { session: i.session, live: i.live };
-    if (i.live) notify('Estás probando WonderfulOS desde el USB. Para quedártelo, abre el menú de WonderfulOS › «Instalar WonderfulOS en este ordenador»: puedes conservar Windows y elegir al encender.', 15000, { title: 'Bienvenido a WonderfulOS', icon: 'ajustes' });
+    if (i.live) notify('Estás usando WonderfulOS desde el USB. Para quedártelo, abre el menú de WonderfulOS › «Instalar WonderfulOS en este ordenador»: puedes conservar Windows y elegir al encender.', 15000, { title: 'Bienvenido a WonderfulOS', icon: 'ajustes' });
   });
   document.body.classList.add('desktop-app');
   window.nubeosDesktop.onOpenUrl((url) => launch('navegador', url));
   window.nubeosDesktop.onNotice((n) => {
     if (n.kind === 'saved') return fs.reload().catch(() => {}); // guardado desde LibreOffice
     if (n.kind === 'download') {
-      fs.reload().then(() => refreshAccount()).catch(() => {});
+      fs.reload().then(() => refreshStorage()).catch(() => {});
       return notify(`${n.path.split('/').pop()} está en Archivos › Descargas.`, 8000, { title: 'Descarga terminada', icon: 'navegador', action: { label: 'Abrir', run: () => ctx.openFile(n.path) } });
     }
     if (n.kind === 'download-error') return notify(`${n.name}: ${n.error}`, 10000, { title: 'No se pudo guardar', icon: 'navegador' });
     if (n.kind === 'linux') return notify(n.text, 7000, { title: 'WonderfulOS', icon: 'ajustes' });
   });
-}
-
-// ---------- Llavero: guardar lo que inicias en el Navegador ----------
-async function offerToSave(n) {
-  await keychain.init().catch(() => {});
-  const site = hostOf(n.url);
-  if (!keychain.isSetUp()) return; // sin Llavero creado no molestamos
-  if (keychain.isUnlocked()) {
-    const same = keychain.matching(n.url).find((e) => e.user === n.user);
-    if (same && same.pass === n.pass) return; // ya la tienes
-    notify(`${n.user || 'Tu cuenta'} en ${site}`, 12000, {
-      title: same ? '¿Actualizar la contraseña?' : '¿Guardar la contraseña?', icon: 'llavero',
-      action: { label: same ? 'Actualizar' : 'Guardar', run: () => keychain.save({ id: same?.id, name: same?.name || site, site, user: n.user, pass: n.pass, notes: same?.notes })
-        .then(() => notify(`Guardada en el Llavero.`, 3000, { title: site, icon: 'llavero' })).catch((e) => notify(e.message)) },
-    });
-  } else {
-    notify(`${n.user || 'Tu cuenta'} en ${site}`, 12000, { title: '¿Guardar la contraseña?', icon: 'llavero',
-      action: { label: 'Guardar…', run: () => launch('llavero', { new: { site, name: site, user: n.user, pass: n.pass } }) } });
-  }
 }
 
 // ---------- Móvil: pantalla de inicio y barra de inicio ----------
@@ -568,12 +537,10 @@ onWindowsChange(() => { renderMenubar(); updateRunning(); updateMobile(); });
 settings.onChange(() => { dockCfg = settings.get(); dockItems = []; renderDock(); });
 fs.onError((msg) => notify(msg, 7000, { title: 'No se pudo guardar', icon: 'archivos' }));
 
-if (isCloud()) {
-  account.user = await currentUser();
-  if (account.user && settings.get().userName !== account.user) settings.set({ userName: account.user });
-  await refreshAccount();
+if (isLocalService()) {
+  await refreshStorage();
   let t;
-  fs.onChange(() => { clearTimeout(t); t = setTimeout(refreshAccount, 1500); });
+  fs.onChange(() => { clearTimeout(t); t = setTimeout(refreshStorage, 1500); });
 
   // Navegador: ficha para el proxy (caduca, se renueva) y descargas que seguían en curso.
   // La app de escritorio usa su propio Chromium y no necesita el proxy.
@@ -582,17 +549,6 @@ if (isCloud()) {
     setInterval(refreshProxyToken, 3600e3);
   }
   resumeDownloads(ctx);
-
-  cloud.onNotice((n) => {
-    // Algo descargado con el Navegador ya está en Archivos.
-    // Has iniciado sesión en una web desde el Navegador: ofrecer guardarla en el Llavero.
-    if (n.kind === 'login') return offerToSave(n);
-    if (n.kind === 'download') {
-      fs.reload().then(() => refreshAccount()).catch(() => {});
-      return notify(`${n.path.split('/').pop()} está en Archivos › Descargas.`, 8000, { title: 'Descarga terminada', icon: 'navegador', action: { label: 'Abrir', run: () => ctx.openFile(n.path) } });
-    }
-    if (n.kind === 'download-error') return notify(`${n.name}: ${n.error}`, 10000, { title: 'No se pudo guardar la descarga', icon: 'navegador', action: { label: 'Ver mi espacio', run: () => launch('ajustes', 'cuenta') } });
-  });
 }
 renderMenubar();
 renderDock();
@@ -616,7 +572,5 @@ scheduleClock();
 
 if (!sessionStorage.getItem('nubeos.welcome')) {
   sessionStorage.setItem('nubeos.welcome', '1');
-  setTimeout(() => notify(isCloud()
-    ? 'Tus archivos se guardan en este ordenador. Arrastra archivos a la pantalla para subirlos.'
-    : 'Modo local: tus archivos se guardan solo en este navegador.', 7000, { title: `Hola, ${settings.get().userName}` }), 600);
+  setTimeout(() => notify('Tus archivos se guardan en este ordenador. Arrastra archivos a la pantalla para añadirlos.', 7000, { title: 'Bienvenido a WonderfulOS' }), 600);
 }

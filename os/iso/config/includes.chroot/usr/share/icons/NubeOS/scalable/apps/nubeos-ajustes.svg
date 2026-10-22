@@ -1,15 +1,7 @@
 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-  <defs>
-    <linearGradient id="i3b" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#8b93a7"/><stop offset="1" stop-color="#3d4456"/></linearGradient>
-    <linearGradient id="i3h" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.32"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/></linearGradient>
-    <linearGradient id="i3w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity=".82"/></linearGradient>
-    <filter id="i3s" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2.5" stdDeviation="2.5" flood-color="#0b1020" flood-opacity=".22"/></filter>
-  </defs>
-  <path d="M50 3C86 3 97 14 97 50S86 97 50 97 3 86 3 50 14 3 50 3Z" fill="url(#i3b)"/>
-  <path d="M50 3C86 3 97 14 97 50S86 97 50 97 3 86 3 50 14 3 50 3Z" fill="url(#i3h)"/>
-  <path d="M50 3C86 3 97 14 97 50S86 97 50 97 3 86 3 50 14 3 50 3Z" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="1"/>
-  <g filter="url(#i3s)">
-    <polygon points="50.0,21.0 54.5,21.4 56.8,29.1 60.0,30.4 67.0,26.5 70.5,29.5 67.8,37.1 69.6,40.0 77.6,41.0 78.6,45.5 72.0,50.0 71.7,53.4 77.6,59.0 75.8,63.2 67.8,62.9 65.6,65.6 67.0,73.5 63.2,75.8 56.8,70.9 53.4,71.7 50.0,79.0 45.5,78.6 43.2,70.9 40.0,69.6 33.0,73.5 29.5,70.5 32.2,62.9 30.4,60.0 22.4,59.0 21.4,54.5 28.0,50.0 28.3,46.6 22.4,41.0 24.2,36.8 32.2,37.1 34.4,34.4 33.0,26.5 36.8,24.2 43.2,29.1 46.6,28.3" fill="url(#i3w)" stroke="#fff" stroke-linejoin="round" stroke-width="3"/>
+  <path d="M3 3H97V97H3Z" fill="#6366F1"/>
+  <g>
+    <polygon points="50.0,21.0 54.5,21.4 56.8,29.1 60.0,30.4 67.0,26.5 70.5,29.5 67.8,37.1 69.6,40.0 77.6,41.0 78.6,45.5 72.0,50.0 71.7,53.4 77.6,59.0 75.8,63.2 67.8,62.9 65.6,65.6 67.0,73.5 63.2,75.8 56.8,70.9 53.4,71.7 50.0,79.0 45.5,78.6 43.2,70.9 40.0,69.6 33.0,73.5 29.5,70.5 32.2,62.9 30.4,60.0 22.4,59.0 21.4,54.5 28.0,50.0 28.3,46.6 22.4,41.0 24.2,36.8 32.2,37.1 34.4,34.4 33.0,26.5 36.8,24.2 43.2,29.1 46.6,28.3" fill="#fff" stroke="#fff" stroke-linejoin="round" stroke-width="3"/>
     <circle cx="50" cy="50" r="13" fill="#4a5164"/>
     <circle cx="50" cy="50" r="7" fill="#fff" fill-opacity=".9"/></g>
 </svg>

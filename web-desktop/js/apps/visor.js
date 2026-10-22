@@ -22,7 +22,7 @@ export default {
     const kind = kindOf(path);
     const node = ctx.fs.stat(path);
     const win = ctx.createWindow({ title: basename(path), width: kind === 'audio' ? 460 : 860, height: kind === 'audio' ? 220 : 600 });
-    // El tipo se decide por la extensión (el servidor solo muestra tipos que no ejecutan código).
+    // El tipo se decide por la extensión (el servicio local solo muestra tipos que no ejecutan código).
     const url = `api/blobs/${node.blob}?${new URLSearchParams({ name: basename(path), inline: '1', type: MIME[extname(path)] })}`;
     win.body.style.cssText += ';align-items:center;justify-content:center;background:color-mix(in srgb, var(--panel-solid) 40%, #000 10%)';
     const el = {

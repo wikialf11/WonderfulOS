@@ -1,6 +1,6 @@
 // Proxy de navegación y búsqueda de WonderfulOS (ver docs/ARQUITECTURA.md §2.1.1).
 // Descarga las páginas en nombre del usuario y quita las cabeceras que impiden
-// mostrarlas dentro del escritorio. En producción corre en la máquina en la nube.
+// mostrarlas dentro del escritorio. Corre como servicio local de WonderfulOS.
 
 import { lookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
@@ -138,7 +138,7 @@ const humanSize = (n) => !n ? 'tamaño desconocido' : n < 1024 ** 2 ? `${(n / 10
 
 function compatibility(name) {
   const ext = (name.match(/\.([^.]+)$/) || [])[1]?.toLowerCase() || '';
-  if (['dmg', 'pkg', 'exe', 'msi', 'appimage', 'deb', 'rpm', 'apk'].includes(ext)) return 'Es un programa: se guarda en tu nube y desde Archivos puedes bajarlo a tu ordenador para instalarlo allí.';
+  if (['dmg', 'pkg', 'exe', 'msi', 'appimage', 'deb', 'rpm', 'apk'].includes(ext)) return 'Es un programa: se guarda en Descargas y desde Archivos puedes bajarlo a tu ordenador para instalarlo allí.';
   return '';
 }
 
@@ -163,7 +163,7 @@ function downloadPage(fileUrl, name, size, type, t) {
     <h1>${esc(name)}</h1>
     <small>${esc(humanSize(size))} · ${esc(new URL(fileUrl).hostname)}</small>
     ${note ? `<p class="note">${esc(note)}</p>` : ''}
-    <button id="save">Guardar en mi nube</button>
+    <button id="save">Guardar en Descargas</button>
   </div>
   <script>
     document.getElementById('save').onclick = function(){
@@ -193,7 +193,7 @@ const decode = (s) => s.replace(/<[^>]+>/g, '').replace(/&nbsp;|&ensp;|&#0?32;/g
 const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // Cada buscador bloquea a veces según desde dónde se le pregunte (p. ej. IPs
-// de servidores), así que se prueban varios hasta obtener resultados.
+// de centros de datos), así que se intentan varios hasta obtener resultados.
 async function fetchHtml(u) {
   const res = await fetch(u, {
     headers: { 'user-agent': BROWSER_UA, 'accept': 'text/html', 'accept-language': 'es-ES,es;q=0.9' },

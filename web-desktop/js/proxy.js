@@ -1,4 +1,4 @@
-// Navegación a través del proxy (server.mjs, o la máquina en la nube en producción).
+// Navegación a través del proxy local del servicio (server.mjs).
 // Si el escritorio se sirve sin proxy (p. ej. con python -m http.server), las
 // páginas se cargan directamente y algunos sitios no se podrán mostrar.
 
@@ -25,7 +25,7 @@ export async function refreshProxyToken() {
   try {
     const res = await fetch('api/proxy-token', { headers: { 'x-nubeos': '1' } });
     if (res.ok) token = (await res.json()).token || '';
-  } catch { /* sin servidor */ }
+  } catch { /* sin servicio */ }
 }
 
 // Direcciones locales (p. ej. una app que corre en tu propio equipo) se cargan tal cual.

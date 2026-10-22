@@ -1,4 +1,4 @@
-// Repeticiones compartidas por Listas y Recordatorios: { unit: day|week|month|year, n }.
+// Repeticiones compartidas por Listas y Calendario: { unit: day|week|month|year, n }.
 export const REPEATS = [['', 'No se repite'], ['1d', 'Cada día'], ['1w', 'Cada semana'], ['2w', 'Cada 2 semanas'], ['1m', 'Cada mes'], ['1y', 'Cada año'], ['n', 'Cada N días…']];
 const UNITS = { d: 'day', w: 'week', m: 'month', y: 'year' };
 

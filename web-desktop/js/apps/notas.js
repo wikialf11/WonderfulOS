@@ -1,5 +1,5 @@
 // Notas: notas rápidas locales, fijables y con color.
-import { cloud, emptyState } from '../cloud.js';
+import { appdata, emptyState } from '../appdata.js';
 import { ICONS, GLYPHS } from '../shell/icons.js';
 import { confirm } from '../dialogs.js';
 import { esc } from '../util.js';
@@ -14,7 +14,7 @@ export default {
 
   async launch(ctx) {
     const win = ctx.createWindow({ title: 'Notas', width: 900, height: 580 });
-    win.body.classList.add('app-cloud', 'app-notas');
+    win.body.classList.add('app-workspace', 'app-notas');
     win.body.innerHTML = `
       <aside class="cl-side">
         <div class="cl-side-head"><label class="cl-search">${GLYPHS.search}<input placeholder="Buscar"></label><button class="icon-btn add" title="Nueva nota">${GLYPHS.plus}</button></div>
@@ -23,15 +23,15 @@ export default {
       <section class="cl-main"></section>`;
     const $ = (s) => win.body.querySelector(s);
     let current = null, query = '';
-    try { await cloud.load(APP); } catch (e) { $('.cl-main').innerHTML = emptyState(ICONS.notas, 'Sin conexión', e.message); return; }
+    try { await appdata.load(APP); } catch (e) { $('.cl-main').innerHTML = emptyState(ICONS.notas, 'No se pudo cargar', e.message); return; }
 
-    const sorted = () => cloud.docs(APP)
+    const sorted = () => appdata.docs(APP)
       .filter((d) => !query || `${d.data.title} ${d.data.body}`.toLowerCase().includes(query))
       .sort((a, b) => (b.data.pinned ? 1 : 0) - (a.data.pinned ? 1 : 0) || b.updated - a.updated);
 
     function renderSide() {
       const notes = sorted();
-      if (!current || !cloud.get(APP, current)) current = notes[0]?.id || null;
+      if (!current || !appdata.get(APP, current)) current = notes[0]?.id || null;
       $('.cl-items').innerHTML = '';
       for (const d of notes) {
         const b = document.createElement('button');
@@ -49,7 +49,7 @@ export default {
     function render() {
       renderSide();
       const main = $('.cl-main');
-      const d = current && cloud.get(APP, current);
+      const d = current && appdata.get(APP, current);
       if (!d) {
         main.innerHTML = emptyState(ICONS.notas, query ? 'Nada coincide' : 'Sin notas', query ? 'Prueba con otra búsqueda.' : 'Pulsa + para escribir tu primera nota.');
         return;
@@ -68,24 +68,24 @@ export default {
         </div>`;
       const save = (field, value) => {
         clearTimeout(timers[field]);
-        timers[field] = setTimeout(() => cloud.ops(APP, d.id, [{ op: 'set', path: [field], value }]).catch((e) => ctx.notify(e.message)), 500);
+        timers[field] = setTimeout(() => appdata.ops(APP, d.id, [{ op: 'set', path: [field], value }]).catch((e) => ctx.notify(e.message)), 500);
       };
       main.querySelector('.note-title').oninput = (e) => save('title', e.target.value);
       main.querySelector('.note-body').oninput = (e) => save('body', e.target.value);
-      main.querySelectorAll('.color').forEach((b) => { b.onclick = () => cloud.ops(APP, d.id, [{ op: 'set', path: ['color'], value: b.dataset.c }]); });
-      main.querySelector('.pin').onclick = () => cloud.ops(APP, d.id, [{ op: 'set', path: ['pinned'], value: !d.data.pinned }]);
+      main.querySelectorAll('.color').forEach((b) => { b.onclick = () => appdata.ops(APP, d.id, [{ op: 'set', path: ['color'], value: b.dataset.c }]); });
+      main.querySelector('.pin').onclick = () => appdata.ops(APP, d.id, [{ op: 'set', path: ['pinned'], value: !d.data.pinned }]);
       main.querySelector('.del').onclick = async () => {
-        if (await confirm(win, '¿Eliminar esta nota?')) cloud.remove(APP, d.id);
+        if (await confirm(win, '¿Eliminar esta nota?')) appdata.remove(APP, d.id);
       };
     }
 
     $('.add').onclick = async () => {
-      const d = await cloud.create(APP, { title: '', body: '', color: COLORS[cloud.docs(APP).length % COLORS.length] });
+      const d = await appdata.create(APP, { title: '', body: '', color: COLORS[appdata.docs(APP).length % COLORS.length] });
       current = d.id; render();
       win.body.querySelector('.note-title')?.focus();
     };
     $('.cl-search input').oninput = (e) => { query = e.target.value.trim().toLowerCase(); render(); };
-    const off = cloud.subscribe(APP, () => {
+    const off = appdata.subscribe(APP, () => {
       const a = document.activeElement;
       if (a && win.body.contains(a) && a.matches('.note-title, .note-body')) { renderSide(); return; }
       render();

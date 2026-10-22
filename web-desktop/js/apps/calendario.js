@@ -1,5 +1,5 @@
 // Calendario: vista de mes con varios calendarios locales.
-import { cloud, uid, emptyState } from '../cloud.js';
+import { appdata, uid, emptyState } from '../appdata.js';
 import { ICONS, GLYPHS } from '../shell/icons.js';
 import { prompt, confirm } from '../dialogs.js';
 import { esc } from '../util.js';
@@ -17,7 +17,7 @@ export default {
 
   async launch(ctx) {
     const win = ctx.createWindow({ title: 'Calendario', width: 1040, height: 660 });
-    win.body.classList.add('app-cloud', 'app-calendario');
+    win.body.classList.add('app-workspace', 'app-calendario');
     win.body.innerHTML = `
       <aside class="cl-side">
         <div class="mini-today"></div>
@@ -31,11 +31,11 @@ export default {
     let selected = ymd(new Date());
     const hidden = new Set();
     try {
-      await cloud.load(APP);
-      if (!cloud.docs(APP).length) await cloud.create(APP, { name: 'Personal', color: COLORS[0], events: {} });
-    } catch (e) { $('.cl-main').innerHTML = emptyState(ICONS.calendario, 'Sin conexión', e.message); return; }
+      await appdata.load(APP);
+      if (!appdata.docs(APP).length) await appdata.create(APP, { name: 'Personal', color: COLORS[0], events: {} });
+    } catch (e) { $('.cl-main').innerHTML = emptyState(ICONS.calendario, 'No se pudo cargar', e.message); return; }
 
-    const cals = () => cloud.docs(APP);
+    const cals = () => appdata.docs(APP);
     const eventsOn = (day) => cals().filter((c) => !hidden.has(c.id)).flatMap((c) =>
       Object.entries(c.data.events || {}).filter(([, e]) => e.date === day).map(([id, e]) => ({ id, cal: c, ...e })))
       .sort((a, b) => (a.start || '00:00').localeCompare(b.start || '00:00'));
@@ -54,10 +54,10 @@ export default {
         b.querySelector('.more').onclick = (e) => {
           const r = e.currentTarget.getBoundingClientRect();
           ctx.menu([
-            { label: 'Cambiar nombre…', run: async () => { const n = await prompt(win, 'Nombre del calendario', c.data.name); if (n) cloud.ops(APP, c.id, [{ op: 'set', path: ['name'], value: n }]); } },
-            ...COLORS.map((col) => ({ label: `${col === c.data.color ? '● ' : '○ '}Color`, run: () => cloud.ops(APP, c.id, [{ op: 'set', path: ['color'], value: col }]) })),
+            { label: 'Cambiar nombre…', run: async () => { const n = await prompt(win, 'Nombre del calendario', c.data.name); if (n) appdata.ops(APP, c.id, [{ op: 'set', path: ['name'], value: n }]); } },
+            ...COLORS.map((col) => ({ label: `${col === c.data.color ? '● ' : '○ '}Color`, run: () => appdata.ops(APP, c.id, [{ op: 'set', path: ['color'], value: col }]) })),
             '-',
-            { label: 'Eliminar calendario', run: async () => { if (await confirm(win, `¿Eliminar «${c.data.name}»?`)) cloud.remove(APP, c.id); } },
+            { label: 'Eliminar calendario', run: async () => { if (await confirm(win, `¿Eliminar «${c.data.name}»?`)) appdata.remove(APP, c.id); } },
           ], r.right - 200, r.bottom + 4);
         };
         $('.cl-items').appendChild(b);
@@ -68,7 +68,7 @@ export default {
       $('.day-list').innerHTML = `<div class="dl-head"><strong>${esc(dayTitle)}</strong><button class="icon-btn add-ev" title="Nuevo evento">${GLYPHS.plus}</button></div>
         ${list.length ? list.map((e) => `<button class="ev-row" data-id="${e.id}" data-cal="${e.cal.id}"><span class="bar" style="background:${e.cal.data.color}"></span><span><strong>${esc(e.title)}</strong><small>${e.start ? `${e.start}${e.end ? `–${e.end}` : ''}` : 'Todo el día'} · ${esc(e.cal.data.name)}</small></span></button>`).join('') : '<div class="cl-hint">Nada este día</div>'}`;
       $('.add-ev').onclick = () => editEvent(null, selected);
-      $('.day-list').querySelectorAll('.ev-row').forEach((b) => { b.onclick = () => editEvent(cloud.get(APP, b.dataset.cal), selected, b.dataset.id); });
+      $('.day-list').querySelectorAll('.ev-row').forEach((b) => { b.onclick = () => editEvent(appdata.get(APP, b.dataset.cal), selected, b.dataset.id); });
     }
 
     function render() {
@@ -124,12 +124,12 @@ export default {
       const f = form.elements;
       f.title.focus();
       back.querySelector('.cancel').onclick = () => back.remove();
-      back.querySelector('.del')?.addEventListener('click', () => { cloud.ops(APP, cal.id, [{ op: 'del', path: ['events', id] }]); back.remove(); });
+      back.querySelector('.del')?.addEventListener('click', () => { appdata.ops(APP, cal.id, [{ op: 'del', path: ['events', id] }]); back.remove(); });
       form.onsubmit = (e) => {
         e.preventDefault();
-        const target = ev ? cal : cloud.get(APP, f.cal.value);
-        const value = { title: f.title.value.trim(), date: f.date.value, start: f.start.value, end: f.end.value, notes: f.notes.value, by: ctx.account.user };
-        cloud.ops(APP, target.id, [{ op: 'set', path: ['events', id || uid()], value }]).catch((er) => ctx.notify(er.message));
+        const target = ev ? cal : appdata.get(APP, f.cal.value);
+        const value = { title: f.title.value.trim(), date: f.date.value, start: f.start.value, end: f.end.value, notes: f.notes.value, by: ctx.me };
+        appdata.ops(APP, target.id, [{ op: 'set', path: ['events', id || uid()], value }]).catch((er) => ctx.notify(er.message));
         selected = value.date;
         back.remove();
       };
@@ -137,9 +137,9 @@ export default {
 
     $('.add-cal').onclick = async () => {
       const name = await prompt(win, 'Nombre del calendario', 'Trabajo');
-      if (name) cloud.create(APP, { name, color: COLORS[cloud.docs(APP).length % COLORS.length], events: {} });
+      if (name) appdata.create(APP, { name, color: COLORS[appdata.docs(APP).length % COLORS.length], events: {} });
     };
-    const off = cloud.subscribe(APP, render);
+    const off = appdata.subscribe(APP, render);
     win.onClose(() => { off(); return true; });
     render();
   },

@@ -1,9 +1,9 @@
 // Sistema de archivos del escritorio.
 //
-// Modo servidor local (con server.mjs): los archivos viven en el disco de este
+// Con el servicio local de WonderfulOS: los archivos viven en el disco de este
 // ordenador. Se cargan al iniciar y cada cambio se aplica al momento en memoria
 // y se envía al servicio local en segundo plano, así las apps usan una API
-// síncrona. Modo local (sin servicio): todo en localStorage.
+// síncrona. Sin servicio: todo en localStorage.
 //
 // No hay cuentas remotas ni carpetas compartidas: cada archivo es tuyo y se queda aquí.
 
@@ -59,15 +59,14 @@ function localSeed() {
 }
 
 // ---------- Arranque ----------
-/** Devuelve 'cloud' (servicio local), 'login' (falta sesión) o 'local' (sin servicio). */
+/** Devuelve 'servicio' (archivos en el disco) o 'local' (sin servicio). */
 export async function initFs() {
   try {
     const { nodes: remote } = await api('fs');
-    mode = 'cloud';
+    mode = 'service';
     nodes = remote;
-    return 'cloud';
-  } catch (err) {
-    if (err.status === 401) return 'login';
+    return 'service';
+  } catch {
     mode = 'local';
     try { nodes = JSON.parse(localStorage.getItem(LOCAL_KEY)) || localSeed(); } catch { nodes = localSeed(); }
     for (const d of ['/Documentos', '/Descargas', '/Imágenes']) nodes[d] ??= { type: 'dir', mtime: Date.now() };
@@ -75,7 +74,7 @@ export async function initFs() {
   }
 }
 
-export const isCloud = () => mode === 'cloud';
+export const isLocalService = () => mode === 'service';
 
 // ---------- Persistencia ----------
 function changed() { listeners.forEach((fn) => fn()); }
@@ -174,13 +173,13 @@ export const fs = {
 
   /** Vuelve a leer los archivos del servicio local (tras guardar desde la oficina). */
   async reload() {
-    if (mode !== 'cloud') return;
+    if (mode !== 'service') return;
     await flushing;
     nodes = (await api('fs')).nodes;
   },
 
   async reset() {
-    if (mode === 'cloud') nodes = (await api('fs/reset', { method: 'POST' })).nodes;
+    if (mode === 'service') nodes = (await api('fs/reset', { method: 'POST' })).nodes;
     else { nodes = localSeed(); try { localStorage.setItem(LOCAL_KEY, JSON.stringify(nodes)); } catch { /* */ } }
     changed();
   },
@@ -192,7 +191,7 @@ export const fs = {
   /** Sube un archivo (File) del ordenador a la carpeta `dir`. onProgress(0..1). */
   upload(dir, file, onProgress = () => {}) {
     const p = normalize(dir + '/' + file.name.replace(/[\/]/g, '-'));
-    if (mode !== 'cloud') return Promise.reject(new Error('Para subir archivos necesitas el servicio local de WonderfulOS'));
+    if (mode !== 'service') return Promise.reject(new Error('Para subir archivos necesitas el servicio local de WonderfulOS'));
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open('POST', `api/upload?path=${encodeURIComponent(p)}`);
@@ -207,7 +206,7 @@ export const fs = {
         changed();
         resolve(p);
       };
-      xhr.onerror = () => reject(new Error('Se perdió la conexión durante la subida'));
+      xhr.onerror = () => reject(new Error('Se interrumpió la subida'));
       xhr.send(file);
     });
   },
