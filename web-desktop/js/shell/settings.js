@@ -35,7 +35,7 @@ export const WALLPAPERS = {
     dark: 'radial-gradient(80vw 80vw at 30% 20%, #374151 0%, transparent 60%), linear-gradient(160deg, #0b0c0f, #1f2937)' },
 };
 
-const DEFAULTS = { theme: 'auto', accent: ACCENTS[0], wallpaper: 'azul', wallpaperColor: '#2563eb', dockSize: 58, magnify: true, dim: 0, night: false, focus: false, userName: 'Usuario', textScale: 1, contrast: false, reduceMotion: false };
+const DEFAULTS = { theme: 'auto', accent: '#8b5cf6', wallpaper: 'indigo', wallpaperColor: '#4f46e5', dockSize: 58, magnify: true, dim: 0, night: false, focus: false, userName: 'Usuario', textScale: 1, contrast: false, reduceMotion: false };
 const listeners = new Set();
 
 export const settings = {
