@@ -96,12 +96,16 @@ curl -s http://127.0.0.1:4310/api/conocimiento/consultar \
   -d '{"texto":"Redacta un informe sobre la fotosíntesis"}'
 ```
 
-Los informes multifuente (`tipo: "informe_web"`) buscan varias páginas, leen hasta cuatro dominios
-distintos, incorporan documentos locales o datos aportados y devuelven `respuesta`, `fuentes`,
-`acciones` y `avisos`. La respuesta incluye citas `[n]`, una estructura de introducción, desarrollo
-y conclusión, y no inventa contenido si no encuentra fuentes. Para usar solo datos locales:
-`Redacta un informe sobre la fotosíntesis con estos datos: … sin internet`. Para guardarlo:
-`… y guárdalo en Documentos`.
+Los informes multifuente (`tipo: "informe_web"`) buscan varias páginas, leen varias fuentes y
+conservan hasta cuatro dominios distintos, incorporan documentos locales o datos aportados y
+devuelven `respuesta`, `fuentes`,
+`acciones`, `avisos` y, si se pidió extensión, `palabras: { objetivo, generadas, exacto }`. La
+respuesta incluye citas `[n]`, una estructura de introducción, desarrollo y conclusión, y no inventa
+contenido si no encuentra fuentes. Para usar solo datos locales:
+`Redacta un informe sobre la fotosíntesis con estos datos: … sin internet`. Para fijar la extensión:
+`Redacta un informe de 300 palabras sobre la fotosíntesis`. Para guardarlo:
+`… y guárdalo en Documentos`. El recuento de palabras se aplica al cuerpo del informe, sin títulos,
+encabezados, fuentes ni marcas de cita.
 
 Enseñar un concepto:
 

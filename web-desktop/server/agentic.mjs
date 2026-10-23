@@ -880,6 +880,18 @@ export async function fetchPageText(url, maxLength = 6000) {
 
     const lines = clean.split('\n').map((l) => l.trim()).filter((l) => l.length > 0);
     let text = lines.join('\n');
+    const tituloBloqueado = /client challenge|access denied|captcha|just a moment/i.test(title);
+    const textoBloqueado = /(?:ad blockers|enable javascript|javascript is disabled|verify (?:that )?you are human|checking your browser|unusual traffic)/i.test(text);
+    if (tituloBloqueado || (textoBloqueado && text.length < 3000)) {
+      return {
+        ok: false,
+        accion: 'leer_pagina_web',
+        url,
+        titulo: title,
+        error: 'La página ha bloqueado la lectura automática.',
+        bloqueada: true,
+      };
+    }
     if (text.length > maxLength) {
       text = text.slice(0, maxLength) + '\n\n[...Contenido web truncado para el contexto...]';
     }

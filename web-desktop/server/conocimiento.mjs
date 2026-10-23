@@ -444,14 +444,36 @@ function separarDatosInforme(texto) {
   };
 }
 
+function quitarIndicacionPalabras(texto) {
+  return String(texto ?? '')
+    .replace(
+      /\b(?:de|con|en|que\s+tenga|que\s+contenga|exactamente|unas?|aproximadamente|alrededor\s+de|un\s+total\s+de)?\s*(?:\d{1,3}(?:\.\d{3})+|\d{2,4})\s*(?:palabras?|vocablos?)\b/gi,
+      ' ',
+    )
+    .replace(/\b(?:de|con|en|que\s+tenga|que\s+contenga|exactamente|unas?|aproximadamente|alrededor\s+de|un\s+total\s+de)?\s*mil\s+palabras?\b/gi, ' ');
+}
+
+function extraerPalabrasObjetivo(texto) {
+  const original = String(texto ?? '');
+  if (/\bmil\s+palabras?\b/i.test(original)) return 1000;
+  const coincidencia = original.match(
+    /\b(?:de|con|en|que\s+tenga|que\s+contenga|exactamente|unas?|aproximadamente|alrededor\s+de|un\s+total\s+de)?\s*(\d{1,3}(?:\.\d{3})+|\d{2,4})\s*(?:palabras?|vocablos?)\b/i,
+  );
+  if (!coincidencia) return null;
+  const numero = Number(coincidencia[1].replace(/\./g, ''));
+  return Number.isFinite(numero) && numero >= 80 && numero <= 3000 ? numero : null;
+}
+
 function limpiarTemaInforme(texto) {
   let tema = String(texto ?? '').trim();
   tema = tema.replace(/^.*?\b(?:red[aá]cta(?:me)?|red[aá]ctes|elabora(?:me)?|elabores|prepara(?:me)?|prepares|haz(?:me)?|hagas|crea(?:me)?|crees|escribe(?:me)?|escribas|genera(?:me)?|generes|realiza(?:me)?|realices|desarrolla(?:me)?|desarrolles)\s+(?:un|una|el|la)?\s*(?:informe|monograf[ií]a|art[ií]culo)\s*/i, '');
   tema = tema.replace(/^.*?\b(?:necesito|quiero|deseo)\s+(?:un|una)\s*(?:informe|monograf[ií]a|art[ií]culo)\s*/i, '');
-  tema = tema.replace(/^(?:sobre|acerca\s+de|en\s+torno\s+a|de|del)\s+/i, '');
-  tema = tema.replace(/\s+(?:y\s+)?(?:gu[aá]rda(?:lo|la)?|guardar)\s+en\s+documentos?\b[\s\S]*$/i, '');
+  tema = tema.replace(/\s*(?:[.;,]\s*)?(?:y\s+)?(?:(?:gu[aá]rda(?:me|lo|la)?|guardar)\s+(?:el|este|dicho|la|esta)?\s*(?:informe|documento|archivo|texto|informaci[oó]n)|(?:gu[aá]rda(?:me|lo|la)?|guardar)\s+en\s+documentos?)\b[\s\S]*$/i, '');
+  tema = tema.replace(/\s*(?:[.;,]\s*)?(?:y\s+)?no\s+guard(?:es|e|ar)\b[\s\S]*$/i, '');
   tema = tema.replace(/\s+(?:sin\s+(?:internet|conexi[oó]n)|solo\s+con\s+(?:estos|mis|los)?\s*(?:datos|documentos|informaci[oó]n)|no\s+busques(?:\s+en\s+internet)?)\b[\s\S]*$/i, '');
   tema = tema.replace(/\s+(?:con|usando|a partir de)\s+(?:estos|los|mis|la siguiente)?\s*(?:datos|notas|informaci[oó]n)\b[\s\S]*$/i, '');
+  tema = quitarIndicacionPalabras(tema).trim();
+  tema = tema.replace(/^(?:sobre|acerca\s+de|en\s+torno\s+a|de|del)\s+/i, '');
   tema = tema.replace(/\s+en\s+documentos?\s*$/i, '');
   tema = tema.replace(/^["'«»]+|["'«»]+$/g, '').replace(/[.,;:]+$/g, '').trim();
   return tema;
@@ -464,7 +486,7 @@ function esOracionUtil(oracion) {
   if (/[?¿]/.test(o)) return false;
   if (/https?:\/\//i.test(o)) return false;
   if (/^(?:ver|leer|compartir|imprimir|descargar|siguiente|anterior|volver|inicio|menú|menu|te explicamos|te contamos|descubre|aprende|si deseas leer|te recomendamos|sigue leyendo|cuando hablamos de|en este artículo|a continuación|diferencia entre|qué es|que es|cómo|como se|cuándo|dónde|por qué|para qué|características|importancia|tipos|ejemplos|ventajas|desventajas|resumen|introducción|conclusión|índice|bibliografía|referencias|perdonen|perdón|disculpen|me gust|excelente|muy bueno|buen artículo|interesante artículo|opino|creo que|considero que|aguante|viva|jaja|jajaja|xd|en mi opinión|para mí|yo creo|yo opino)\b/i.test(o)) return false;
-  if (/(cookies?|pol[ií]tica de privacidad|suscr[ií]bete|iniciar sesi[oó]n|todos los derechos|publicidad|newsletter|aceptar cookies|artículos parecidos|entra en nuestra categoría|no podemos evitar pensar|si deseas leer más|les doy|sumamente completo|este comentario|otro comentario|la verdad es que|sumamente buen|buen texto|gran artículo|me encanta|me gustó|me gusta|increíble|increible|jajaja?|xd|del la|es algo que todos hemos oído|hemos oído mencionar|si quieres aprender|acompáñanos|acompananos|continúa leyendo|continua leyendo|no te lo pierdas|te invitamos a leer)/i.test(o)) return false;
+  if (/(cookies?|pol[ií]tica de privacidad|suscr[ií]bete|iniciar sesi[oó]n|todos los derechos|publicidad|newsletter|aceptar cookies|artículos parecidos|entra en nuestra categoría|no podemos evitar pensar|si deseas leer más|les doy|sumamente completo|este comentario|otro comentario|la verdad es que|sumamente buen|buen texto|gran artículo|me encanta|me gustó|me gusta|increíble|increible|jajaja?|xd|del la|es algo que todos hemos oído|hemos oído mencionar|si quieres aprender|acompáñanos|acompananos|continúa leyendo|continua leyendo|no te lo pierdas|te invitamos a leer|client challenge|ad blockers|enable javascript|checking your browser|verify you are human)/i.test(o)) return false;
   if (/\b[A-ZÁÉÍÓÚÑ]{6,}\b/.test(o)) return false;
   if (/^[^.]{1,90}:\s*(?:qué|que|cómo|como|cuándo|cuando|dónde|donde|por qué|para qué|fases|características|importancia|tipos|ejemplos)\b/i.test(o)) return false;
   if (/[–-]\s*(?:con|sin)\s+(?:esquema|ejemplos|resumen|vídeo|video|imágenes|imagenes)\b/i.test(o)) return false;
@@ -478,6 +500,33 @@ function oracionBreve(texto) {
   if (!limpio) return '';
   const base = limpio.length > 420 ? `${limpio.slice(0, 420).replace(/\s+\S*$/, '')}…` : limpio;
   return capitalizar(/[.!?]$/.test(base) ? base : `${base}.`);
+}
+
+function contarPalabras(texto) {
+  const limpio = String(texto ?? '')
+    .replace(/\[\d+\]/g, ' ')
+    .replace(/https?:\/\/\S+/gi, ' ');
+  return (limpio.match(/[\p{L}\p{N}]+(?:[-'’][\p{L}\p{N}]+)*/gu) || []).length;
+}
+
+function truncarPalabras(texto, maximo) {
+  const original = String(texto ?? '').trim();
+  const limite = Math.max(0, Number(maximo) || 0);
+  if (contarPalabras(original) <= limite) return original;
+  if (!limite) return '';
+  const cita = original.match(/\s*\[\d+\]\s*\.?\s*$/)?.[0]?.trim() || '';
+  const base = original.replace(/\s*\[\d+\]\s*\.?\s*$/, '').trim();
+  const palabras = /[\p{L}\p{N}]+(?:[-'’][\p{L}\p{N}]+)*/gu;
+  let coincidencia;
+  let contador = 0;
+  let fin = 0;
+  while ((coincidencia = palabras.exec(base)) && contador < limite) {
+    contador += 1;
+    fin = palabras.lastIndex;
+  }
+  let recorte = base.slice(0, fin).replace(/[,;:\s]+$/g, '');
+  if (!/[.!?…]$/.test(recorte)) recorte += '…';
+  return `${recorte}${cita ? ` ${cita}` : ''}`.trim();
 }
 
 function extraerOracionesFuente(texto, terminos, max = 4) {
@@ -1611,6 +1660,10 @@ export function createEngine(opciones = {}) {
   async function respuestaInformeWeb(texto) {
     const { instruccion, datos } = separarDatosInforme(texto);
     const tema = limpiarTemaInforme(instruccion);
+    const palabrasObjetivo = extraerPalabrasObjetivo(texto);
+    const maxPasajes = palabrasObjetivo
+      ? Math.min(24, Math.max(4, Math.ceil(palabrasObjetivo / 40)))
+      : 4;
     const avisos = [];
     if (!tema) {
       return {
@@ -1642,7 +1695,7 @@ export function createEngine(opciones = {}) {
       .sort((a, b) => b.score - a.score)
       .slice(0, 2);
     for (const documento of locales) {
-      const oraciones = extraerOracionesFuente(documento.texto, terminos, 4);
+      const oraciones = extraerOracionesFuente(documento.texto, terminos, maxPasajes);
       if (oraciones.length) {
         fuentes.push({
           titulo: documento.titulo || 'Documento del usuario',
@@ -1654,7 +1707,7 @@ export function createEngine(opciones = {}) {
     }
 
     if (datos) {
-      let oraciones = extraerOracionesFuente(datos, terminos, 4);
+      let oraciones = extraerOracionesFuente(datos, terminos, maxPasajes);
       if (!oraciones.length) {
         const breve = oracionBreve(datos);
         if (breve) oraciones = [{ texto: breve, score: 1, orden: 0 }];
@@ -1678,6 +1731,7 @@ export function createEngine(opciones = {}) {
         const dominios = new Set();
         for (const resultado of busqueda.resultados || []) {
           if (!/^https?:\/\//i.test(String(resultado.enlace || ''))) continue;
+          if (/(?:client challenge|access denied|captcha|just a moment)/i.test(resultado.titulo || '')) continue;
           let host = '';
           try {
             host = new URL(resultado.enlace).hostname.replace(/^www\./i, '');
@@ -1687,10 +1741,15 @@ export function createEngine(opciones = {}) {
           if (!host || dominios.has(host)) continue;
           dominios.add(host);
           candidatos.push(resultado);
-          if (candidatos.length >= 4) break;
+          if (candidatos.length >= 6) break;
         }
+        const maxTextoPagina = palabrasObjetivo
+          ? (palabrasObjetivo >= 800 ? 30000 : 20000)
+          : 12000;
         const paginas = await Promise.all(candidatos.map(async (resultado) => {
-          const pagina = await fetchPageText(resultado.enlace, 12000);
+          const pagina = await fetchPageText(resultado.enlace, maxTextoPagina);
+          const bloqueada = Boolean(pagina.bloqueada)
+            || /(?:client challenge|access denied|captcha|just a moment)/i.test(`${pagina.titulo || ''} ${resultado.titulo || ''}`);
           return pagina.ok
             ? {
               ...resultado,
@@ -1698,24 +1757,31 @@ export function createEngine(opciones = {}) {
               titulo: pagina.titulo || resultado.titulo,
               url: pagina.url || resultado.enlace,
               leida: true,
+              bloqueada,
             }
             : {
               ...resultado,
-              texto: resultado.descripcion || '',
+              texto: bloqueada ? '' : (resultado.descripcion || ''),
               titulo: resultado.titulo,
               url: resultado.enlace,
               leida: false,
+              bloqueada,
             };
         }));
         let leidas = 0;
+        let bloqueadas = 0;
         for (const pagina of paginas) {
-          let oraciones = extraerOracionesFuente(pagina.texto, terminos, 4);
+          if (pagina.bloqueada) {
+            bloqueadas += 1;
+            continue;
+          }
+          let oraciones = extraerOracionesFuente(pagina.texto, terminos, maxPasajes);
           if (!oraciones.length && !pagina.leida) {
             const breve = oracionBreve(pagina.descripcion || pagina.texto);
             if (breve) oraciones = [{ texto: breve, score: 1, orden: 0 }];
           }
-          if (!oraciones.length) continue;
           if (pagina.leida) leidas += 1;
+          if (!oraciones.length) continue;
           fuentes.push({
             titulo: pagina.titulo || pagina.url,
             url: pagina.url,
@@ -1723,8 +1789,12 @@ export function createEngine(opciones = {}) {
             oraciones,
           });
         }
+        if (bloqueadas) {
+          avisos.push(`Se descartaron ${bloqueadas} páginas que bloquearon la lectura automática.`);
+        }
         if (paginas.length && leidas < paginas.length) {
-          avisos.push(`Se leyeron ${leidas} de ${paginas.length} páginas; en las demás se usó el resumen del buscador.`);
+          const restantes = paginas.length - leidas;
+          avisos.push(`Se leyeron ${leidas} de ${paginas.length} páginas; en las otras ${restantes} se usó el resumen del buscador o se descartaron por bloqueo.`);
         }
       }
     } else {
@@ -1743,6 +1813,20 @@ export function createEngine(opciones = {}) {
       }
     }
 
+    // Aunque se leen hasta seis páginas para sustituir las bloqueadas, el
+    // informe final se apoya como máximo en cuatro fuentes web.
+    const fuentesWeb = fuentes.filter((fuente) => fuente.tipo === 'web');
+    if (fuentesWeb.length > 4) {
+      const puntuacionFuente = (fuente) => fuente.oraciones.length * 10
+        + fuente.oraciones.reduce((total, oracion) => total + (oracion.score || 0), 0);
+      const conservar = new Set(
+        [...fuentesWeb].sort((a, b) => puntuacionFuente(b) - puntuacionFuente(a)).slice(0, 4),
+      );
+      for (let i = fuentes.length - 1; i >= 0; i -= 1) {
+        if (fuentes[i].tipo === 'web' && !conservar.has(fuentes[i])) fuentes.splice(i, 1);
+      }
+    }
+
     if (!fuentes.length) {
       return {
         tipo: 'informe_web',
@@ -1758,9 +1842,13 @@ export function createEngine(opciones = {}) {
     }
     fuentes.forEach((fuente, i) => { fuente.n = i + 1; });
 
-    const listas = fuentes.map((fuente) => fuente.oraciones.slice(0, 3));
+    const maxSeleccion = palabrasObjetivo
+      ? Math.min(80, Math.max(12, Math.ceil(palabrasObjetivo / 15)))
+      : 12;
+    const rondas = palabrasObjetivo ? maxPasajes : 3;
+    const listas = fuentes.map((fuente) => fuente.oraciones.slice(0, palabrasObjetivo ? maxPasajes : 3));
     const seleccionadas = [];
-    for (let ronda = 0; ronda < 3; ronda += 1) {
+    for (let ronda = 0; ronda < rondas; ronda += 1) {
       for (let i = 0; i < listas.length; i += 1) {
         const oracion = listas[i][ronda];
         if (!oracion || esOracionDuplicada(oracion.texto, seleccionadas)) continue;
@@ -1769,9 +1857,9 @@ export function createEngine(opciones = {}) {
           fuente: fuentes[i],
           firma: new Set(firmaOracion(oracion.texto).split(' ').filter(Boolean)),
         });
-        if (seleccionadas.length >= 12) break;
+        if (seleccionadas.length >= maxSeleccion) break;
       }
-      if (seleccionadas.length >= 12) break;
+      if (seleccionadas.length >= maxSeleccion) break;
     }
 
     if (!seleccionadas.length) {
@@ -1789,36 +1877,112 @@ export function createEngine(opciones = {}) {
       ...seleccion,
       texto: conCita(parafrasearOracion(seleccion.texto), seleccion.fuente.n),
     }));
-    const introCount = redactadas.length >= 4 ? 2 : 1;
-    const introduccion = redactadas.slice(0, introCount);
-    const desarrollo = redactadas.slice(introCount, 9);
-    const cierre = redactadas.slice(9, 11);
     const recuentoFuentes = fuentes.length === 1 ? '1 fuente consultada' : `${fuentes.length} fuentes consultadas`;
+    const introPlantilla = `El presente informe ofrece una síntesis sobre ${tema} a partir de ${recuentoFuentes}. Los pasajes se han seleccionado por su relación con el tema, se han reorganizado y se han reformulado con un criterio de estilo uniforme. Las citas entre corchetes remiten a la lista final de fuentes.`;
+    const sintesisFinal = fuentes.length === 1
+      ? `En conjunto, este informe reúne los aspectos principales sobre ${tema} presentes en la fuente consultada.`
+      : `En conjunto, este informe reúne los aspectos principales sobre ${tema} presentes en las fuentes consultadas.`;
+    const cierrePlantilla = `${sintesisFinal} Para ampliar o verificar cualquier dato, conviene consultar los documentos originales citados.`;
+
+    const construirCuerpo = (lista) => {
+      const introCount = lista.length >= 4 ? 2 : 1;
+      const cierreCount = lista.length >= 6 ? 2 : lista.length >= 3 ? 1 : 0;
+      const intro = lista.slice(0, introCount);
+      const cierre = cierreCount ? lista.slice(-cierreCount) : [];
+      const desarrollo = lista.slice(introCount, lista.length - cierreCount);
+      const introTexto = intro.length ? `${introPlantilla} ${unirOraciones(intro)}` : introPlantilla;
+      const desarrolloTextos = [];
+      for (let i = 0; i < desarrollo.length; i += 4) {
+        desarrolloTextos.push(unirOraciones(desarrollo.slice(i, i + 4)));
+      }
+      const conclusionTexto = cierre.length
+        ? `${unirOraciones(cierre)} ${cierrePlantilla}`
+        : cierrePlantilla;
+      const texto = [introTexto, ...desarrolloTextos, conclusionTexto].join(' ');
+      return {
+        introTexto,
+        desarrolloTextos,
+        conclusionTexto,
+        texto,
+        palabras: contarPalabras(texto),
+      };
+    };
+
+    let contenido = redactadas.map((item) => ({ ...item }));
+    let cuerpo = construirCuerpo(contenido);
+    let palabrasGeneradas = cuerpo.palabras;
+    let palabrasExactas = null;
+
+    if (palabrasObjetivo) {
+      const firmas = new Set(seleccionadas.map((seleccion) => firmaOracion(seleccion.texto)));
+      const pool = [];
+      for (const fuente of fuentes) {
+        for (const oracion of fuente.oraciones) {
+          const firma = firmaOracion(oracion.texto);
+          if (!firma || firmas.has(firma)) continue;
+          firmas.add(firma);
+          pool.push({
+            ...oracion,
+            fuente,
+            firma: new Set(firma.split(' ').filter(Boolean)),
+            texto: conCita(parafrasearOracion(oracion.texto), fuente.n),
+          });
+        }
+      }
+
+      while (cuerpo.palabras > palabrasObjetivo && contenido.length > 1) {
+        contenido.pop();
+        cuerpo = construirCuerpo(contenido);
+      }
+      if (cuerpo.palabras < palabrasObjetivo) {
+        for (const item of pool) {
+          contenido.push(item);
+          cuerpo = construirCuerpo(contenido);
+          if (cuerpo.palabras >= palabrasObjetivo) break;
+        }
+      }
+      if (cuerpo.palabras > palabrasObjetivo && contenido.length) {
+        const sobra = cuerpo.palabras - palabrasObjetivo;
+        const ultimo = contenido[contenido.length - 1];
+        const palabrasUltimo = contarPalabras(ultimo.texto);
+        if (palabrasUltimo > sobra) {
+          contenido[contenido.length - 1] = {
+            ...ultimo,
+            texto: truncarPalabras(ultimo.texto, palabrasUltimo - sobra),
+          };
+          cuerpo = construirCuerpo(contenido);
+        }
+      }
+      palabrasGeneradas = cuerpo.palabras;
+      palabrasExactas = palabrasGeneradas === palabrasObjetivo;
+      if (palabrasExactas) {
+        avisos.push(`Extensión ajustada a ${palabrasObjetivo} palabras exactas (sin contar títulos, encabezados, fuentes ni citas).`);
+      } else {
+        avisos.push(`Se solicitaron ${palabrasObjetivo} palabras, pero las fuentes solo permiten ${palabrasGeneradas} sin repetir ni inventar contenido.`);
+      }
+    }
+
     const lineas = [
       `**Informe: ${capitalizar(tema)}**`,
       '',
       '**Introducción**',
       '',
-      `El presente informe ofrece una síntesis sobre ${tema} a partir de ${recuentoFuentes}. Los pasajes se han seleccionado por su relación con el tema, se han reorganizado y se han reformulado con un criterio de estilo uniforme. Las citas entre corchetes remiten a la lista final de fuentes.`,
+      cuerpo.introTexto,
+      '',
+      '**Desarrollo**',
+      '',
     ];
-    if (introduccion.length) lineas.push('', unirOraciones(introduccion));
-    lineas.push('', '**Desarrollo**', '');
-    if (desarrollo.length) {
-      for (let i = 0; i < desarrollo.length; i += 4) {
-        lineas.push(unirOraciones(desarrollo.slice(i, i + 4)));
+    if (cuerpo.desarrolloTextos.length) {
+      for (const parrafo of cuerpo.desarrolloTextos) {
+        lineas.push(parrafo);
         lineas.push('');
       }
     } else {
       lineas.push('Las fuentes consultadas no aportan suficientes pasajes para desarrollar el tema en varios párrafos.');
       lineas.push('');
     }
-    lineas.push('**Conclusión**', '');
-    if (cierre.length) lineas.push(unirOraciones(cierre));
-    const sintesisFinal = fuentes.length === 1
-      ? `En conjunto, este informe reúne los aspectos principales sobre ${tema} presentes en la fuente consultada.`
-      : `En conjunto, este informe reúne los aspectos principales sobre ${tema} presentes en las fuentes consultadas.`;
-    lineas.push(`${sintesisFinal} Para ampliar o verificar cualquier dato, conviene consultar los documentos originales citados.`);
-    lineas.push('', '**Fuentes**', '');
+    lineas.push('**Conclusión**', '', cuerpo.conclusionTexto, '');
+    lineas.push('**Fuentes**', '');
     for (const fuente of fuentes) {
       const origen = fuente.url
         ? ` — ${fuente.url}`
@@ -1847,7 +2011,10 @@ export function createEngine(opciones = {}) {
       tipo: 'informe_web',
       respuesta: lineas.join('\n'),
       conceptos: buscarConceptos(tema, 3).map((c) => c.id),
-      fuentes: fuentes.map((f) => `${f.titulo}${f.url ? ` — ${f.url}` : ' (documento del usuario)'}`),
+      fuentes: fuentes.map((f) => `${f.titulo}${f.url ? ` — ${f.url}` : f.tipo === 'datos' ? ' (datos aportados en el mensaje)' : ' (documento del usuario)'}`),
+      palabras: palabrasObjetivo
+        ? { objetivo: palabrasObjetivo, generadas: palabrasGeneradas, exacto: palabrasExactas }
+        : undefined,
       acciones: accion ? [accion] : [],
       avisos: [
         'Informe elaborado mediante búsqueda, selección y parafraseo controlado de las fuentes; no se ha usado ningún modelo neuronal.',

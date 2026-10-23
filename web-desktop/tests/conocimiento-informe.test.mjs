@@ -23,6 +23,7 @@ const htmlBusqueda = `
 <div class="result results_links"><a class="result__a" href="https://fuente-a.example/articulo">Fuente A: fotosíntesis</a><div class="snippet">La fotosíntesis es un proceso bioquímico fundamental para la vida.</div></div></div>
 <div class="result results_links"><a class="result__a" href="https://fuente-b.example/articulo">Fuente B: fotosíntesis</a><div class="snippet">Las plantas utilizan la luz solar para producir energía química.</div></div></div>
 <div class="result results_links"><a class="result__a" href="https://fuente-c.example/articulo">Fuente C: fotosíntesis</a><div class="snippet">La fotosíntesis produce oxígeno y materia orgánica.</div></div></div>
+<div class="result results_links"><a class="result__a" href="https://bloqueado.example/articulo">Documento de fotosíntesis</a><div class="snippet">Un documento alojado en un portal que exige JavaScript.</div></div></div>
 `;
 
 const paginas = {
@@ -39,6 +40,10 @@ const paginas = {
   'https://fuente-c.example/articulo': `<html><head><title>Fuente C</title></head><body>
     <p>La fotosíntesis produce oxígeno y materia orgánica a partir de la luz solar, el agua y el dióxido de carbono. Este proceso es fundamental para los ecosistemas.</p>
     <p>Además, la fotosíntesis regula el clima y sostiene la cadena alimentaria. Su estudio permite comprender mejor el funcionamiento de la biosfera.</p>
+  </body></html>`,
+  'https://bloqueado.example/articulo': `<html><head><title>Client Challenge</title></head><body>
+    <p>Connection, disable any ad blockers, or try using a different browser.</p>
+    <p>Enable JavaScript to continue.</p>
   </body></html>`,
 };
 
@@ -81,6 +86,43 @@ test('conocimiento: redacta un informe con varias fuentes y parafraseo controlad
   assert.doesNotMatch(r.respuesta, /a partir de 1 fuentes/i);
   assert.doesNotMatch(r.respuesta, /&[a-z]+;/i);
   assert.doesNotMatch(r.respuesta, /AGUANTE|Con esquema|sumamente buen|la verdad es que/i);
+  assert.doesNotMatch(r.respuesta, /Client Challenge|ad blockers/i);
+});
+
+test('conocimiento: entiende guardar el informe y ajusta las palabras exactas', async () => {
+  globalThis.fetch = async (url) => {
+    const destino = String(url);
+    if (destino.includes('html.duckduckgo.com')) return respuestaHtml(htmlBusqueda);
+    if (paginas[destino]) return respuestaHtml(paginas[destino]);
+    throw new Error(`URL no simulada: ${destino}`);
+  };
+
+  const r = await consultarConHerramientas(
+    'Redacta un informe de 200 palabras sobre la fotosíntesis. Guarda el informe en documentos',
+  );
+  assert.equal(r.tipo, 'informe_web');
+  assert.match(r.respuesta, /\*\*Informe: La fotosíntesis\*\*/);
+  assert.doesNotMatch(r.respuesta, /Guarda el informe/i);
+  assert.equal(r.palabras.objetivo, 200);
+  assert.equal(r.palabras.generadas, 200);
+  assert.equal(r.palabras.exacto, true);
+  assert.equal(r.acciones[0].accion, 'crear_documento');
+  assert.match(r.acciones[0].ruta, /Informe-la-fotosintesis\.md$/);
+  assert.doesNotMatch(r.respuesta, /Client Challenge|ad blockers/i);
+});
+
+test('conocimiento: interpreta «mil palabras» y limpia el tema', async () => {
+  globalThis.fetch = async (url) => {
+    const destino = String(url);
+    if (destino.includes('html.duckduckgo.com')) return respuestaHtml(htmlBusqueda);
+    if (paginas[destino]) return respuestaHtml(paginas[destino]);
+    throw new Error(`URL no simulada: ${destino}`);
+  };
+
+  const r = await consultarConHerramientas('Redacta un informe de mil palabras sobre la fotosíntesis');
+  assert.equal(r.tipo, 'informe_web');
+  assert.equal(r.palabras.objetivo, 1000);
+  assert.match(r.respuesta, /\*\*Informe: La fotosíntesis\*\*/);
 });
 
 test('conocimiento: usa datos del usuario sin internet y guarda el informe', async () => {

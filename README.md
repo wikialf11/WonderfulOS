@@ -75,11 +75,14 @@ URL o un informe con fuentes), y entonces muestra las fuentes consultadas.
 - **Herramientas web**: búsqueda en DuckDuckGo, titulares y fechas de Google News, y lectura
   extractiva de una URL. La respuesta incluye enlaces y fragmentos de las fuentes; si la red falla,
   lo dice y no inventa una respuesta.
-- **Informes multifuente**: con «Redacta un informe sobre…» busca varias páginas, lee hasta cuatro
-  dominios distintos, incorpora documentos del usuario o datos aportados en el mensaje, elimina
+- **Informes multifuente**: con «Redacta un informe sobre…» busca varias páginas, lee varias fuentes
+  y conserva hasta cuatro dominios distintos, incorpora documentos del usuario o datos aportados
+  en el mensaje, elimina
   pasajes duplicados y redacta una introducción, un desarrollo, una conclusión y una lista de
   fuentes. El parafraseo es determinista y controlado: cambia conectores y expresiones frecuentes,
-  pero protege URLs, citas y términos técnicos.
+  pero protege URLs, citas y términos técnicos. También acepta una extensión exacta, por ejemplo
+  «un informe de 300 palabras»; el recuento se aplica al cuerpo y no incluye títulos, fuentes ni
+  citas. Las órdenes de guardado se separan del tema, aunque vayan en otra frase.
 - **Acciones locales**: puede crear notas, listas de tareas y documentos en las apps de
   WonderfulOS, y guardar el informe en Documentos cuando se lo pides explícitamente.
 - **Generación determinista**: correos formales, planes semanales, textos expositivos e informes
@@ -99,6 +102,7 @@ Redacta un correo formal al Ayuntamiento de La Laguna para solicitar un certific
 Hazme un plan semanal realista para una persona autónoma que cuida de un familiar mayor.
 Explica la vegetación.
 Redacta un informe sobre la fotosíntesis.
+Redacta un informe de 300 palabras sobre la fotosíntesis. Guarda el informe en Documentos.
 Redacta un informe sobre la fotosíntesis con estos datos: la clorofila capta la luz solar. Sin internet y guárdalo en Documentos.
 Busca en internet las noticias de hoy sobre inteligencia artificial.
 Busca en internet información sobre fotosíntesis y crea un informe en Documentos.

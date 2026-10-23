@@ -142,7 +142,8 @@ Flujo de una consulta:
 1. **Detección de intención**: definición, comprobación `es_un`, camino entre
    conceptos, búsqueda local, correo, plan, texto expositivo, informe
    multifuente, búsqueda web, noticias, lectura de una URL o una acción local
-   (nota, lista o documento).
+   (nota, lista o documento). En los informes se separan las órdenes de
+   guardado y la extensión (`de 300 palabras`) del tema que se busca.
 2. **Resolución de conceptos**: índice por lema y sinónimo; prioriza la semilla
    y los conceptos enseñados por el usuario sobre MCR.
 3. **Hechos y reglas**: se construyen hechos `es_un`, `parte_de`,
@@ -170,9 +171,10 @@ la fotosíntesis». El flujo es determinista:
 1. Separa los datos aportados por el usuario (`con estos datos: …`) y limpia el
    tema de la orden.
 2. Añade documentos locales del usuario que sean relevantes para el tema.
-3. Busca en DuckDuckGo y lee hasta cuatro dominios distintos con
-   `fetchPageText`. Si una página no se puede leer, usa el resumen del buscador
-   y lo advierte.
+3. Busca en DuckDuckGo, descarta páginas bloqueadas o con desafíos JavaScript
+   y lee varias fuentes con `fetchPageText`; conserva hasta cuatro dominios
+   utilizables. Si una página no se puede leer, usa el resumen del buscador y lo
+   advierte.
 4. Extrae oraciones con `extraerOracionesFuente`, filtra navegación, cookies,
    preguntas y URLs, y puntúa cada pasaje por los términos del tema.
 5. Deduplica pasajes con similitud Jaccard (≥ 0,7) y reparte la selección entre
@@ -183,7 +185,11 @@ la fotosíntesis». El flujo es determinista:
 7. Compone introducción, desarrollo, conclusión y fuentes. Cada idea lleva una
    cita `[n]` y la lista final identifica la página o el documento. Si no hay
    fuentes legibles, devuelve un aviso y no inventa contenido.
-8. Solo guarda el informe en Documentos si la petición incluye «en Documentos»
+8. Si se pide una extensión exacta (`de 300 palabras`), recorta o amplía con
+   pasajes ya disponibles hasta ajustar el cuerpo. El recuento excluye título,
+   encabezados, lista de fuentes y marcas de cita; si las fuentes no permiten
+   llegar sin repetir o inventar, lo advierte y entrega la extensión posible.
+9. Solo guarda el informe en Documentos si la petición incluye «en Documentos»
    o una orden equivalente de guardado.
 
 La API está en `server/api.mjs`:
