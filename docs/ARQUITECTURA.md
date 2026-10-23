@@ -140,17 +140,24 @@ data/conocimiento/
 Flujo de una consulta:
 
 1. **Detección de intención**: definición, comprobación `es_un`, camino entre
-   conceptos, búsqueda local, correo, plan o texto expositivo.
+   conceptos, búsqueda local, correo, plan, texto expositivo, búsqueda web,
+   noticias, lectura de una URL o una acción local (nota, lista o documento).
 2. **Resolución de conceptos**: índice por lema y sinónimo; prioriza la semilla
    y los conceptos enseñados por el usuario sobre MCR.
 3. **Hechos y reglas**: se construyen hechos `es_un`, `parte_de`,
    `asociado_con`, etc., y se aplican reglas de transitividad, simetría y
    herencia. Las deducciones guardan premisas y nombre de regla.
 4. **Recuperación**: índice BM25 sobre definiciones y documentos. La consulta se
-   expande con sinónimos. No se consulta internet.
-5. **Generación**: plantillas deterministas para correos, planes y textos. Los
-   huecos se marcan con placeholders y cada respuesta incluye conceptos,
-   fuentes y avisos.
+   expande con sinónimos. Si el usuario pide internet, noticias o incluye una
+   URL, se usan las herramientas web de Agentic (`searchWeb`, Google News RSS y
+   `fetchPageText`) y se devuelven enlaces, fechas y fragmentos. Si la red falla,
+   la respuesta lo declara y no inventa datos.
+5. **Generación y acciones**: plantillas deterministas para correos, planes y
+   textos. Los huecos se marcan con placeholders y cada respuesta incluye
+   conceptos, fuentes y avisos. Las respuestas web son extractivas: no se
+   redacta una opinión sin fuente. Las órdenes explícitas de crear una nota,
+   lista o documento se ejecutan con `executeOsTool` y se confirman con la
+   ruta o el identificador del resultado.
 6. **Verificación**: la comprobación `es_un` y el detector de contradicciones
    solo afirman lo que está en la base o se deduce de ella.
 
@@ -159,7 +166,7 @@ La API está en `server/api.mjs`:
 | Ruta | Uso |
 |---|---|
 | `GET /api/conocimiento/status` | Estadísticas del motor. |
-| `POST /api/conocimiento/consultar` | `{ "texto": "¿Qué es el verde?" }`. |
+| `POST /api/conocimiento/consultar` | `{ "texto": "¿Qué es el verde?" }`; también resuelve búsquedas web, noticias y URLs. |
 | `POST /api/conocimiento/ensenar` | Concepto, relación, texto o regla. |
 | `GET /api/conocimiento/buscar?q=...` | Búsqueda BM25 directa. |
 | `GET /api/conocimiento/concepto?lema=...` | Definición directa. |

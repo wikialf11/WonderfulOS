@@ -1,7 +1,9 @@
 # Datos del motor de conocimiento
 
 Esta carpeta alimenta el modo **Lógica** de Agentic. El motor es 100 % simbólico: no hay modelo
-neuronal, no hay entrenamiento por gradientes y no se llama a Ollama.
+neuronal, no hay entrenamiento por gradientes y no se llama a Ollama. La consulta local no usa
+internet; cuando el usuario pide una búsqueda web, noticias o una URL, el motor usa las
+herramientas de red de Agentic y devuelve las fuentes consultadas.
 
 ## Ficheros
 
@@ -76,6 +78,18 @@ curl -s http://127.0.0.1:4310/api/conocimiento/status -H 'x-nubeos: 1'
 curl -s http://127.0.0.1:4310/api/conocimiento/consultar \
   -H 'x-nubeos: 1' -H 'content-type: application/json' \
   -d '{"texto":"¿Qué es el verde?"}'
+```
+
+La misma ruta resuelve herramientas web y acciones locales cuando se piden de forma explícita:
+
+```bash
+curl -s http://127.0.0.1:4310/api/conocimiento/consultar \
+  -H 'x-nubeos: 1' -H 'content-type: application/json' \
+  -d '{"texto":"Busca en internet las noticias de hoy sobre inteligencia artificial"}'
+
+curl -s http://127.0.0.1:4310/api/conocimiento/consultar \
+  -H 'x-nubeos: 1' -H 'content-type: application/json' \
+  -d '{"texto":"Crea una nota con las ideas de la reunión de mañana"}'
 ```
 
 Enseñar un concepto:

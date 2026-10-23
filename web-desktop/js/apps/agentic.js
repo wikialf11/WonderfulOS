@@ -209,6 +209,12 @@ export default {
                 <button class="ag-prompt-chip" data-text="¿Qué es el verde?">
                   <span>◇</span> Definir un concepto
                 </button>
+                <button class="ag-prompt-chip" data-text="Busca en internet las noticias de hoy sobre inteligencia artificial">
+                  <span>🌐</span> Buscar noticias en internet
+                </button>
+                <button class="ag-prompt-chip" data-text="Crea una nota con ideas de diseño y colores para la interfaz">
+                  <span>📝</span> Crear nota
+                </button>
                 <button class="ag-prompt-chip" data-text="Redacta un correo formal al Ayuntamiento de La Laguna para solicitar un certificado de residencia. Usa placeholders para mis datos y un tono cordial y administrativo.">
                   <span>▤</span> Correo formal con plantilla
                 </button>
@@ -325,7 +331,7 @@ export default {
         dlBtn.hidden = true;
         downloadTarget = '';
         if (modelStatusEl) {
-          modelStatusEl.innerHTML = 'Lógica: diccionario abierto + reglas + plantillas. <strong>Sin Ollama.</strong>';
+          modelStatusEl.innerHTML = 'Lógica: diccionario abierto + reglas + plantillas + web y acciones locales. <strong>Sin Ollama.</strong>';
         }
         try {
           const st = await api('conocimiento/status');

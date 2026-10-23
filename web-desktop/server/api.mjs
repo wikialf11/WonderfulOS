@@ -202,7 +202,7 @@ export async function apiHandler(req, res, url) {
         if (req.method === 'GET' && sub === 'status') return send(200, conocimiento.estadisticas());
         if (req.method === 'POST' && sub === 'consultar') {
           const { texto } = await readJson(req, 200000);
-          return send(200, conocimiento.consultar(texto));
+          return send(200, await conocimiento.consultarConHerramientas(texto));
         }
         if (req.method === 'POST' && sub === 'ensenar') {
           return send(200, conocimiento.ensenar(await readJson(req, 1024 * 1024)));

@@ -179,6 +179,64 @@ test('conocimiento: detecta una contradicción enseñada', (t) => {
   assert.ok(engine.estadisticas().contradicciones >= 1);
 });
 
+test('conocimiento: consulta noticias web y cita fuentes sin modelo', async (t) => {
+  const { dir, engine } = motorDePrueba();
+  limpiar(t, dir);
+  const fetchOriginal = globalThis.fetch;
+  const llamadas = [];
+  globalThis.fetch = async (url) => {
+    llamadas.push(String(url));
+    if (String(url).includes('news.google.com/rss')) {
+      return {
+        ok: true,
+        text: async () => `<rss><channel><item>
+          <title>Noticia de prueba</title>
+          <link>https://example.com/noticia</link>
+          <pubDate>Fri, 23 Oct 2026 10:00:00 GMT</pubDate>
+          <description><![CDATA[<a href="https://example.com/noticia">Resumen de la noticia</a>]]></description>
+          <source>Medio de prueba</source>
+        </item></channel></rss>`,
+      };
+    }
+    return {
+      ok: true,
+      text: async () => '<html><head><title>Página de prueba</title></head><body><p>La inteligencia artificial es el tema de esta noticia de prueba.</p></body></html>',
+    };
+  };
+  t.after(() => { globalThis.fetch = fetchOriginal; });
+
+  const r = await engine.consultarConHerramientas('Busca en internet las noticias de hoy sobre inteligencia artificial');
+  assert.equal(r.tipo, 'noticias');
+  assert.equal(r.modelo, false);
+  assert.ok(llamadas.some((u) => u.includes('news.google.com/rss')));
+  assert.match(r.respuesta, /Noticia de prueba/);
+  assert.ok(r.fuentes.some((f) => f.includes('https://example.com/noticia')));
+});
+
+test('conocimiento: lee una URL y no consulta internet para preguntas locales', async (t) => {
+  const { dir, engine } = motorDePrueba();
+  limpiar(t, dir);
+  const fetchOriginal = globalThis.fetch;
+  let llamadas = 0;
+  globalThis.fetch = async () => {
+    llamadas += 1;
+    return {
+      ok: true,
+      text: async () => '<html><head><title>Documento web</title></head><body><p>Contenido de prueba suficientemente largo para el resumen extractivo.</p></body></html>',
+    };
+  };
+  t.after(() => { globalThis.fetch = fetchOriginal; });
+
+  const local = await engine.consultarConHerramientas('¿Qué es el verde?');
+  assert.equal(local.tipo, 'definir');
+  assert.equal(llamadas, 0);
+
+  const web = await engine.consultarConHerramientas('Lee https://example.com/documento');
+  assert.equal(web.tipo, 'leer_url');
+  assert.match(web.respuesta, /Documento web/);
+  assert.equal(web.modelo, false);
+});
+
 test('conocimiento: carga el diccionario abierto MCR', (t) => {
   const { dir, engine } = motorDePrueba({ mcr: true });
   limpiar(t, dir);

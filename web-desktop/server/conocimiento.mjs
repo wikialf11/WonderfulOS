@@ -9,13 +9,18 @@
 //
 // El motor define conceptos, recorre relaciones, aplica reglas, recupera
 // fragmentos con BM25 y redacta correos, planes y textos expositivos con
-// plantillas deterministas. Todas las respuestas declaran sus fuentes y avisos.
+// plantillas deterministas. También puede consultar fuentes web y ejecutar
+// acciones locales (notas, listas y documentos) cuando el usuario lo pide de
+// forma explícita. Todas las respuestas declaran sus fuentes y avisos.
 
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { DATA } from './store.mjs';
+// Herramientas web ya usadas por Agentic. Son funciones de red, no modelos.
+import { searchWeb, fetchPageText, executeOsTool } from './agentic.mjs';
+import { assertPublic } from './proxy.mjs';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const SEED_DIR = path.resolve(AQUI, '..', 'data', 'conocimiento');
@@ -274,6 +279,144 @@ function aplicarReglas(hechosIniciales, reglas) {
     if (!cambios || truncado) break;
   }
   return { hechos, derivaciones, truncado };
+}
+
+// ---------- Herramientas de actualidad (red, sin modelo neuronal) ----------
+
+function limpiarTextoWeb(texto) {
+  // Primero se decodifican las entidades y después se quitan las etiquetas:
+  // los resúmenes RSS suelen traer enlaces escapados como &lt;a href=...&gt;.
+  return String(texto ?? '')
+    .replace(/&amp;/gi, '&')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&hellip;/gi, '…')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function esPeticionNoticias(texto) {
+  const t = normalizar(texto);
+  return /(noticias|actualidad|ultima hora|ultimas noticias|que pasa hoy|que ha pasado hoy|que pasa ahora|que ha pasado ahora|ultimamente)/.test(t);
+}
+
+function esPeticionActual(texto) {
+  const t = normalizar(texto);
+  return /(que tiempo|el tiempo|clima|temperatura|cotizacion|precio|resultado|marcador|cuanto cuesta|cuanto vale)/.test(t)
+    && /(hoy|ahora|actual|actualidad|ultimo|ultima|en vivo|estos dias)/.test(t);
+}
+
+function limpiarConsultaWeb(texto) {
+  let q = String(texto ?? '').trim();
+  q = q.replace(/^¿\s*/, '').replace(/\s*\?+\s*$/, '').trim();
+  q = q.replace(/^(?:busca|buscar|búscame|buscame|consulta|consultar|averigua|averiguar|dime|encuentra)\s+(?:en\s+)?(?:internet|la\s+web|la\s+red|online|google)\s*(?:sobre|acerca\s+de|de)?\s*/i, '');
+  q = q.replace(/^(?:dime|cuéntame|cuentame|muéstrame|muestrame)\s+/i, '');
+  q = q.replace(/^(?:cuáles|cuales)\s+son\s+(?:las\s+)?/i, '');
+  q = q.replace(/^(?:las\s+)?(?:noticias|últimas\s+noticias|ultimas\s+noticias|actualidad|última\s+hora|ultima\s+hora)\s*(?:sobre|de|del)?\s*/i, '');
+  q = q.replace(/^(?:hoy|ahora|última\s+hora|ultima\s+hora|últimamente|ultimamente)\s*(?:sobre|de|del)?\s*/i, '');
+  q = q.replace(/^(?:qué\s+pasa|que\s+pasa|qué\s+ha\s+pasado|que\s+ha\s+pasado)\s+(?:hoy|ahora|últimamente|ultimamente|en\s+el\s+mundo)\s*(?:con|sobre|de)?\s*/i, '');
+  q = q.replace(/^(?:información|informacion|datos|detalles)\s+(?:sobre|acerca\s+de|de)\s+/i, '');
+  q = q.replace(/\s+(?:y\s+)?(?:crea|crear|genera|generar|guarda|guardar|redacta|redactar)\s+(?:un\s+)?(?:documento|informe|archivo|nota)\b[\s\S]*$/i, '');
+  q = q.replace(/\s+(?:y\s+)?(?:guárdalo|guardalo|guárdala|guardala)\s+en\s+documentos?\b[\s\S]*$/i, '');
+  return q.trim();
+}
+
+function pideInformeWeb(texto) {
+  const t = normalizar(texto);
+  if (/\b(como)\s+(crear|hacer|generar|redactar)\b/.test(t)) return false;
+  return /\b(crea|crear|genera|generar|guarda|guardar|redacta|redactar)\b/.test(t)
+    && /\b(documento|informe|archivo)\b/.test(t)
+    && (/\bdocumentos?\b/.test(t) || /\binforme\b/.test(t));
+}
+
+function formatearFechaWeb(fecha) {
+  if (!fecha) return '';
+  const d = new Date(fecha);
+  if (Number.isNaN(d.getTime())) return String(fecha);
+  return d.toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+async function searchNews(consulta) {
+  try {
+    const url = `https://news.google.com/rss/search?q=${encodeURIComponent(consulta)}&hl=es&gl=ES&ceid=ES:es`;
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'WonderfulOS/1.0 (motor simbólico; consulta de actualidad)',
+        'Accept': 'application/rss+xml,application/xml,text/xml;q=0.9,*/*;q=0.8',
+      },
+      signal: AbortSignal.timeout(12000),
+    });
+    if (!res.ok) return [];
+    const xml = await res.text();
+    const resultados = [];
+    const itemRegex = /<item>([\s\S]*?)<\/item>/gi;
+    let match;
+    while ((match = itemRegex.exec(xml)) !== null && resultados.length < 8) {
+      const item = match[1];
+      const leer = (tag) => {
+        const m = new RegExp(`<${tag}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${tag}>`, 'i').exec(item);
+        return m ? limpiarTextoWeb(m[1].replace(/^<!\[CDATA\[|\]\]>$/g, '')) : '';
+      };
+      const titulo = leer('title');
+      const enlace = leer('link');
+      if (!titulo || !enlace) continue;
+      resultados.push({
+        titulo,
+        enlace,
+        descripcion: leer('description'),
+        fecha: leer('pubDate'),
+        fuente: leer('source') || 'Google News',
+      });
+    }
+    return resultados;
+  } catch {
+    return [];
+  }
+}
+
+function esFraseBoilerplate(frase) {
+  const f = normalizar(frase);
+  if (!f) return true;
+  if (/^(ir al contenido|menu|buscar|donar|crear cuenta|acceder|iniciar sesion|inicio|saltar|navegacion|wikimedia|articulo|discusion|leer|editar|ver historial|herramientas|idiomas|descargar|imprimir)\b/.test(f)) return true;
+  if (/^(representacion|diagrama|ecuacion|comparacion|imagen que muestra|fotografia|mapa|grafico|ilustracion|esquema|figura)\b/.test(f)) return true;
+  if (/^para la (pelicula|serie|novela|obra|cancion|revista)\b/.test(f)) return true;
+  if (/wikipedia la enciclopedia libre$/.test(f)) return true;
+  return false;
+}
+
+function resumenExtractivo(texto, consulta, max = 900) {
+  const limpio = String(texto ?? '').replace(/[ \t]+/g, ' ').replace(/\n{2,}/g, '\n').trim();
+  if (!limpio) return '';
+  const terminos = new Set(tokens(consulta).filter((t) => !STOPWORDS.has(t)).map(raiz));
+  const oraciones = [];
+  for (const bloque of limpio.split(/\n+/)) {
+    const partes = bloque.length > 800 ? bloque.split(/(?<=[.!?])\s+/) : [bloque];
+    for (const parte of partes) {
+      const oracion = parte.trim();
+      if (oracion.length >= 60 && oracion.length <= 900 && !esFraseBoilerplate(oracion)) {
+        oraciones.push(oracion);
+      }
+    }
+  }
+  if (!oraciones.length) return limpio.slice(0, max);
+  const puntuadas = oraciones.map((oracion, i) => {
+    const presentes = new Set(tokens(oracion).map(raiz));
+    const score = [...terminos].filter((t) => presentes.has(t)).length;
+    return { oracion, i, score };
+  });
+  const relevantes = puntuadas
+    .filter((o) => o.score > 0)
+    .sort((a, b) => b.score - a.score || a.i - b.i)
+    .slice(0, 5);
+  const elegidas = (relevantes.length ? relevantes : puntuadas.slice(0, 4))
+    .sort((a, b) => a.i - b.i);
+  let salida = elegidas.map((o) => o.oracion).join(' ');
+  if (salida.length > max) salida = `${salida.slice(0, max).replace(/\s+\S*$/, '')}…`;
+  return salida;
 }
 
 export function createEngine(opciones = {}) {
@@ -1164,9 +1307,258 @@ export function createEngine(opciones = {}) {
     };
   }
 
+  async function respuestaAccion(texto) {
+    const original = String(texto || '').trim();
+    // El tipo de acción se decide por la cabeza de la orden, no por palabras
+    // que aparezcan después en el contenido (p. ej. "preparar el informe").
+    const mando = original.match(/^(?:crea|crear|añade|anade|guarda|guardar)\s+(?:una?\s+)?(nota|lista(?:\s+de\s+tareas)?|documento|informe|archivo)\b/i);
+    const tipoAccion = mando ? normalizar(mando[1]) : '';
+    try {
+      if (tipoAccion.includes('nota')) {
+        let cuerpo = original
+          .replace(/^(?:crea|crear|añade|anade|guarda|guardar)\s+(?:una?\s+)?nota(?:\s+rápida)?\s*/i, '')
+          .trim();
+        cuerpo = cuerpo.replace(/^(?:que\s+diga|con|sobre|titulada|titulado)\s*[:\-]?\s*/i, '').trim();
+        if (!cuerpo) throw new Error('Indica el contenido de la nota.');
+        const titulo = (cuerpo.split(/[.\n]/)[0] || 'Nota').slice(0, 60).trim();
+        const accion = await executeOsTool('crear_nota', { titulo, texto: cuerpo });
+        return {
+          tipo: 'accion',
+          respuesta: `**Acción realizada**\n\n- Nota creada: **${titulo}**\n- Puedes verla en la aplicación Notas.`,
+          conceptos: [],
+          fuentes: ['Aplicación Notas'],
+          acciones: [accion],
+          avisos: ['Acción ejecutada en el perfil local de WonderfulOS.'],
+        };
+      }
+
+      if (tipoAccion.includes('lista')) {
+        let resto = original
+          .replace(/^(?:crea|crear|añade|anade|guarda|guardar)\s+(?:una?\s+)?lista(?:\s+de\s+tareas)?\s*/i, '')
+          .trim();
+        resto = resto.replace(/^(?:para|del|de)\s+/i, '');
+        const partes = resto.split(/\s+con\s+/i);
+        const tituloParte = partes.length > 1 ? partes.shift() : resto;
+        const tareasTexto = partes.join(' con ').trim();
+        const titulo = capitalizar(limpiarTermino(tituloParte) || 'Lista de tareas');
+        const tareas = tareasTexto
+          .split(/\s*(?:,|;|\by\b)\s*/i)
+          .map((t) => t.trim())
+          .filter(Boolean);
+        const accion = await executeOsTool('crear_lista_tareas', {
+          titulo,
+          tareas: (tareas.length ? tareas : ['Primera tarea']).map((t) => ({ texto: t })),
+        });
+        return {
+          tipo: 'accion',
+          respuesta: `**Acción realizada**\n\n- Lista creada: **${accion.titulo}**\n- Tareas iniciales: ${accion.numTareas}`,
+          conceptos: [],
+          fuentes: ['Aplicación Listas'],
+          acciones: [accion],
+          avisos: ['Acción ejecutada en el perfil local de WonderfulOS.'],
+        };
+      }
+
+      let resto = original
+        .replace(/^(?:crea|crear|añade|anade|guarda|guardar)\s+(?:un\s+)?(?:documento|informe|archivo)\s*/i, '')
+        .trim();
+      let titulo = 'Documento';
+      let contenido = resto;
+      const coincide = resto.match(/^(?:de|sobre|titulado|titulada)\s+(.+?)(?:\s+con\s+|$)/i);
+      if (coincide) {
+        titulo = capitalizar(limpiarTermino(coincide[1])) || 'Documento';
+        contenido = resto.slice(coincide[0].length).replace(/^con\s+/i, '').trim()
+          || `# ${titulo}\n\nDocumento creado desde Lógica.`;
+      }
+      if (!contenido) contenido = 'Documento creado desde Lógica.';
+      if (!/^\s*#/.test(contenido)) contenido = `# ${titulo}\n\n${contenido}`;
+      const accion = await executeOsTool('crear_documento', {
+        nombre: `${slug(titulo)}.md`,
+        contenido,
+      });
+      return {
+        tipo: 'accion',
+        respuesta: `**Acción realizada**\n\n- Documento creado: \`${accion.ruta}\``,
+        conceptos: [],
+        fuentes: ['Documentos'],
+        acciones: [accion],
+        avisos: ['Acción ejecutada en el perfil local de WonderfulOS.'],
+      };
+    } catch (err) {
+      return {
+        tipo: 'accion',
+        respuesta: `No he podido completar la acción: ${err.message || 'error desconocido'}.`,
+        conceptos: [],
+        fuentes: [],
+        acciones: [],
+        avisos: ['No se ha modificado ningún archivo ni aplicación.'],
+      };
+    }
+  }
+
+  async function respuestaInternet(texto) {
+    const noticias = esPeticionNoticias(texto);
+    const consulta = limpiarConsultaWeb(texto) || 'actualidad';
+    let resultados = [];
+    let origen = '';
+
+    if (noticias) {
+      resultados = await searchNews(consulta);
+      if (resultados.length) origen = 'Google News';
+    }
+    if (!resultados.length) {
+      const busqueda = await searchWeb(consulta);
+      if (busqueda.ok) {
+        resultados = busqueda.resultados || [];
+        origen = 'DuckDuckGo';
+      } else if (!noticias) {
+        return {
+          tipo: 'internet',
+          respuesta: `No he podido consultar internet para «${consulta}»: ${busqueda.error || 'sin conexión'}. No voy a inventar una respuesta.`,
+          conceptos: [],
+          fuentes: [],
+          avisos: ['La consulta web ha fallado; no se ha usado conocimiento local para simular una respuesta.'],
+        };
+      }
+    }
+
+    if (!resultados.length) {
+      return {
+        tipo: noticias ? 'noticias' : 'internet',
+        respuesta: `No he encontrado resultados web para «${consulta}». No voy a inventar una respuesta.`,
+        conceptos: [],
+        fuentes: [],
+        avisos: ['Consulta web realizada sin resultados; prueba con otras palabras o revisa la conexión.'],
+      };
+    }
+
+    let extracto = '';
+    const principal = resultados.find((r) => /^https?:\/\//i.test(String(r.enlace || '')));
+    if (principal) {
+      const pagina = await fetchPageText(principal.enlace, 12000);
+      if (pagina.ok) extracto = resumenExtractivo(pagina.texto, consulta, 800);
+    }
+
+    const lineas = [
+      noticias ? `**Actualidad para «${consulta}»**` : `**Resultados web para «${consulta}»**`,
+      '',
+      `_Consulta realizada ahora${origen ? ` · ${origen}` : ''}._`,
+      '',
+    ];
+    resultados.slice(0, 6).forEach((r, i) => {
+      const fecha = formatearFechaWeb(r.fecha);
+      lineas.push(`${i + 1}. **${r.titulo || 'Sin título'}**${fecha ? ` — ${fecha}` : ''}`);
+      if (r.descripcion) lineas.push(`   ${String(r.descripcion).slice(0, 320)}`);
+      if (r.enlace) lineas.push(`   ${r.enlace}`);
+    });
+    if (extracto) {
+      lineas.push('', '**Fragmento de la fuente principal**', extracto);
+    }
+
+    const fuentes = [...new Set(resultados
+      .slice(0, 6)
+      .map((r) => (r.titulo ? `${r.titulo} — ${r.enlace}` : r.enlace))
+      .filter(Boolean))];
+
+    let accion = null;
+    if (pideInformeWeb(texto)) {
+      const informe = [
+        `# Informe: ${consulta}`,
+        '',
+        `Generado por Lógica el ${new Date().toLocaleString('es-ES')} a partir de fuentes web.`,
+        '',
+        ...lineas,
+        '',
+        '## Fuentes',
+        ...fuentes.map((f) => `- ${f}`),
+      ].join('\n');
+      try {
+        accion = await executeOsTool('crear_documento', {
+          nombre: `Informe-${slug(consulta)}.md`,
+          contenido: informe,
+        });
+      } catch (err) {
+        accion = { ok: false, error: err.message };
+      }
+      if (accion.ok) {
+        lineas.push('', '**Acción del sistema**', `- Informe guardado en \`${accion.ruta}\``);
+      } else {
+        lineas.push('', '**Acción del sistema**', '- No se pudo guardar el informe en Documentos.');
+      }
+    }
+
+    return {
+      tipo: noticias ? 'noticias' : 'internet',
+      respuesta: lineas.join('\n'),
+      conceptos: [],
+      fuentes,
+      acciones: accion ? [accion] : [],
+      avisos: [
+        'Información obtenida de internet en el momento de la consulta; puede cambiar.',
+        'Se muestran fuentes y fragmentos; no se ha generado una opinión ni se han inventado datos.',
+      ],
+    };
+  }
+
+  async function respuestaLeerUrl(texto) {
+    const coincidencia = String(texto || '').match(/https?:\/\/[^\s<>"']+/i);
+    const url = coincidencia ? coincidencia[0].replace(/[).,;!?]+$/, '') : '';
+    if (!url) {
+      return {
+        tipo: 'leer_url',
+        respuesta: 'No he encontrado una URL válida en la consulta.',
+        conceptos: [],
+        fuentes: [],
+        avisos: ['Indica una dirección que empiece por http:// o https://.'],
+      };
+    }
+    try {
+      const destino = new URL(url);
+      if (!/^https?:$/.test(destino.protocol)) throw new Error('solo se admiten http:// o https://');
+      await assertPublic(destino);
+    } catch (err) {
+      return {
+        tipo: 'leer_url',
+        respuesta: `No he podido leer ${url}: ${err.message || 'dirección no permitida'}.`,
+        conceptos: [],
+        fuentes: [],
+        avisos: ['Por seguridad no se leen direcciones locales ni privadas.'],
+      };
+    }
+    const pagina = await fetchPageText(url, 12000);
+    if (!pagina.ok) {
+      return {
+        tipo: 'leer_url',
+        respuesta: `No he podido leer ${url}: ${pagina.error || 'error de red'}. No voy a inventar el contenido.`,
+        conceptos: [],
+        fuentes: [],
+        avisos: ['La lectura de la página ha fallado; revisa la URL o la conexión.'],
+      };
+    }
+    const consulta = `${String(texto || '').replace(url, ' ').trim()} ${pagina.titulo || ''}`.trim();
+    const resumen = resumenExtractivo(pagina.texto, consulta, 1400);
+    return {
+      tipo: 'leer_url',
+      respuesta: [
+        `**${pagina.titulo || 'Página web'}**`,
+        '',
+        resumen || 'La página no contiene texto extraíble.',
+        '',
+        `Fuente: ${pagina.url}`,
+      ].join('\n'),
+      conceptos: [],
+      fuentes: [`${pagina.titulo || pagina.url} — ${pagina.url}`],
+      avisos: ['Contenido leído de la URL indicada en el momento de la consulta.'],
+    };
+  }
+
   function detectarIntencion(texto) {
     const lower = normalizar(texto);
+    if (/https?:\/\//i.test(String(texto || ''))) return 'leer_url';
+    if (/(busca|buscar|buscame|consulta|consultar|averigua|averiguar|dime|encuentra)\s+(?:en\s+)?(?:internet|la\s+web|la\s+red|online|google)\b/.test(lower)) return 'internet';
+    if (esPeticionNoticias(texto) || esPeticionActual(texto)) return 'internet';
     if (/^(hola|buenas|buenos dias|buenas tardes|buenas noches)\b/.test(lower)) return 'saludo';
+    if (/^(?:crea|crear|anade|añade|guarda|guardar)\s+(?:una?\s+)?(?:nota|lista(?:\s+de\s+tareas)?|documento|informe|archivo)\b/.test(lower)) return 'accion';
     if (/(correo|carta|email|e-mail)/.test(lower)
       && /(redacta|escribe|prepara|haz|borrador|formal|envia)/.test(lower)
       && !/(texto|ensayo|articulo)/.test(lower)) return 'correo';
@@ -1188,6 +1580,25 @@ export function createEngine(opciones = {}) {
     const intencion = detectarIntencion(entrada);
     let resultado;
     switch (intencion) {
+      case 'internet':
+      case 'leer_url':
+        resultado = {
+          tipo: 'herramienta',
+          respuesta: 'Esta consulta necesita una herramienta web. Usa consultarConHerramientas() o el endpoint /api/conocimiento/consultar.',
+          conceptos: [],
+          fuentes: [],
+          avisos: ['La consulta síncrona no accede a internet para no bloquear el motor.'],
+        };
+        break;
+      case 'accion':
+        resultado = {
+          tipo: 'herramienta',
+          respuesta: 'Esta consulta requiere ejecutar una acción del sistema. Usa consultarConHerramientas() o el endpoint /api/conocimiento/consultar.',
+          conceptos: [],
+          fuentes: [],
+          avisos: ['La consulta síncrona no modifica aplicaciones ni archivos.'],
+        };
+        break;
       case 'saludo':
         resultado = {
           tipo: 'saludo',
@@ -1228,6 +1639,23 @@ export function createEngine(opciones = {}) {
         resultado = respuestaDefinir(entrada);
         break;
     }
+    return {
+      ...resultado,
+      modo: 'simbólico',
+      modelo: false,
+    };
+  }
+
+  async function consultarConHerramientas(texto) {
+    const entrada = String(texto ?? '').trim();
+    if (!entrada) throw new Error('Escribe una consulta.');
+    if (entrada.length > 20000) throw new Error('La consulta es demasiado larga.');
+    const intencion = detectarIntencion(entrada);
+    let resultado;
+    if (intencion === 'accion') resultado = await respuestaAccion(entrada);
+    else if (intencion === 'internet') resultado = await respuestaInternet(entrada);
+    else if (intencion === 'leer_url') resultado = await respuestaLeerUrl(entrada);
+    else resultado = consultar(entrada);
     return {
       ...resultado,
       modo: 'simbólico',
@@ -1340,6 +1768,7 @@ export function createEngine(opciones = {}) {
 
   return {
     consultar,
+    consultarConHerramientas,
     buscar: (texto, limite = 5) => buscarBM25(texto, limite),
     definir: (termino) => respuestaDefinir(`¿Qué es ${termino}?`),
     buscarConceptos,
@@ -1358,6 +1787,7 @@ export function motor() {
 }
 
 export const consultar = (texto) => motor().consultar(texto);
+export const consultarConHerramientas = (texto) => motor().consultarConHerramientas(texto);
 export const buscar = (texto, limite) => motor().buscar(texto, limite);
 export const definir = (termino) => motor().definir(termino);
 export const estadisticas = () => motor().estadisticas();

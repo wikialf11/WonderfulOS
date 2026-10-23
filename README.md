@@ -53,13 +53,16 @@ Notas de Agentic:
 - El modo **Agente** usa `qwen3:1.7b` y las herramientas del sistema (4096 tokens de contexto).
   El modo **Redacción** usa `gemma2:2b`, 2048 tokens y ninguna herramienta: así escribe mejor y
   consume menos memoria.
-- El modo **Lógica** no usa Ollama ni ningún modelo neuronal. Es un motor simbólico local con
-  diccionario abierto, reglas de inferencia, búsqueda BM25 y plantillas deterministas.
+- El modo **Lógica** no usa Ollama ni ningún modelo neuronal. Es un motor simbólico con
+  diccionario abierto, reglas de inferencia, búsqueda BM25, plantillas deterministas y
+  herramientas web explícitas para consultar fuentes actuales.
 
 ### Motor de conocimiento simbólico (`Lógica`)
 
 El modo **Lógica** de Agentic funciona en cualquier equipo con Node.js, aunque no haya modelos
-descargados. No entrena, no genera con una red neuronal y no envía datos fuera del ordenador.
+descargados. No entrena ni genera con una red neuronal. Por defecto razona en local; solo abre
+conexiones a internet cuando se lo pides explícitamente (búsqueda web, noticias o lectura de una
+URL), y entonces muestra las fuentes consultadas.
 
 - **Diccionario abierto**: semilla curada de 103 conceptos más 18.913 synsets del
   [Multilingual Central Repository (MCR/WordNet)](https://github.com/omwn/omw-data) en español,
@@ -67,7 +70,13 @@ descargados. No entrena, no genera con una red neuronal y no envía datos fuera 
 - **Grafo y reglas**: relaciones `es_un`, `parte_de`, `asociado_con`, `opuesto_a`, `sinonimo`…
   y reglas de transitividad, simetría y herencia. Cada respuesta puede incluir la traza de la
   inferencia.
-- **Recuperación local**: BM25 sobre definiciones y documentos de ejemplo. No consulta internet.
+- **Recuperación local**: BM25 sobre definiciones y documentos de ejemplo. No consulta internet
+  salvo que la petición pida la web de forma explícita.
+- **Herramientas web**: búsqueda en DuckDuckGo, titulares y fechas de Google News, y lectura
+  extractiva de una URL. La respuesta incluye enlaces y fragmentos de las fuentes; si la red falla,
+  lo dice y no inventa una respuesta.
+- **Acciones locales**: puede crear notas, listas de tareas y documentos en las apps de
+  WonderfulOS, y guardar un informe con fuentes cuando se lo pides junto a una búsqueda web.
 - **Generación determinista**: correos formales, planes semanales, textos expositivos con
   introducción/desarrollo/conclusión/fuentes y listas. Las plantillas marcan los datos que faltan
   con placeholders.
@@ -84,6 +93,11 @@ Ejemplos de consultas:
 Redacta un correo formal al Ayuntamiento de La Laguna para solicitar un certificado de residencia.
 Hazme un plan semanal realista para una persona autónoma que cuida de un familiar mayor.
 Explica la vegetación.
+Busca en internet las noticias de hoy sobre inteligencia artificial.
+Busca en internet información sobre fotosíntesis y crea un informe en Documentos.
+Lee esta página y resúmela: https://es.wikipedia.org/wiki/Fotosíntesis
+Crea una nota con las ideas de la reunión de mañana.
+Crea una lista de tareas para el proyecto con revisar el correo, preparar el informe y llamar a Ana.
 Busca información sobre fotosíntesis.
 ```
 
