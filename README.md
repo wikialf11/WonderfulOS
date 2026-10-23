@@ -53,6 +53,69 @@ Notas de Agentic:
 - El modo **Agente** usa `qwen3:1.7b` y las herramientas del sistema (4096 tokens de contexto).
   El modo **Redacción** usa `gemma2:2b`, 2048 tokens y ninguna herramienta: así escribe mejor y
   consume menos memoria.
+- El modo **Lógica** no usa Ollama ni ningún modelo neuronal. Es un motor simbólico local con
+  diccionario abierto, reglas de inferencia, búsqueda BM25 y plantillas deterministas.
+
+### Motor de conocimiento simbólico (`Lógica`)
+
+El modo **Lógica** de Agentic funciona en cualquier equipo con Node.js, aunque no haya modelos
+descargados. No entrena, no genera con una red neuronal y no envía datos fuera del ordenador.
+
+- **Diccionario abierto**: semilla curada de 103 conceptos más 18.913 synsets del
+  [Multilingual Central Repository (MCR/WordNet)](https://github.com/omwn/omw-data) en español,
+  con licencia **CC BY 3.0**. Los datos generados están en `web-desktop/data/conocimiento/mcr-es.json`.
+- **Grafo y reglas**: relaciones `es_un`, `parte_de`, `asociado_con`, `opuesto_a`, `sinonimo`…
+  y reglas de transitividad, simetría y herencia. Cada respuesta puede incluir la traza de la
+  inferencia.
+- **Recuperación local**: BM25 sobre definiciones y documentos de ejemplo. No consulta internet.
+- **Generación determinista**: correos formales, planes semanales, textos expositivos con
+  introducción/desarrollo/conclusión/fuentes y listas. Las plantillas marcan los datos que faltan
+  con placeholders.
+- **Enseñanza**: desde el botón **+ Enseñar concepto** del modo Lógica se añaden conceptos con
+  definición, género y relaciones. La API permite además enseñar relaciones, textos y reglas. Todo
+  se guarda en `NUBEOS_DATA/conocimiento/` y se usa en la siguiente consulta.
+
+Ejemplos de consultas:
+
+```text
+¿Qué es el verde?
+¿El verde es una cualidad?
+¿Qué relación hay entre verde y vegetación?
+Redacta un correo formal al Ayuntamiento de La Laguna para solicitar un certificado de residencia.
+Hazme un plan semanal realista para una persona autónoma que cuida de un familiar mayor.
+Explica la vegetación.
+Busca información sobre fotosíntesis.
+```
+
+API local (requiere la cabecera `x-nubeos: 1`):
+
+```bash
+curl -s http://127.0.0.1:4310/api/conocimiento/status -H 'x-nubeos: 1'
+curl -s http://127.0.0.1:4310/api/conocimiento/consultar \
+  -H 'x-nubeos: 1' -H 'content-type: application/json' \
+  -d '{"texto":"¿Qué es el verde?"}'
+```
+
+Para enseñar un concepto:
+
+```bash
+curl -s http://127.0.0.1:4310/api/conocimiento/ensenar \
+  -H 'x-nubeos: 1' -H 'content-type: application/json' \
+  -d '{"tipo":"concepto","lema":"fotosíntesis artificial","definicion":"proceso técnico que imita la fotosíntesis natural","genero":"proceso"}'
+```
+
+Para enseñar una relación, usa `predicado` (no `tipo`, que reserva el tipo de operación):
+
+```json
+{"tipo":"relacion","origen":"fotosíntesis artificial","predicado":"parte_de","destino":"tecnología"}
+```
+
+El motor y su formato de datos se documentan en `docs/ARQUITECTURA.md` y en
+`web-desktop/data/conocimiento/README.md`. Para regenerar el diccionario desde MCR:
+
+```bash
+cd web-desktop && node scripts/importar-mcr.mjs
+```
 
 Qué incluye:
 
@@ -66,11 +129,11 @@ Qué incluye:
 | **Diapositivas** | Presentaciones con miniaturas, temas, reordenación y modo presentación a pantalla completa. |
 | **Navegador** | En la app de escritorio usa Chromium; en el escritorio web, el proxy local. Las direcciones locales (p. ej. ComfyUI en `127.0.0.1:8188`) se abren directamente. Las **descargas** se guardan en Archivos › Descargas, en este equipo. |
 | **Correo** | Cliente inspirado en FairEmail: IMAP/SMTP con detección automática de servidores, carpetas, búsqueda, destacados, borradores con autoguardado y firma. Sin cuenta funciona en local y lo enviado espera en la Bandeja de salida. |
-| **Agentic** | Asistente local con Ollama. Modo **Agente** para automatizar el sistema (`qwen3:1.7b`) y modo **Redacción** para correos, planes e ideas (`gemma2:2b`), sin herramientas y con menos contexto para ahorrar RAM. |
+| **Agentic** | Asistente local con Ollama. Modo **Agente** para automatizar el sistema (`qwen3:1.7b`), modo **Redacción** para correos, planes e ideas (`gemma2:2b`) y modo **Lógica** 100 % simbólico, sin modelo y con diccionario abierto. |
 | **Llavero** | Contraseñas cifradas con una contraseña maestra propia, sin conexión ni recuperación remota. |
 | **Ajustes** | Apariencia, fondo, dock, pantalla, accesibilidad, almacenamiento local y apps de Linux. |
 
-Pruebas del motor de fórmulas:
+Pruebas del motor de fórmulas y del motor de conocimiento:
 
 ```bash
 cd web-desktop && node --test tests/*.test.mjs
@@ -84,7 +147,10 @@ web-desktop/             Escritorio en el navegador (HTML/CSS/JS; el correo usa 
   server.mjs             Servicio local: escritorio, API y proxy
   server/api.mjs         API local: archivos, descargas y datos de apps
   server/store.mjs       Datos en disco: perfil local y archivos
+  server/conocimiento.mjs Motor simbólico: léxico, reglas, BM25 y plantillas
   server/proxy.mjs       Proxy de navegación y búsqueda
+  data/conocimiento/     Semilla, reglas, textos y diccionario MCR generado
+  scripts/importar-mcr.mjs Importación reproducible de MCR/WordNet
   js/wm.js               Gestor de ventanas
   js/fs.js               Sistema de archivos virtual
   js/desktop.js          Shell: registro de apps, Launchpad, barra de tareas
@@ -97,3 +163,8 @@ os/iso/                  Sistema instalable para PC
 ## Licencia
 
 WonderfulOS es software libre: se distribuye bajo la licencia **GNU GPL versión 3 o posterior** (ver `LICENSE`). Usa piezas libres de otros proyectos con sus propias licencias: Collabora Online / LibreOffice (MPL-2.0), Electron (MIT), Lima (Apache-2.0), Xpra (GPL-2.0) y Debian.
+
+El diccionario del modo Lógica deriva del **Multilingual Central Repository (MCR) 2.0 / Open
+Multilingual WordNet**, WordNet en español, distribuido bajo **CC BY 3.0**. La atribución completa,
+la URL de origen y las transformaciones aplicadas están en
+`web-desktop/data/conocimiento/README.md`.

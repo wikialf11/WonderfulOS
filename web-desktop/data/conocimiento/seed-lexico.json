@@ -1,0 +1,1379 @@
+{
+  "version": 1,
+  "descripcion": "Léxico semilla de WonderfulOS. Definiciones originales y relaciones mínimas para el motor lógico. Los datos abiertos de MCR/WordNet se cargan aparte.",
+  "conceptos": [
+    {
+      "id": "entidad",
+      "lema": "entidad",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "aquello que existe o puede existir y puede ser identificado",
+          "diferencia": "de forma independiente",
+          "ejemplo": "Una mesa, una idea y un número son entidades."
+        }
+      ]
+    },
+    {
+      "id": "cualidad",
+      "lema": "cualidad",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "propiedad o característica que distingue a una entidad",
+          "genero": "entidad",
+          "diferencia": "que se predica de algo",
+          "ejemplo": "El color y el tamaño son cualidades."
+        }
+      ]
+    },
+    {
+      "id": "ser-vivo",
+      "lema": "ser vivo",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "entidad que nace, crece, se reproduce y muere",
+          "genero": "entidad",
+          "diferencia": "que realiza funciones vitales",
+          "ejemplo": "Una planta, un animal y una persona son seres vivos."
+        }
+      ]
+    },
+    {
+      "id": "sustancia",
+      "lema": "sustancia",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "materia de la que están hechas las cosas",
+          "genero": "entidad",
+          "diferencia": "que tiene composición física",
+          "ejemplo": "El agua y el hierro son sustancias."
+        }
+      ]
+    },
+    {
+      "id": "materia",
+      "lema": "materia",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "sustancia física que ocupa un lugar en el espacio",
+          "genero": "sustancia",
+          "diferencia": "que puede ser percibida por los sentidos",
+          "ejemplo": "La madera es materia."
+        }
+      ]
+    },
+    {
+      "id": "fenomeno",
+      "lema": "fenómeno",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "suceso que se manifiesta en la naturaleza o en la experiencia",
+          "genero": "entidad",
+          "diferencia": "que ocurre en el tiempo",
+          "ejemplo": "La lluvia y el eco son fenómenos."
+        }
+      ]
+    },
+    {
+      "id": "conjunto",
+      "lema": "conjunto",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "agrupación de elementos que se consideran como una unidad",
+          "genero": "entidad",
+          "diferencia": "que reúne varias partes",
+          "ejemplo": "Un bosque es un conjunto de árboles."
+        }
+      ]
+    },
+    {
+      "id": "propiedad",
+      "lema": "propiedad",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "atributo que caracteriza o distingue a una entidad",
+          "genero": "cualidad",
+          "diferencia": "que puede ser poseída o predicada",
+          "ejemplo": "La densidad es una propiedad de la materia."
+        }
+      ]
+    },
+    {
+      "id": "espacio",
+      "lema": "espacio",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "extensión donde se sitúan los cuerpos y ocurren los movimientos",
+          "genero": "entidad",
+          "diferencia": "que permite la ubicación",
+          "ejemplo": "El cielo ocupa un espacio."
+        }
+      ]
+    },
+    {
+      "id": "tiempo",
+      "lema": "tiempo",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "sucesión ordenada de hechos que permite distinguir pasado, presente y futuro",
+          "genero": "entidad",
+          "diferencia": "que se mide con intervalos",
+          "ejemplo": "Una semana es un periodo de tiempo."
+        }
+      ]
+    },
+    {
+      "id": "idea",
+      "lema": "idea",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "representación mental de algo",
+          "genero": "entidad",
+          "diferencia": "que existe en la mente",
+          "ejemplo": "La idea de justicia no ocupa un lugar físico."
+        }
+      ]
+    },
+    {
+      "id": "enunciado",
+      "lema": "enunciado",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "expresión lingüística con sentido completo",
+          "genero": "entidad",
+          "diferencia": "que puede ser emitida o escrita",
+          "ejemplo": "«Llueve» es un enunciado."
+        }
+      ]
+    },
+    {
+      "id": "proposicion",
+      "lema": "proposición",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "enunciado que puede ser verdadero o falso",
+          "genero": "enunciado",
+          "diferencia": "que tiene valor de verdad",
+          "ejemplo": "«El agua hierve a 100 grados» es una proposición."
+        }
+      ]
+    },
+    {
+      "id": "argumento",
+      "lema": "argumento",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "conjunto de premisas que apoyan una conclusión",
+          "genero": "conjunto",
+          "diferencia": "que busca justificar una afirmación",
+          "ejemplo": "Un silogismo es un tipo de argumento."
+        }
+      ]
+    },
+    {
+      "id": "premisa",
+      "lema": "premisa",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "proposición que se ofrece como razón dentro de un argumento",
+          "genero": "proposicion",
+          "diferencia": "que sirve de apoyo a la conclusión",
+          "ejemplo": "«Todos los seres vivos mueren» es una premisa."
+        }
+      ]
+    },
+    {
+      "id": "conclusion",
+      "lema": "conclusión",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "proposición que se sigue de las premisas de un argumento",
+          "genero": "proposicion",
+          "diferencia": "que se pretende justificar",
+          "ejemplo": "«Los seres humanos mueren» es una conclusión."
+        }
+      ]
+    },
+    {
+      "id": "definicion",
+      "lema": "definición",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "enunciado que explica el significado de un concepto",
+          "genero": "enunciado",
+          "diferencia": "que delimita su sentido",
+          "ejemplo": "«El verde es el color de la vegetación» es una definición."
+        }
+      ]
+    },
+    {
+      "id": "concepto",
+      "lema": "concepto",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "idea general que representa una clase de objetos o fenómenos",
+          "genero": "idea",
+          "diferencia": "que reúne características comunes",
+          "ejemplo": "El concepto de planta reúne a árboles, hierbas y arbustos."
+        }
+      ]
+    },
+    {
+      "id": "conocimiento",
+      "lema": "conocimiento",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "conjunto de conceptos, hechos y reglas que se conocen",
+          "genero": "conjunto",
+          "diferencia": "que se puede comunicar y justificar",
+          "ejemplo": "El diccionario y las reglas forman parte del conocimiento del sistema."
+        }
+      ]
+    },
+    {
+      "id": "disciplina",
+      "lema": "disciplina",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "campo del saber que estudia un conjunto de problemas con métodos propios",
+          "genero": "conocimiento",
+          "diferencia": "que se cultiva de forma organizada",
+          "ejemplo": "La lógica es una disciplina filosófica."
+        }
+      ]
+    },
+    {
+      "id": "logica",
+      "lema": "lógica",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "disciplina que estudia la validez de los argumentos",
+          "genero": "disciplina",
+          "diferencia": "que distingue formas correctas e incorrectas de razonar",
+          "ejemplo": "La lógica permite comprobar si una conclusión se sigue de las premisas."
+        }
+      ]
+    },
+    {
+      "id": "verdad",
+      "lema": "verdad",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "correspondencia entre lo que se afirma y lo que ocurre",
+          "genero": "propiedad",
+          "diferencia": "que se atribuye a proposiciones",
+          "ejemplo": "Una proposición tiene valor de verdad."
+        }
+      ]
+    },
+    {
+      "id": "sistema",
+      "lema": "sistema",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "conjunto ordenado de elementos que interactúan entre sí",
+          "genero": "conjunto",
+          "diferencia": "que forma una unidad organizada",
+          "ejemplo": "El lenguaje es un sistema de signos."
+        }
+      ]
+    },
+    {
+      "id": "lenguaje",
+      "lema": "lenguaje",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "sistema de signos que permite comunicar ideas",
+          "genero": "sistema",
+          "diferencia": "que se usa para expresar y comprender",
+          "ejemplo": "El español es un lenguaje natural."
+        }
+      ]
+    },
+    {
+      "id": "palabra",
+      "lema": "palabra",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "unidad del lenguaje con significado propio",
+          "genero": "unidad",
+          "diferencia": "que puede combinarse con otras",
+          "ejemplo": "«Verde» es una palabra."
+        }
+      ]
+    },
+    {
+      "id": "unidad",
+      "lema": "unidad",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "elemento singular que se considera completo dentro de un conjunto",
+          "genero": "entidad",
+          "diferencia": "que puede contarse o distinguirse",
+          "ejemplo": "Cada palabra es una unidad del texto."
+        }
+      ]
+    },
+    {
+      "id": "comunicacion",
+      "lema": "comunicación",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "proceso por el que se transmite información entre un emisor y un receptor",
+          "genero": "proceso",
+          "diferencia": "que requiere un mensaje y un canal",
+          "ejemplo": "Un correo es una forma de comunicación."
+        }
+      ]
+    },
+    {
+      "id": "proceso",
+      "lema": "proceso",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "sucesión de cambios o acciones orientados a un resultado",
+          "genero": "fenomeno",
+          "diferencia": "que se desarrolla en el tiempo",
+          "ejemplo": "La educación es un proceso."
+        }
+      ]
+    },
+    {
+      "id": "texto",
+      "lema": "texto",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "conjunto de enunciados organizados con un propósito comunicativo",
+          "genero": "comunicacion",
+          "diferencia": "que posee coherencia y unidad",
+          "ejemplo": "Un correo formal es un texto."
+        }
+      ]
+    },
+    {
+      "id": "documento",
+      "lema": "documento",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "soporte que contiene información y puede ser consultado",
+          "genero": "soporte",
+          "diferencia": "que conserva un contenido",
+          "ejemplo": "Un certificado es un documento."
+        }
+      ]
+    },
+    {
+      "id": "soporte",
+      "lema": "soporte",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "objeto o medio material o digital que contiene algo",
+          "genero": "entidad",
+          "diferencia": "que sirve para conservar o transmitir",
+          "ejemplo": "El papel y el disco son soportes."
+        }
+      ]
+    },
+    {
+      "id": "informacion",
+      "lema": "información",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "conjunto de datos organizados que tienen significado",
+          "genero": "conjunto",
+          "diferencia": "que reduce la incertidumbre",
+          "ejemplo": "Un documento contiene información."
+        }
+      ]
+    },
+    {
+      "id": "correo",
+      "lema": "correo",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "texto que se envía a un destinatario por un servicio postal o electrónico",
+          "genero": "texto",
+          "diferencia": "que está dirigido a alguien",
+          "ejemplo": "Envié un correo al ayuntamiento."
+        }
+      ]
+    },
+    {
+      "id": "carta",
+      "lema": "carta",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "texto dirigido a una persona o institución",
+          "genero": "texto",
+          "diferencia": "que sigue fórmulas de trato",
+          "ejemplo": "La carta empezaba con un saludo formal."
+        }
+      ]
+    },
+    {
+      "id": "solicitud",
+      "lema": "solicitud",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "documento con el que se pide algo a una autoridad o entidad",
+          "genero": "documento",
+          "diferencia": "que expresa una petición",
+          "ejemplo": "Presentó una solicitud de residencia."
+        }
+      ]
+    },
+    {
+      "id": "certificado",
+      "lema": "certificado",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "documento que acredita oficialmente un hecho",
+          "genero": "documento",
+          "diferencia": "que sirve como prueba",
+          "ejemplo": "El certificado de residencia acredita el domicilio."
+        }
+      ]
+    },
+    {
+      "id": "residencia",
+      "lema": "residencia",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "hecho de vivir de forma habitual en un lugar determinado",
+          "genero": "hecho",
+          "diferencia": "que puede acreditarse administrativamente",
+          "ejemplo": "La residencia se certifica con el padrón."
+        }
+      ]
+    },
+    {
+      "id": "hecho",
+      "lema": "hecho",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "suceso o situación que ocurre y puede ser comprobado",
+          "genero": "fenomeno",
+          "diferencia": "que se presenta como real",
+          "ejemplo": "La lluvia de ayer es un hecho."
+        }
+      ]
+    },
+    {
+      "id": "ayuntamiento",
+      "lema": "ayuntamiento",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "institución que gobierna un municipio",
+          "genero": "institucion",
+          "diferencia": "que presta servicios locales",
+          "ejemplo": "El ayuntamiento expide el certificado de residencia."
+        }
+      ]
+    },
+    {
+      "id": "institucion",
+      "lema": "institución",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "organización establecida para cumplir un fin social",
+          "genero": "organizacion",
+          "diferencia": "que tiene normas y continuidad",
+          "ejemplo": "La universidad es una institución."
+        }
+      ]
+    },
+    {
+      "id": "organizacion",
+      "lema": "organización",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "conjunto de personas y medios coordinados para un fin",
+          "genero": "conjunto",
+          "diferencia": "que distribuye tareas y recursos",
+          "ejemplo": "Una administración es una organización."
+        }
+      ]
+    },
+    {
+      "id": "administracion",
+      "lema": "administración",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "organización que gestiona recursos y servicios",
+          "genero": "organizacion",
+          "diferencia": "que aplica normas y procedimientos",
+          "ejemplo": "La administración local atiende al ciudadano."
+        }
+      ]
+    },
+    {
+      "id": "plan",
+      "lema": "plan",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "esquema que organiza acciones para alcanzar un fin",
+          "genero": "esquema",
+          "diferencia": "que distribuye tareas y tiempos",
+          "ejemplo": "El plan semanal reserva bloques de trabajo."
+        }
+      ]
+    },
+    {
+      "id": "esquema",
+      "lema": "esquema",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "representación ordenada de las partes de algo",
+          "genero": "representacion",
+          "diferencia": "que muestra su estructura",
+          "ejemplo": "El esquema del texto tiene introducción, desarrollo y conclusión."
+        }
+      ]
+    },
+    {
+      "id": "representacion",
+      "lema": "representación",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "idea o imagen que sustituye a algo en la mente o en un soporte",
+          "genero": "idea",
+          "diferencia": "que permite referirse a lo representado",
+          "ejemplo": "Un mapa es una representación del territorio."
+        }
+      ]
+    },
+    {
+      "id": "periodo",
+      "lema": "periodo",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "espacio de tiempo con un inicio y un fin",
+          "genero": "tiempo",
+          "diferencia": "que puede medirse",
+          "ejemplo": "Una semana es un periodo de siete días."
+        }
+      ]
+    },
+    {
+      "id": "semana",
+      "lema": "semana",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "periodo de siete días consecutivos",
+          "genero": "periodo",
+          "diferencia": "que se usa para organizar el calendario",
+          "ejemplo": "El plan semanal cubre de lunes a viernes."
+        }
+      ]
+    },
+    {
+      "id": "actividad",
+      "lema": "actividad",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "conjunto de acciones que se realizan con un propósito",
+          "genero": "proceso",
+          "diferencia": "que implica esfuerzo o atención",
+          "ejemplo": "Leer es una actividad."
+        }
+      ]
+    },
+    {
+      "id": "trabajo",
+      "lema": "trabajo",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "actividad que produce bienes o servicios",
+          "genero": "actividad",
+          "diferencia": "que puede ser remunerada",
+          "ejemplo": "El trabajo profundo requiere concentración."
+        }
+      ]
+    },
+    {
+      "id": "descanso",
+      "lema": "descanso",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "actividad que permite recuperar fuerzas",
+          "genero": "actividad",
+          "diferencia": "que interrumpe el esfuerzo",
+          "ejemplo": "Una pausa breve es un descanso."
+        }
+      ]
+    },
+    {
+      "id": "cuidado",
+      "lema": "cuidado",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "actividad que protege o atiende a alguien o algo",
+          "genero": "actividad",
+          "diferencia": "que requiere atención y tiempo",
+          "ejemplo": "El cuidado de un familiar mayor exige planificación."
+        }
+      ]
+    },
+    {
+      "id": "grupo",
+      "lema": "grupo",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "conjunto de personas o cosas reunidas por un criterio",
+          "genero": "conjunto",
+          "diferencia": "que comparte alguna característica",
+          "ejemplo": "La familia es un grupo."
+        }
+      ]
+    },
+    {
+      "id": "familia",
+      "lema": "familia",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "grupo de personas unidas por parentesco o convivencia",
+          "genero": "grupo",
+          "diferencia": "que mantiene vínculos de cuidado",
+          "ejemplo": "La familia se reúne los domingos."
+        }
+      ]
+    },
+    {
+      "id": "estado",
+      "lema": "estado",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "situación en que se encuentra una entidad en un momento dado",
+          "genero": "entidad",
+          "diferencia": "que puede cambiar",
+          "ejemplo": "La salud es un estado."
+        }
+      ]
+    },
+    {
+      "id": "salud",
+      "lema": "salud",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "estado de bienestar físico y mental",
+          "genero": "estado",
+          "diferencia": "que permite desarrollar la vida con normalidad",
+          "ejemplo": "Dormir bien favorece la salud."
+        }
+      ]
+    },
+    {
+      "id": "educacion",
+      "lema": "educación",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "proceso de enseñanza y aprendizaje",
+          "genero": "proceso",
+          "diferencia": "que transmite conocimientos y valores",
+          "ejemplo": "La educación universitaria forma especialistas."
+        }
+      ]
+    },
+    {
+      "id": "universidad",
+      "lema": "universidad",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "institución de educación superior",
+          "genero": "institucion",
+          "diferencia": "que imparte docencia e investigación",
+          "ejemplo": "La universidad ofrece grados y másteres."
+        }
+      ]
+    },
+    {
+      "id": "libro",
+      "lema": "libro",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "documento con páginas que contiene un texto",
+          "genero": "documento",
+          "diferencia": "que se organiza para la lectura",
+          "ejemplo": "El libro reúne varios capítulos."
+        }
+      ]
+    },
+    {
+      "id": "lectura",
+      "lema": "lectura",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "actividad de interpretar un texto",
+          "genero": "actividad",
+          "diferencia": "que requiere comprender signos",
+          "ejemplo": "La lectura atenta mejora la comprensión."
+        }
+      ]
+    },
+    {
+      "id": "escritura",
+      "lema": "escritura",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "actividad de producir un texto",
+          "genero": "actividad",
+          "diferencia": "que organiza ideas en signos",
+          "ejemplo": "La escritura formal evita ambigüedades."
+        }
+      ]
+    },
+    {
+      "id": "color",
+      "lema": "color",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "cualidad visual que produce la luz reflejada por un objeto",
+          "genero": "cualidad",
+          "diferencia": "que se percibe por la vista",
+          "ejemplo": "El verde y el rojo son colores."
+        }
+      ]
+    },
+    {
+      "id": "verde",
+      "lema": "verde",
+      "categoria": "adjetivo",
+      "sinonimos": ["verdoso"],
+      "acepciones": [
+        {
+          "definicion": "color de la vegetación",
+          "genero": "color",
+          "diferencia": "que recuerda al de las hojas y la hierba",
+          "ejemplo": "El verde del bosque se intensifica en primavera.",
+          "relaciones": [
+            ["asociado_con", "vegetacion"],
+            ["opuesto_a", "rojo"]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rojo",
+      "lema": "rojo",
+      "categoria": "adjetivo",
+      "acepciones": [
+        {
+          "definicion": "color de la sangre y de muchas frutas maduras",
+          "genero": "color",
+          "diferencia": "que se asocia al fuego y a la sangre",
+          "ejemplo": "El rojo de la manzana destaca en el frutero.",
+          "relaciones": [["opuesto_a", "verde"]]
+        }
+      ]
+    },
+    {
+      "id": "azul",
+      "lema": "azul",
+      "categoria": "adjetivo",
+      "acepciones": [
+        {
+          "definicion": "color del cielo despejado y del mar",
+          "genero": "color",
+          "diferencia": "que se percibe en longitudes de onda cortas",
+          "ejemplo": "El azul del cielo anuncia buen tiempo.",
+          "relaciones": [["asociado_con", "cielo"], ["asociado_con", "mar"]]
+        }
+      ]
+    },
+    {
+      "id": "amarillo",
+      "lema": "amarillo",
+      "categoria": "adjetivo",
+      "acepciones": [
+        {
+          "definicion": "color del sol y de la yema del huevo",
+          "genero": "color",
+          "diferencia": "que se asocia a la luz y al calor",
+          "ejemplo": "El amarillo del sol iluminó la plaza.",
+          "relaciones": [["asociado_con", "sol"]]
+        }
+      ]
+    },
+    {
+      "id": "blanco",
+      "lema": "blanco",
+      "categoria": "adjetivo",
+      "acepciones": [
+        {
+          "definicion": "color de la luz que reúne todos los colores",
+          "genero": "color",
+          "diferencia": "que refleja la mayor parte de la luz",
+          "ejemplo": "La nieve es blanca.",
+          "relaciones": [["opuesto_a", "negro"]]
+        }
+      ]
+    },
+    {
+      "id": "negro",
+      "lema": "negro",
+      "categoria": "adjetivo",
+      "acepciones": [
+        {
+          "definicion": "color de la ausencia de luz",
+          "genero": "color",
+          "diferencia": "que absorbe la mayor parte de la luz",
+          "ejemplo": "La noche es negra.",
+          "relaciones": [["opuesto_a", "blanco"]]
+        }
+      ]
+    },
+    {
+      "id": "vegetacion",
+      "lema": "vegetación",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "conjunto de plantas que cubren un terreno",
+          "genero": "conjunto",
+          "diferencia": "que forma la cubierta vegetal",
+          "ejemplo": "La vegetación protege el suelo de la erosión.",
+          "relaciones": [["compuesto_por", "planta"], ["parte_de", "naturaleza"]]
+        }
+      ]
+    },
+    {
+      "id": "fotosintesis",
+      "lema": "fotosíntesis",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "proceso por el que las plantas fabrican su alimento usando luz, agua y dióxido de carbono",
+          "genero": "proceso",
+          "diferencia": "que produce oxígeno",
+          "ejemplo": "La fotosíntesis ocurre en las hojas.",
+          "relaciones": [
+            ["parte_de", "planta"],
+            ["produce", "oxigeno"],
+            ["necesita", "luz"],
+            ["necesita", "agua"]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "oxigeno",
+      "lema": "oxígeno",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "gas necesario para la respiración de muchos seres vivos",
+          "genero": "sustancia",
+          "diferencia": "que forma parte del aire",
+          "ejemplo": "Las plantas producen oxígeno.",
+          "relaciones": [["parte_de", "aire"]]
+        }
+      ]
+    },
+    {
+      "id": "planta",
+      "lema": "planta",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "ser vivo que crece fijo al suelo y fabrica su alimento",
+          "genero": "ser-vivo",
+          "diferencia": "que realiza la fotosíntesis",
+          "ejemplo": "El árbol es una planta de gran tamaño.",
+          "relaciones": [["necesita", "agua"], ["necesita", "luz"], ["parte_de", "vegetacion"]]
+        }
+      ]
+    },
+    {
+      "id": "arbol",
+      "lema": "árbol",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "planta de tallo leñoso que se ramifica a cierta altura",
+          "genero": "planta",
+          "diferencia": "que tiene tronco y copa",
+          "ejemplo": "El roble es un árbol.",
+          "relaciones": [["tiene", "hoja"], ["tiene", "tronco"], ["compone", "bosque"]]
+        }
+      ]
+    },
+    {
+      "id": "hoja",
+      "lema": "hoja",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "parte de la planta que realiza la fotosíntesis",
+          "genero": "parte",
+          "diferencia": "que suele ser plana y verde",
+          "ejemplo": "La hoja capta la luz del sol.",
+          "relaciones": [["parte_de", "planta"], ["asociado_con", "verde"]]
+        }
+      ]
+    },
+    {
+      "id": "parte",
+      "lema": "parte",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "elemento que compone un todo",
+          "genero": "entidad",
+          "diferencia": "que puede separarse o distinguirse",
+          "ejemplo": "La hoja es una parte de la planta."
+        }
+      ]
+    },
+    {
+      "id": "hierba",
+      "lema": "hierba",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "planta pequeña de tallo blando",
+          "genero": "planta",
+          "diferencia": "que cubre el suelo",
+          "ejemplo": "La hierba del prado es verde.",
+          "relaciones": [["parte_de", "vegetacion"]]
+        }
+      ]
+    },
+    {
+      "id": "bosque",
+      "lema": "bosque",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "conjunto de árboles que cubren un terreno",
+          "genero": "conjunto",
+          "diferencia": "que forma un ecosistema",
+          "ejemplo": "El bosque alberga muchas especies.",
+          "relaciones": [["compuesto_por", "arbol"], ["parte_de", "naturaleza"]]
+        }
+      ]
+    },
+    {
+      "id": "naturaleza",
+      "lema": "naturaleza",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "conjunto de seres vivos y elementos físicos que forman el mundo",
+          "genero": "conjunto",
+          "diferencia": "que no ha sido creado por la voluntad humana",
+          "ejemplo": "La naturaleza incluye montañas, ríos y bosques."
+        }
+      ]
+    },
+    {
+      "id": "agua",
+      "lema": "agua",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "sustancia líquida necesaria para la vida",
+          "genero": "sustancia",
+          "diferencia": "que está formada por hidrógeno y oxígeno",
+          "ejemplo": "Sin agua no hay vida.",
+          "relaciones": [["parte_de", "naturaleza"], ["necesaria_para", "ser-vivo"]]
+        }
+      ]
+    },
+    {
+      "id": "tierra",
+      "lema": "tierra",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "materia sólida que forma el suelo",
+          "genero": "materia",
+          "diferencia": "que sostiene a las plantas",
+          "ejemplo": "La tierra del huerto es fértil.",
+          "relaciones": [["parte_de", "naturaleza"]]
+        }
+      ]
+    },
+    {
+      "id": "sol",
+      "lema": "sol",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "astro que emite luz y calor al sistema solar",
+          "genero": "astro",
+          "diferencia": "que es la estrella central",
+          "ejemplo": "El sol ilumina la tierra.",
+          "relaciones": [["emite", "luz"], ["parte_de", "naturaleza"]]
+        }
+      ]
+    },
+    {
+      "id": "astro",
+      "lema": "astro",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "cuerpo celeste que se observa en el espacio",
+          "genero": "entidad",
+          "diferencia": "que se encuentra fuera de la Tierra",
+          "ejemplo": "El sol y la luna son astros."
+        }
+      ]
+    },
+    {
+      "id": "luz",
+      "lema": "luz",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "fenómeno que permite ver los objetos",
+          "genero": "fenomeno",
+          "diferencia": "que se propaga y puede reflejarse",
+          "ejemplo": "La luz del sol entra por la ventana.",
+          "relaciones": [["opuesto_a", "oscuridad"]]
+        }
+      ]
+    },
+    {
+      "id": "oscuridad",
+      "lema": "oscuridad",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "ausencia o escasez de luz",
+          "genero": "fenomeno",
+          "diferencia": "que impide ver con claridad",
+          "ejemplo": "La oscuridad de la noche cubrió el pueblo.",
+          "relaciones": [["opuesto_a", "luz"]]
+        }
+      ]
+    },
+    {
+      "id": "mar",
+      "lema": "mar",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "masa de agua salada que cubre una parte de la Tierra",
+          "genero": "masa-de-agua",
+          "diferencia": "que está conectada con los océanos",
+          "ejemplo": "El mar estaba en calma.",
+          "relaciones": [["parte_de", "naturaleza"], ["asociado_con", "azul"]]
+        }
+      ]
+    },
+    {
+      "id": "masa-de-agua",
+      "lema": "masa de agua",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "gran cantidad de agua reunida en un lugar",
+          "genero": "conjunto",
+          "diferencia": "que forma mares, lagos o ríos",
+          "ejemplo": "El lago es una masa de agua."
+        }
+      ]
+    },
+    {
+      "id": "cielo",
+      "lema": "cielo",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "espacio que se ve sobre la Tierra",
+          "genero": "espacio",
+          "diferencia": "que contiene nubes y astros",
+          "ejemplo": "El cielo estaba azul.",
+          "relaciones": [["asociado_con", "azul"], ["contiene", "astro"]]
+        }
+      ]
+    },
+    {
+      "id": "fuego",
+      "lema": "fuego",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "fenómeno de combustión que produce calor y luz",
+          "genero": "fenomeno",
+          "diferencia": "que consume materia y libera energía",
+          "ejemplo": "El fuego calentó la casa.",
+          "relaciones": [["produce", "luz"]]
+        }
+      ]
+    },
+    {
+      "id": "aire",
+      "lema": "aire",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "mezcla de gases que forma la atmósfera",
+          "genero": "sustancia",
+          "diferencia": "que es necesario para respirar",
+          "ejemplo": "El aire de la montaña es limpio.",
+          "relaciones": [["parte_de", "naturaleza"], ["necesario_para", "ser-vivo"]]
+        }
+      ]
+    },
+    {
+      "id": "animal",
+      "lema": "animal",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "ser vivo que se alimenta de otros seres y se desplaza",
+          "genero": "ser-vivo",
+          "diferencia": "que carece de fotosíntesis",
+          "ejemplo": "El perro es un animal.",
+          "relaciones": [["necesita", "agua"], ["necesita", "aire"]]
+        }
+      ]
+    },
+    {
+      "id": "persona",
+      "lema": "persona",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "ser humano considerado como individuo",
+          "genero": "animal",
+          "diferencia": "que posee razón y lenguaje",
+          "ejemplo": "Cada persona tiene derechos."
+        }
+      ]
+    },
+    {
+      "id": "perro",
+      "lema": "perro",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "animal doméstico de la familia de los cánidos",
+          "genero": "animal",
+          "diferencia": "que suele convivir con las personas",
+          "ejemplo": "El perro ladraba en el jardín."
+        }
+      ]
+    },
+    {
+      "id": "gato",
+      "lema": "gato",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "animal doméstico de la familia de los félidos",
+          "genero": "animal",
+          "diferencia": "que suele cazar roedores",
+          "ejemplo": "El gato dormía al sol."
+        }
+      ]
+    },
+    {
+      "id": "casa",
+      "lema": "casa",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "edificio destinado a vivienda",
+          "genero": "edificio",
+          "diferencia": "que sirve de hogar",
+          "ejemplo": "La casa tiene dos plantas.",
+          "relaciones": [["sirve_para", "vivir"]]
+        }
+      ]
+    },
+    {
+      "id": "edificio",
+      "lema": "edificio",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "construcción con paredes y techo destinada a un uso",
+          "genero": "entidad",
+          "diferencia": "que ocupa un lugar y tiene estructura",
+          "ejemplo": "La biblioteca es un edificio público."
+        }
+      ]
+    },
+    {
+      "id": "ciudad",
+      "lema": "ciudad",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "asentamiento urbano con muchos habitantes y servicios",
+          "genero": "asentamiento",
+          "diferencia": "que concentra actividades económicas",
+          "ejemplo": "La ciudad creció junto al río."
+        }
+      ]
+    },
+    {
+      "id": "pueblo",
+      "lema": "pueblo",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "asentamiento pequeño con población estable",
+          "genero": "asentamiento",
+          "diferencia": "que mantiene vínculos comunitarios",
+          "ejemplo": "El pueblo celebra sus fiestas en agosto."
+        }
+      ]
+    },
+    {
+      "id": "asentamiento",
+      "lema": "asentamiento",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "lugar donde se establece un grupo humano",
+          "genero": "espacio",
+          "diferencia": "que organiza viviendas y servicios",
+          "ejemplo": "La ciudad y el pueblo son asentamientos."
+        }
+      ]
+    },
+    {
+      "id": "camino",
+      "lema": "camino",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "vía por la que se transita de un lugar a otro",
+          "genero": "via",
+          "diferencia": "que conecta puntos del territorio",
+          "ejemplo": "El camino llevaba al pueblo.",
+          "relaciones": [["sirve_para", "desplazarse"]]
+        }
+      ]
+    },
+    {
+      "id": "via",
+      "lema": "vía",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "lugar o medio por el que se puede pasar o transmitir algo",
+          "genero": "espacio",
+          "diferencia": "que permite el tránsito",
+          "ejemplo": "La carretera es una vía de comunicación."
+        }
+      ]
+    },
+    {
+      "id": "musica",
+      "lema": "música",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "arte que organiza sonidos en el tiempo",
+          "genero": "arte",
+          "diferencia": "que combina ritmo, melodía y armonía",
+          "ejemplo": "La música puede emocionar."
+        }
+      ]
+    },
+    {
+      "id": "poesia",
+      "lema": "poesía",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "arte que usa las palabras con ritmo y sentido estético",
+          "genero": "arte",
+          "diferencia": "que concentra el lenguaje en imágenes y sonoridad",
+          "ejemplo": "La poesía de Bécquer es breve e intensa."
+        }
+      ]
+    },
+    {
+      "id": "arte",
+      "lema": "arte",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "actividad creadora que produce obras con valor estético",
+          "genero": "actividad",
+          "diferencia": "que busca expresar o conmover",
+          "ejemplo": "La pintura y la música son artes."
+        }
+      ]
+    },
+    {
+      "id": "sonido",
+      "lema": "sonido",
+      "categoria": "sustantivo",
+      "acepciones": [
+        {
+          "definicion": "fenómeno producido por vibraciones que se transmiten por un medio",
+          "genero": "fenomeno",
+          "diferencia": "que puede ser percibido por el oído",
+          "ejemplo": "El sonido de la campana llegó lejos."
+        }
+      ]
+    }
+  ]
+}

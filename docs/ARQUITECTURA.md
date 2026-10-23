@@ -123,6 +123,55 @@ Imagen Debian mínima con labwc que abre WonderfulOS como sistema completo. Usa
 el mismo escritorio y el mismo servicio local; no hay cliente ligero ni
 sincronización con una nube.
 
+### 2.8 Motor de conocimiento simbólico (`Lógica`)
+
+El modo **Lógica** de Agentic es independiente de Ollama y de cualquier modelo
+neuronal. Vive en `web-desktop/server/conocimiento.mjs` y se apoya en datos
+locales:
+
+```
+data/conocimiento/
+  seed-lexico.json          conceptos y relaciones curados
+  reglas.json               reglas de inferencia
+  documentos-ejemplo.json   textos para recuperación
+  mcr-es.json               diccionario MCR/WordNet generado
+```
+
+Flujo de una consulta:
+
+1. **Detección de intención**: definición, comprobación `es_un`, camino entre
+   conceptos, búsqueda local, correo, plan o texto expositivo.
+2. **Resolución de conceptos**: índice por lema y sinónimo; prioriza la semilla
+   y los conceptos enseñados por el usuario sobre MCR.
+3. **Hechos y reglas**: se construyen hechos `es_un`, `parte_de`,
+   `asociado_con`, etc., y se aplican reglas de transitividad, simetría y
+   herencia. Las deducciones guardan premisas y nombre de regla.
+4. **Recuperación**: índice BM25 sobre definiciones y documentos. La consulta se
+   expande con sinónimos. No se consulta internet.
+5. **Generación**: plantillas deterministas para correos, planes y textos. Los
+   huecos se marcan con placeholders y cada respuesta incluye conceptos,
+   fuentes y avisos.
+6. **Verificación**: la comprobación `es_un` y el detector de contradicciones
+   solo afirman lo que está en la base o se deduce de ella.
+
+La API está en `server/api.mjs`:
+
+| Ruta | Uso |
+|---|---|
+| `GET /api/conocimiento/status` | Estadísticas del motor. |
+| `POST /api/conocimiento/consultar` | `{ "texto": "¿Qué es el verde?" }`. |
+| `POST /api/conocimiento/ensenar` | Concepto, relación, texto o regla. |
+| `GET /api/conocimiento/buscar?q=...` | Búsqueda BM25 directa. |
+| `GET /api/conocimiento/concepto?lema=...` | Definición directa. |
+
+En la interfaz, el botón **+ Enseñar concepto** del modo Lógica usa
+`POST /api/conocimiento/ensenar` para guardar un concepto con su definición,
+género y relaciones. Los datos enseñados se guardan en
+`NUBEOS_DATA/conocimiento/` y se recargan en cada alta. El diccionario
+`mcr-es.json` se regenera con
+`web-desktop/scripts/importar-mcr.mjs`; su origen y licencia se documentan en
+`web-desktop/data/conocimiento/README.md`.
+
 ---
 
 ## 3. Seguridad y privacidad
@@ -135,6 +184,9 @@ sincronización con una nube.
 - El Llavero cifra con AES-GCM y deriva la clave con PBKDF2. No hay recuperación
   si se pierde la contraseña maestra.
 - No hay telemetría, P2P, servidor de equipo ni funciones sociales.
+- El motor simbólico no abre conexiones de red: solo lee los datos locales y los
+  textos que el usuario haya enseñado. La importación de MCR es un paso manual
+  y reproducible.
 
 ---
 

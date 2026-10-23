@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "descripcion": "Reglas de inferencia simbólicas. Los ?x, ?y, ?z son variables. El motor encadena hacia adelante y guarda la traza de cada deducción.",
+  "reglas": [
+    {
+      "nombre": "transitividad_es_un",
+      "descripcion": "Si A es un B y B es un C, entonces A es un C.",
+      "si": [["es_un", "?x", "?y"], ["es_un", "?y", "?z"]],
+      "entonces": [["es_un", "?x", "?z"]]
+    },
+    {
+      "nombre": "simetria_sinonimo",
+      "descripcion": "La sinonimia es simétrica.",
+      "si": [["sinonimo", "?x", "?y"]],
+      "entonces": [["sinonimo", "?y", "?x"]]
+    },
+    {
+      "nombre": "herencia_sinonimo",
+      "descripcion": "Si dos términos son sinónimos, comparten sus géneros.",
+      "si": [["sinonimo", "?x", "?y"], ["es_un", "?x", "?z"]],
+      "entonces": [["es_un", "?y", "?z"]]
+    },
+    {
+      "nombre": "simetria_asociado_con",
+      "descripcion": "La asociación conceptual se puede recorrer en ambos sentidos.",
+      "si": [["asociado_con", "?x", "?y"]],
+      "entonces": [["asociado_con", "?y", "?x"]]
+    },
+    {
+      "nombre": "transitividad_parte_de",
+      "descripcion": "Si A es parte de B y B es parte de C, A es parte de C.",
+      "si": [["parte_de", "?x", "?y"], ["parte_de", "?y", "?z"]],
+      "entonces": [["parte_de", "?x", "?z"]]
+    }
+  ]
+}

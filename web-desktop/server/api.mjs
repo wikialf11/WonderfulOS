@@ -11,6 +11,7 @@ import * as store from './store.mjs';
 import * as office from './office.mjs';
 import * as appdata from './appdata.mjs';
 import * as agentic from './agentic.mjs';
+import * as conocimiento from './conocimiento.mjs';
 import * as mail from './mail.mjs';
 import * as ext from './mcp.mjs';
 import { assertPublic, unwrapRedirect, BROWSER_UA, signProxyToken } from './proxy.mjs';
@@ -194,6 +195,29 @@ export async function apiHandler(req, res, url) {
     }
 
     // --- Agentic (asistente inteligente y automatización del sistema) ---
+    // --- Motor de conocimiento simbólico (sin modelo neuronal) ---
+    if (parts[0] === 'conocimiento') {
+      const sub = parts[1] || '';
+      try {
+        if (req.method === 'GET' && sub === 'status') return send(200, conocimiento.estadisticas());
+        if (req.method === 'POST' && sub === 'consultar') {
+          const { texto } = await readJson(req, 200000);
+          return send(200, conocimiento.consultar(texto));
+        }
+        if (req.method === 'POST' && sub === 'ensenar') {
+          return send(200, conocimiento.ensenar(await readJson(req, 1024 * 1024)));
+        }
+        if (req.method === 'GET' && sub === 'buscar') {
+          return send(200, { resultados: conocimiento.buscar(url.searchParams.get('q') || '', 8) });
+        }
+        if (req.method === 'GET' && sub === 'concepto') {
+          return send(200, conocimiento.definir(url.searchParams.get('lema') || ''));
+        }
+      } catch (err) {
+        fail(400, err.message || 'No se pudo procesar la consulta');
+      }
+    }
+
     if (parts[0] === 'agentic') {
       const sub = parts[1] || '';
       if (req.method === 'GET' && sub === 'status') return send(200, await agentic.checkOllama());

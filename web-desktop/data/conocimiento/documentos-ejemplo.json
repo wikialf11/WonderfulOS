@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "descripcion": "Textos originales de ejemplo para probar la recuperación simbólica. No se ha usado ningún modelo de lenguaje.",
+  "documentos": [
+    {
+      "id": "ejemplo-vegetacion",
+      "titulo": "La vegetación y el color verde",
+      "fuente": "Texto de ejemplo de WonderfulOS",
+      "texto": "La vegetación es el conjunto de plantas que cubren un terreno. Las plantas son seres vivos que crecen fijas al suelo y fabrican su alimento mediante la fotosíntesis. La hoja es la parte de la planta que capta la luz y realiza la fotosíntesis. El color verde aparece en las hojas y en la hierba porque reflejan la luz de una forma característica. Un bosque es un conjunto de árboles que forma un ecosistema y protege el suelo. La vegetación cumple funciones importantes: produce oxígeno, retiene el agua y sirve de refugio a muchos animales."
+    },
+    {
+      "id": "ejemplo-correo",
+      "titulo": "Cómo se estructura un correo formal",
+      "fuente": "Texto de ejemplo de WonderfulOS",
+      "texto": "Un correo formal se organiza en varias partes. Primero se escribe el asunto, que resume el motivo del mensaje. Después va el saludo o la fórmula de atención, adaptada al destinatario. El cuerpo expone los hechos y la petición con claridad, sin rodeos y sin datos innecesarios. Conviene incluir los datos personales que la administración necesite para tramitar la solicitud. Al final se añade una fórmula de despedida, el nombre y los datos de contacto. Si el correo solicita un certificado, el asunto debe indicarlo y el cuerpo debe explicar para qué se pide."
+    },
+    {
+      "id": "ejemplo-logica",
+      "titulo": "Premisas, conclusiones y validez",
+      "fuente": "Texto de ejemplo de WonderfulOS",
+      "texto": "Un argumento está formado por premisas y una conclusión. Las premisas son proposiciones que se ofrecen como razones. La conclusión es la proposición que se pretende justificar. Un argumento es válido cuando la conclusión se sigue necesariamente de las premisas, aunque las premisas sean falsas. La verdad de las premisas es una cuestión distinta de la validez del razonamiento. La lógica estudia las formas válidas de inferencia y permite detectar contradicciones. Un silogismo es un argumento con dos premisas y una conclusión."
+    }
+  ]
+}

@@ -88,6 +88,24 @@ export default {
           </div>
         </div>
 
+        <div class="ag-learn-panel" hidden>
+          <div class="ag-panel-title">Enseñar un concepto</div>
+          <div class="ag-panel-desc">Se guarda en tu perfil local. El motor simbólico lo usará en las próximas respuestas, sin entrenar ningún modelo.</div>
+          <form class="ag-learn-form">
+            <div class="ag-form-grid">
+              <label>Lema<input type="text" class="ag-learn-lema" placeholder="fotosíntesis artificial" maxlength="120" required></label>
+              <label>Género (opcional)<input type="text" class="ag-learn-genero" placeholder="proceso" maxlength="80"></label>
+            </div>
+            <label>Definición<textarea class="ag-learn-def" rows="2" placeholder="proceso técnico que imita la fotosíntesis natural" maxlength="600" required></textarea></label>
+            <label>Relaciones (opcional)<input type="text" class="ag-learn-rel" placeholder="parte_de: tecnología, asociado_con: energía" maxlength="500"></label>
+            <div class="ag-input-row">
+              <button type="submit" class="pill ag-learn-save">Guardar concepto</button>
+              <button type="button" class="pill soft ag-learn-cancel">Cancelar</button>
+            </div>
+            <div class="ag-learn-status" aria-live="polite"></div>
+          </form>
+        </div>
+
         <div class="ag-ext-panel" hidden>
           <div class="ag-panel-title">MCP y skills externas</div>
           <div class="ag-panel-desc">Conecta cualquier servidor MCP (stdio o HTTP) y añade skills tipo <code>SKILL.md</code>. Agentic las usará en el chat junto a las herramientas del sistema.</div>
@@ -186,6 +204,24 @@ export default {
                   <span>🪄</span> Reescribir en formal
                 </button>
               </div>
+
+              <div class="ag-prompts ag-prompts-logica" hidden>
+                <button class="ag-prompt-chip" data-text="¿Qué es el verde?">
+                  <span>◇</span> Definir un concepto
+                </button>
+                <button class="ag-prompt-chip" data-text="Redacta un correo formal al Ayuntamiento de La Laguna para solicitar un certificado de residencia. Usa placeholders para mis datos y un tono cordial y administrativo.">
+                  <span>▤</span> Correo formal con plantilla
+                </button>
+                <button class="ag-prompt-chip" data-text="Hazme un plan semanal realista para una persona autónoma que trabaja desde casa y cuida de un familiar mayor. Incluye trabajo profundo, administración, comidas, pausas y tiempo de cuidado.">
+                  <span>▦</span> Plan semanal
+                </button>
+                <button class="ag-prompt-chip" data-text="Explica la vegetación.">
+                  <span>▥</span> Texto expositivo con fuentes
+                </button>
+                <button class="ag-prompt-chip" data-text="¿Qué relación hay entre verde y vegetación?">
+                  <span>↔</span> Recorrer relaciones
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -195,7 +231,9 @@ export default {
           <div class="ag-mode-bar">
             <button type="button" class="ag-mode on" data-mode="agente">Agente</button>
             <button type="button" class="ag-mode" data-mode="redaccion">Redacción</button>
-            <span class="ag-mode-hint">Automatiza el sistema o redacta sin herramientas</span>
+            <button type="button" class="ag-mode" data-mode="logica">Lógica</button>
+            <span class="ag-mode-hint">Automatiza, redacta o usa el motor simbólico sin modelo</span>
+            <button type="button" class="ag-tag ag-learn-toggle" hidden>+ Enseñar concepto</button>
           </div>
           <div class="ag-input-box">
             <textarea class="ag-input" placeholder="Pídele a Agentic que cree o automatice cualquier tarea..." rows="1"></textarea>
@@ -231,6 +269,10 @@ export default {
     const saveWriteModelBtn = $('.ag-save-write-model-btn');
     const modelStatusEl = $('.ag-model-status');
     const modeBtns = [...win.body.querySelectorAll('.ag-mode')];
+    const learnToggle = $('.ag-learn-toggle');
+    const learnPanel = $('.ag-learn-panel');
+    const learnForm = $('.ag-learn-form');
+    const learnStatus = $('.ag-learn-status');
 
     let history = []; // { role, content, think, tools }
     let isBusy = false;
@@ -238,16 +280,32 @@ export default {
     let mode = 'agente';
     let downloadTarget = '';
 
-    // Cambiar entre automatización del sistema y redacción.
+    // Cambiar entre automatización del sistema, redacción y motor lógico.
     function setMode(next) {
-      mode = next === 'redaccion' ? 'redaccion' : 'agente';
+      mode = ['redaccion', 'logica'].includes(next) ? next : 'agente';
       modeBtns.forEach((b) => b.classList.toggle('on', b.dataset.mode === mode));
-      if (descEl) descEl.textContent = mode === 'redaccion' ? 'Escritura, planificación y creatividad' : 'Automatización de WonderfulOS';
+      if (descEl) {
+        descEl.textContent = mode === 'redaccion'
+          ? 'Escritura, planificación y creatividad'
+          : mode === 'logica'
+            ? 'Conocimiento simbólico, sin modelo neuronal'
+            : 'Automatización de WonderfulOS';
+      }
       input.placeholder = mode === 'redaccion'
         ? 'Escribe o pega el texto: correo formal, plan, ideas, reescritura…'
-        : 'Pídele a Agentic que cree o automatice cualquier tarea...';
-      win.body.querySelector('.ag-prompts-agent')?.toggleAttribute('hidden', mode === 'redaccion');
+        : mode === 'logica'
+          ? 'Pregunta qué es algo, pide un correo, un plan o un texto con fuentes…'
+          : 'Pídele a Agentic que cree o automatice cualquier tarea...';
+      win.body.querySelector('.ag-prompts-agent')?.toggleAttribute('hidden', mode !== 'agente');
       win.body.querySelector('.ag-prompts-write')?.toggleAttribute('hidden', mode !== 'redaccion');
+      win.body.querySelector('.ag-prompts-logica')?.toggleAttribute('hidden', mode !== 'logica');
+      learnToggle?.toggleAttribute('hidden', mode !== 'logica');
+      if (mode !== 'logica') {
+        learnPanel.hidden = true;
+      } else {
+        modelPanel.hidden = true;
+        extPanel.hidden = true;
+      }
       updateStatus();
     }
 
@@ -257,6 +315,39 @@ export default {
 
     // Actualizar estado de Ollama y del modelo
     async function updateStatus() {
+      if (mode === 'logica') {
+        modelNameEl.textContent = 'Motor lógico';
+        modelDot.className = 'ag-dot ag-dot-ok';
+        modelBtn.title = 'Motor simbólico local: sin modelo neuronal, sin Ollama';
+        const chevron = modelBtn.querySelector('.ag-chevron');
+        if (chevron) chevron.hidden = true;
+        dlArea.hidden = true;
+        dlBtn.hidden = true;
+        downloadTarget = '';
+        if (modelStatusEl) {
+          modelStatusEl.innerHTML = 'Lógica: diccionario abierto + reglas + plantillas. <strong>Sin Ollama.</strong>';
+        }
+        try {
+          const st = await api('conocimiento/status');
+          if (mode !== 'logica') return;
+          modelNameEl.textContent = `Lógica · ${st.conceptos.toLocaleString('es-ES')} conceptos`;
+          modelBtn.title = `${st.conceptos} conceptos, ${st.reglas} reglas y ${st.documentos} documentos. Sin modelo neuronal.`;
+          if (modelStatusEl) {
+            modelStatusEl.innerHTML = `Conceptos: <strong>${st.conceptos.toLocaleString('es-ES')}</strong>`
+              + ` &nbsp;|&nbsp; Reglas: <strong>${st.reglas}</strong>`
+              + ` &nbsp;|&nbsp; Documentos: <strong>${st.documentos}</strong>`
+              + ` &nbsp;|&nbsp; Derivaciones: <strong>${st.derivaciones}</strong>`
+              + '<br>Motor simbólico local. <strong>Sin Ollama.</strong>';
+          }
+        } catch {
+          if (mode === 'logica' && modelStatusEl) {
+            modelStatusEl.innerHTML = 'No se pudo leer el estado del motor lógico. <strong>Sin Ollama.</strong>';
+          }
+        }
+        return;
+      }
+      const chevron = modelBtn.querySelector('.ag-chevron');
+      if (chevron) chevron.hidden = false;
       try {
         currentStatus = await api('agentic/status');
         const running = currentStatus.running;
@@ -304,16 +395,81 @@ export default {
 
     // Alternar panel de modelo
     modelBtn.onclick = () => {
+      if (mode === 'logica') return;
       modelPanel.hidden = !modelPanel.hidden;
-      if (!modelPanel.hidden) extPanel.hidden = true;
+      if (!modelPanel.hidden) {
+        extPanel.hidden = true;
+        learnPanel.hidden = true;
+      }
     };
 
     extBtn.onclick = () => {
       extPanel.hidden = !extPanel.hidden;
       if (!extPanel.hidden) {
         modelPanel.hidden = true;
+        learnPanel.hidden = true;
         renderExtensions();
       }
+    };
+
+    // Enseñar un concepto desde el modo Lógica.
+    function setLearnStatus(mensaje, tipo = '') {
+      if (!learnStatus) return;
+      learnStatus.textContent = mensaje;
+      learnStatus.className = `ag-learn-status${tipo ? ` ${tipo}` : ''}`;
+    }
+
+    function leerRelaciones(valor) {
+      return String(valor || '')
+        .split(/[;,\n]+/)
+        .map((parte) => parte.trim())
+        .filter(Boolean)
+        .map((parte) => {
+          const m = parte.match(/^([a-z_]+)\s*[:=]\s*(.+)$/i);
+          return m ? [m[1].toLowerCase(), m[2].trim()] : null;
+        })
+        .filter(Boolean);
+    }
+
+    learnToggle.onclick = () => {
+      if (mode !== 'logica') return;
+      learnPanel.hidden = !learnPanel.hidden;
+      if (!learnPanel.hidden) {
+        modelPanel.hidden = true;
+        extPanel.hidden = true;
+        learnPanel.querySelector('.ag-learn-lema')?.focus();
+      }
+    };
+
+    learnForm.onsubmit = async (event) => {
+      event.preventDefault();
+      const lema = learnPanel.querySelector('.ag-learn-lema')?.value.trim() || '';
+      const definicion = learnPanel.querySelector('.ag-learn-def')?.value.trim() || '';
+      const genero = learnPanel.querySelector('.ag-learn-genero')?.value.trim() || '';
+      const relaciones = leerRelaciones(learnPanel.querySelector('.ag-learn-rel')?.value);
+      if (!lema || !definicion) {
+        setLearnStatus('Indica al menos el lema y la definición.', 'error');
+        return;
+      }
+      setLearnStatus('Guardando…');
+      try {
+        const r = await api('conocimiento/ensenar', {
+          method: 'POST',
+          body: { tipo: 'concepto', lema, definicion, genero, relaciones },
+        });
+        const total = r.estadisticas?.conceptos;
+        setLearnStatus(`Guardado: ${r.concepto?.lema || lema}${total ? ` · ${total.toLocaleString('es-ES')} conceptos` : ''}.`, 'ok');
+        learnForm.reset();
+        updateStatus();
+      } catch (err) {
+        setLearnStatus(`No se pudo guardar: ${err.message}`, 'error');
+      }
+    };
+
+    learnPanel.querySelector('.ag-learn-cancel').onclick = () => {
+      learnForm.reset();
+      learnPanel.hidden = true;
+      setLearnStatus('');
     };
 
     win.body.querySelectorAll('.ag-ext-tab').forEach((tab) => {
@@ -502,7 +658,7 @@ export default {
     saveWriteModelBtn.onclick = () => setModel('write', writeModelInput.value);
 
     // Sugerencias de modelos
-    win.body.querySelectorAll('.ag-tag').forEach((btn) => {
+    win.body.querySelectorAll('.ag-tag[data-target]').forEach((btn) => {
       btn.onclick = async () => {
         const target = btn.dataset.target === 'write' ? 'write' : 'model';
         const modelEl = target === 'write' ? writeModelInput : modelInput;
@@ -684,6 +840,54 @@ export default {
 
       let fullContent = '';
       let fullThink = '';
+
+      if (mode === 'logica') {
+        try {
+          const r = await api('conocimiento/consultar', { method: 'POST', body: { texto: text } });
+          fullContent = r.respuesta || 'Sin respuesta.';
+          textEl.innerHTML = renderMarkdown(fullContent);
+
+          const bubble = agentMsgEl.querySelector('.ag-bubble-agent');
+          bubble?.classList.add('ag-logic-bubble');
+          if (bubble) {
+            const badge = document.createElement('div');
+            badge.className = 'ag-logic-badge';
+            badge.textContent = 'Motor simbólico · sin modelo';
+            bubble.prepend(badge);
+
+            const partes = [];
+            const conceptos = (r.conceptos || [])
+              .map((id) => String(id))
+              .filter((id) => !id.startsWith('mcr:'));
+            if (conceptos.length) {
+              partes.push(`<div><strong>Conceptos:</strong> ${conceptos.map(esc).join(' · ')}</div>`);
+            }
+            if (r.fuentes?.length) {
+              partes.push(`<div><strong>Fuentes:</strong> ${r.fuentes.map(esc).join(' · ')}</div>`);
+            }
+            if (r.avisos?.length) {
+              partes.push(`<div class="ag-logic-warn"><strong>Avisos:</strong> ${r.avisos.map(esc).join(' · ')}</div>`);
+            }
+            if (partes.length) {
+              const meta = document.createElement('div');
+              meta.className = 'ag-logic-meta';
+              meta.innerHTML = partes.join('');
+              bubble.appendChild(meta);
+            }
+          }
+
+          history.push({ role: 'assistant', content: fullContent });
+          scrollBottom();
+        } catch (err) {
+          textEl.innerHTML = `<span class="ag-error">Error del motor lógico: ${esc(err.message)}</span>`;
+        } finally {
+          textEl.querySelector('.ag-cursor')?.remove();
+          isBusy = false;
+          sendBtn.disabled = false;
+          input.focus();
+        }
+        return;
+      }
 
       try {
         const res = await fetch('/api/agentic/chat', {
