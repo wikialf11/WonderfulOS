@@ -20,8 +20,8 @@ export const WALLPAPERS = {
   carbon: { name: 'Carbón', kind: 'solid', light: '#1f2937', dark: '#1f2937' },
 };
 
-const DEFAULTS = { theme: 'auto', accent: '#8b5cf6', wallpaper: 'indigo', wallpaperColor: '#4f46e5', dockSize: 58, magnify: true, dim: 0, night: false, focus: false, textScale: 1.15 };
-const SCALE_MIGRATION = 'nubeos.shell.scaleDefault.v2';
+const DEFAULTS = { theme: 'auto', accent: '#8b5cf6', wallpaper: 'indigo', wallpaperColor: '#4f46e5', dockSize: 46, magnify: false, dim: 0, night: false, focus: false, textScale: 0.9 };
+const SCALE_MIGRATION = 'nubeos.shell.scaleDefault.v4';
 const listeners = new Set();
 
 // El tamaño «Grande» pasa a ser el valor de partida. Si el perfil venía con el

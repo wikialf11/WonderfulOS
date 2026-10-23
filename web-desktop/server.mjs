@@ -72,7 +72,11 @@ if (process.env.NUBEOS_ROLE === 'proxy') {
   http.createServer((req, res) => ((req.headers.host || '').split(':')[0] === PROXY_HOST ? proxyHandler(req, res) : desktopHandler(req, res)))
     .listen(PORT, HOST, () => console.log(`WonderfulOS en el puerto ${PORT} (proxy en ${PROXY_HOST}). Datos: ${DATA}`));
 } else {
-  http.createServer(desktopHandler).listen(PORT, HOST, () => console.log(`Escritorio WonderfulOS: http://${HOST}:${PORT}  (datos en ${DATA})`));
+  const server = http.createServer(desktopHandler);
+  server.requestTimeout = 0;
+  server.headersTimeout = 0;
+  server.keepAliveTimeout = 60000;
+  server.listen(PORT, HOST, () => console.log(`Escritorio WonderfulOS: http://${HOST}:${PORT}  (datos en ${DATA})`));
   // En la app de escritorio el Navegador es su propio Chromium: no hace falta el proxy.
   if (!LOCAL) http.createServer(proxyHandler).listen(PROXY_PORT, HOST, () => console.log(`Proxy del Navegador: http://${HOST}:${PROXY_PORT}`));
 }

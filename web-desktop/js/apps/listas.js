@@ -100,12 +100,12 @@ export default {
               ${t.done && t.doneBy ? `<span>Hecha por ${esc(t.doneBy)}</span>` : ''}
             </div>
           </div>
-          <button class="icon-btn menu" title="Opciones">${GLYPHS.more}</button>`;
+          <button class="icon-btn task-more-btn" title="Opciones">${GLYPHS.more}</button>`;
         el.querySelector('.check').onclick = () => toggle(d, t);
         const text = el.querySelector('.text');
         text.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); text.blur(); } };
         text.onblur = () => { const v = text.textContent.trim(); if (v && v !== t.text) change(d, [{ op: 'set', path: ['tasks', t.id, 'text'], value: v }]); else text.textContent = t.text; };
-        el.querySelector('.menu').onclick = (e) => taskMenu(d, t, e);
+        el.querySelector('.task-more-btn').onclick = (e) => taskMenu(d, t, e);
         return el;
       };
       if (!tasks.length) box.innerHTML = '<div class="cl-hint">Escribe arriba tu primera tarea y pulsa Intro.</div>';

@@ -17,6 +17,10 @@ import notas from './apps/notas.js';
 import calendario from './apps/calendario.js';
 import navegador from './apps/navegador.js';
 import llavero from './apps/llavero.js';
+import agentic from './apps/agentic.js';
+import codigo from './apps/codigo.js';
+import correo from './apps/correo.js';
+
 import { startDownload, resumeDownloads } from './downloads.js';
 import { refreshProxyToken } from './proxy.js';
 
@@ -33,7 +37,7 @@ const esc = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<
 
 // ---------- Apps ----------
 // Solo apps de trabajo.
-const APPS = [navegador, archivos, listas, notas, calendario, llavero, texto, calculo, diapositivas, ajustes, visor];
+const APPS = [agentic, codigo, navegador, correo, archivos, listas, notas, calendario, llavero, texto, calculo, diapositivas, ajustes, visor];
 const VISIBLE = APPS.filter((a) => !a.hidden);
 const appById = (id) => APPS.find((a) => a.id === id);
 const iconOf = (id) => ICONS[id] || ICONS.app;
@@ -205,8 +209,8 @@ function openMenu(btn, kind, e) {
 }
 
 // ---------- Dock (con efecto lupa) ----------
-const DOCK = ['launchpad', 'navegador', 'archivos', 'listas', 'notas', 'calendario', 'texto', 'calculo', 'diapositivas', 'llavero', 'ajustes'];
-const MOBILE_DOCK = ['navegador', 'archivos', 'listas', 'notas'];
+const DOCK = ['launchpad', 'agentic', 'codigo', 'navegador', 'correo', 'archivos', 'listas', 'notas', 'calendario', 'texto', 'calculo', 'diapositivas', 'llavero', 'ajustes'];
+const MOBILE_DOCK = ['agentic', 'correo', 'navegador', 'archivos', 'listas', 'notas'];
 let dockCfg = settings.get();
 let dockItems = [];
 let dockRaf = 0;
@@ -533,7 +537,14 @@ $('#home-bar').onclick = () => allWindows().forEach((w) => !w.minimized && w.min
 mobileQuery.addEventListener('change', () => { document.body.classList.toggle('mobile', isMobile()); renderDock(); renderHome(); renderMenubar(); updateMobile(); });
 
 // ---------- Arranque ----------
-onWindowsChange(() => { renderMenubar(); updateRunning(); updateMobile(); });
+
+function updateFullscreenDockState() {
+  const hasMax = allWindows().some((w) => !w.minimized && w.el.classList.contains('maximized'));
+  document.body.classList.toggle('has-maximized', hasMax || !!document.fullscreenElement);
+}
+document.addEventListener('fullscreenchange', updateFullscreenDockState);
+
+onWindowsChange(() => { renderMenubar(); updateRunning(); updateMobile(); updateFullscreenDockState(); });
 settings.onChange(() => { dockCfg = settings.get(); dockItems = []; renderDock(); });
 fs.onError((msg) => notify(msg, 7000, { title: 'No se pudo guardar', icon: 'archivos' }));
 

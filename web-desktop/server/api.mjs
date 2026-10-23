@@ -10,6 +10,9 @@ import { pipeline } from 'node:stream/promises';
 import * as store from './store.mjs';
 import * as office from './office.mjs';
 import * as appdata from './appdata.mjs';
+import * as agentic from './agentic.mjs';
+import * as mail from './mail.mjs';
+import * as ext from './mcp.mjs';
 import { assertPublic, unwrapRedirect, BROWSER_UA, signProxyToken } from './proxy.mjs';
 
 const MAX_UPLOAD = Number(process.env.NUBEOS_MAX_UPLOAD_MB || 2048) * 1024 * 1024;
@@ -166,6 +169,77 @@ export async function apiHandler(req, res, url) {
       if (req.method === 'POST' && !id) return send(200, { doc: appdata.create(USER, app, (await readJson(req)).data) });
       if (req.method === 'POST' && sub === 'ops') return send(200, { doc: appdata.patch(USER, app, id, (await readJson(req)).ops) });
       if (req.method === 'DELETE' && id && !sub) return send(200, appdata.remove(USER, app, id));
+    }
+
+
+    // --- Correo (server/mail.mjs). Los mensajes se leen y editan como datos de la app "correo". ---
+    if (parts[0] === 'email') {
+      const sub = parts[1] || '';
+      if (req.method === 'GET' && sub === 'account') return send(200, { ...mail.getAccount(), sync: mail.syncState() });
+      if (req.method === 'POST' && sub === 'account') return send(200, mail.saveAccount(await readJson(req, 20000)));
+      if (req.method === 'DELETE' && sub === 'account') return send(200, mail.removeAccount());
+      if (req.method === 'GET' && sub === 'detect') return send(200, mail.detectServers(url.searchParams.get('email')));
+      if (req.method === 'POST' && sub === 'test') return send(200, await mail.testAccount());
+      if (req.method === 'POST' && sub === 'sync') return send(200, await mail.sync());
+      if (req.method === 'GET' && sub === 'list') {
+        const q = url.searchParams;
+        return send(200, { mails: mail.list({ folder: q.get('folder'), query: q.get('q'), unread: q.get('unread') === '1' }).map((d) => mail.summary(d)), counts: mail.counts() });
+      }
+      if (req.method === 'POST' && sub === 'draft') return send(200, { doc: mail.createDraft(await readJson(req, 1024 * 1024)) });
+      if (req.method === 'POST' && sub === 'send') return send(200, await mail.send(await readJson(req, 1024 * 1024)));
+      if (req.method === 'POST' && sub === 'move') { const { id, folder } = await readJson(req, 4000); return send(200, { doc: mail.move(id, folder) }); }
+      if (req.method === 'POST' && sub === 'trash') { const { id, forever } = await readJson(req, 4000); return send(200, mail.trash(id, forever)); }
+      if (req.method === 'POST' && sub === 'restore') { const { id } = await readJson(req, 4000); return send(200, { doc: mail.restore(id) }); }
+      if (req.method === 'POST' && sub === 'empty') { const { folder } = await readJson(req, 4000); return send(200, mail.emptyFolder(folder || 'trash')); }
+    }
+
+    // --- Agentic (asistente inteligente y automatización del sistema) ---
+    if (parts[0] === 'agentic') {
+      const sub = parts[1] || '';
+      if (req.method === 'GET' && sub === 'status') return send(200, await agentic.checkOllama());
+      if (req.method === 'GET' && sub === 'config') return send(200, agentic.getConfig());
+      if (req.method === 'POST' && sub === 'config') return send(200, agentic.saveConfig(await readJson(req, 10000)));
+      if (req.method === 'GET' && sub === 'models') {
+        const st = await agentic.checkOllama();
+        return send(200, { models: st.models || [] });
+      }
+      if (req.method === 'POST' && sub === 'pull') {
+        const { model } = await readJson(req, 10000);
+        return agentic.pullModelStream(model || agentic.getConfig().model, res);
+      }
+      if (req.method === 'POST' && sub === 'run-code') {
+        const { language, code: codeSnippet } = await readJson(req, 1024 * 1024);
+        return send(200, await agentic.runCode(language, codeSnippet));
+      }
+      if (req.method === 'POST' && sub === 'chat') {
+        const { messages, mode } = await readJson(req, 1024 * 1024);
+        return agentic.chatStream(messages || [], res, req, { mode });
+      }
+      if (req.method === 'GET' && sub === 'extensions') return send(200, ext.listPublicExtensions());
+      if (req.method === 'POST' && sub === 'extensions') {
+        const body = await readJson(req, 1024 * 1024);
+        const kind = body.kind || body.type;
+        if (kind === 'mcp') return send(200, { mcp: ext.addMcp(body) });
+        if (kind === 'skill') {
+          if (body.path) return send(200, { skill: ext.addSkillFromPath(body.path) });
+          if (body.text && !body.body) return send(200, { skill: ext.addSkillFromText(body.text, body.source || 'manual') });
+          return send(200, { skill: ext.addSkill(body) });
+        }
+        if (kind === 'import-mcp') return send(200, { mcps: ext.importMcps(body.json || body.text || body) });
+        fail(400, 'Indica kind: mcp, skill o import-mcp');
+      }
+      if (req.method === 'POST' && sub === 'mcp' && parts[2] === 'test') {
+        const { id } = await readJson(req, 4000);
+        return send(200, await ext.testMcp(id));
+      }
+      if (req.method === 'POST' && sub === 'mcp' && parts[2]) {
+        return send(200, { mcp: ext.updateMcp(parts[2], await readJson(req, 10000)) });
+      }
+      if (req.method === 'DELETE' && sub === 'mcp' && parts[2]) return send(200, ext.removeMcp(parts[2]));
+      if (req.method === 'POST' && sub === 'skill' && parts[2]) {
+        return send(200, { skill: ext.updateSkill(parts[2], await readJson(req, 1024 * 1024)) });
+      }
+      if (req.method === 'DELETE' && sub === 'skill' && parts[2]) return send(200, ext.removeSkill(parts[2]));
     }
 
     fail(404, 'No encontrado');

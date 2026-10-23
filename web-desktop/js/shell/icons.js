@@ -104,7 +104,31 @@ export const ICONS = {
     ${[0, 1, 2, 3].map((c) => [0, 1, 2].map((r) => `<circle cx="${33 + c * 11.3}" cy="${48 + r * 10}" r="3" fill="#be185d" fill-opacity=".3"/>`).join('')).join('')}
     <circle cx="55.6" cy="58" r="6" fill="#be185d"/>`),
 
+
+
+  // Código: estudio de programación y desarrollo agéntico
+  codigo: base('#059669', `
+    <rect x="22" y="24" width="56" height="52" rx="8" fill="W"/>
+    <rect x="22" y="24" width="56" height="12" rx="6" fill="#047857" fill-opacity=".3"/>
+    <circle cx="30" cy="30" r="2.5" fill="#ef4444"/>
+    <circle cx="37" cy="30" r="2.5" fill="#f59e0b"/>
+    <circle cx="44" cy="30" r="2.5" fill="#10b981"/>
+    <path d="M38 46l-7 7 7 7M62 46l7 7-7 7M53 43l-6 20" stroke="#047857" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`),
+
+  // Agentic: asistente inteligente y automatización con IA
+  agentic: base('#8B5CF6', `
+    <rect x="25" y="30" width="50" height="40" rx="10" fill="W"/>
+    <circle cx="39" cy="46" r="4.5" fill="#6d28d9"/>
+    <circle cx="61" cy="46" r="4.5" fill="#6d28d9"/>
+    <path d="M42 58c2.5 2.5 13.5 2.5 16 0" stroke="#6d28d9" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <rect x="47" y="22" width="6" height="8" rx="2" fill="#fff" fill-opacity=".85"/>
+    <circle cx="50" cy="20" r="3.5" fill="#f59e0b"/>
+    <path d="M19 46h6M75 46h6" stroke="#fff" stroke-width="4" stroke-linecap="round"/>`),
+
   // Llavero: llave sobre fondo naranja.
+  // Correo: sobre blanco sobre fondo azul.
+  correo: base('#2563EB', `<rect x="18" y="27" width="64" height="46" rx="8" fill="W"/><path d="M22 33l28 20 28-20" stroke="#1d4ed8" stroke-opacity=".55" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`),
+
   llavero: base('#F97316', `
     <circle cx="38" cy="44" r="15" fill="W"/>
     <circle cx="38" cy="44" r="6" fill="#ea580c" fill-opacity=".55"/>
@@ -191,4 +215,9 @@ export const GLYPHS = {
   key: line('<circle cx="8" cy="14" r="4.5"/><path d="M11.5 11 20 2.5M16 7l3 3M14 9l2 2"/>'),
   more: line('<circle cx="6" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="18" cy="12" r="1"/>'),
   listView: line('<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>'),
+  mail: line('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>'),
+  code: line('<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>'),
+  play: line('<polygon points="6 4 19 12 6 20 6 4" fill="currentColor"/>'),
+  spark: line('<path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4Z"/>'),
+  bot: line('<rect x="4" y="8" width="16" height="12" rx="3"/><circle cx="9" cy="14" r="1.5"/><circle cx="15" cy="14" r="1.5"/><path d="M12 2v6M9 2h6"/>'),
 };

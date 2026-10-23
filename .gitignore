@@ -10,3 +10,6 @@ os/iso/config/includes.chroot/opt/nubeos/
 os/iso/config/includes.chroot/usr/share/nubeos/
 nubeos.zip
 .agentic/
+agentic/
+web-desktop/fairemail.zip
+web-desktop/fairemail_extracted/

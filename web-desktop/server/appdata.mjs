@@ -14,7 +14,7 @@ import * as store from './store.mjs';
 const { HttpError } = store;
 const fail = (status, message) => { throw new HttpError(status, message); };
 
-export const APPS = ['listas', 'notas', 'calendario', 'llavero'];
+export const APPS = ['listas', 'notas', 'calendario', 'llavero', 'correo'];
 const MAX_DOC = 2 * 1024 * 1024;
 const DIR = path.join(store.DATA, 'apps');
 mkdirSync(DIR, { recursive: true });

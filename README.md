@@ -1,7 +1,7 @@
 # WonderfulOS
 
 Un sistema operativo sencillo y bonito, basado en Linux, para trabajar: Navegador, Archivos,
-Listas, Notas, Calendario, Texto, Cálculo, Presentaciones (LibreOffice), Llavero y Ajustes.
+Listas, Notas, Calendario, Correo, Texto, Cálculo, Presentaciones (LibreOffice), Llavero y Ajustes.
 Es **software libre** (GPL-3.0-or-later).
 
 - **Funciona en tu ordenador**: se instala como app en Mac, Windows y Linux (`desktop/`), o como
@@ -27,15 +27,32 @@ cd desktop && npm install && npx electron-builder
 
 ## Probar el escritorio web
 
-No necesita dependencias ni compilación, solo Node.js. Desde la carpeta del proyecto:
+Solo necesita Node.js. La primera vez instala las dependencias del correo (IMAP/SMTP) y después
+arranca el servicio:
 
 ```bash
-cd web-desktop && node server.mjs
+cd web-desktop && npm install && node server.mjs
 ```
 
 y abre <http://127.0.0.1:4310>. El servicio también arranca, en el puerto 4311,
 el proxy local de navegación que permite al Navegador mostrar webs y buscar sin
 salir del escritorio. Todo se queda en tu equipo.
+
+Notas del correo:
+- En Gmail, Outlook, Yahoo o iCloud usa una **contraseña de aplicación** (las 16 letras, sin
+  espacios). En Gmail hay que activar además IMAP en *Configuración › Reenvío y correo POP/IMAP*.
+- Si un antivirus con escaneo SSL (Norton, Kaspersky, ESET…) intercepta la conexión, Node no
+  reconoce su certificado. Guarda el certificado raíz del antivirus en `~/.nubeos/mail-ca.pem`
+  (o indica otra ruta con `NUBEOS_MAIL_CA`) y reinicia; no hace falta desactivar la verificación TLS.
+
+Notas de Agentic:
+- Necesita [Ollama](https://ollama.com). Los modelos se pueden descargar desde la propia app o con
+  `ollama pull qwen3:1.7b gemma2:2b`.
+- En equipos de 8 GB, `gemma2:2b` (1,6 GB) es el equilibrio recomendado para redactar;
+  `gemma3:1b` (806 MB) es la opción ultraligera si necesitas más RAM libre, a cambio de menor calidad.
+- El modo **Agente** usa `qwen3:1.7b` y las herramientas del sistema (4096 tokens de contexto).
+  El modo **Redacción** usa `gemma2:2b`, 2048 tokens y ninguna herramienta: así escribe mejor y
+  consume menos memoria.
 
 Qué incluye:
 
@@ -48,6 +65,8 @@ Qué incluye:
 | **Cálculo** | Hoja de cálculo con fórmulas (`=SUMA(A1:A5)`, `PROMEDIO`, `MIN`, `MAX`, `CONTAR`, `SI`, `REDONDEAR`…), autosuma e importación/exportación CSV. |
 | **Diapositivas** | Presentaciones con miniaturas, temas, reordenación y modo presentación a pantalla completa. |
 | **Navegador** | En la app de escritorio usa Chromium; en el escritorio web, el proxy local. Las direcciones locales (p. ej. ComfyUI en `127.0.0.1:8188`) se abren directamente. Las **descargas** se guardan en Archivos › Descargas, en este equipo. |
+| **Correo** | Cliente inspirado en FairEmail: IMAP/SMTP con detección automática de servidores, carpetas, búsqueda, destacados, borradores con autoguardado y firma. Sin cuenta funciona en local y lo enviado espera en la Bandeja de salida. |
+| **Agentic** | Asistente local con Ollama. Modo **Agente** para automatizar el sistema (`qwen3:1.7b`) y modo **Redacción** para correos, planes e ideas (`gemma2:2b`), sin herramientas y con menos contexto para ahorrar RAM. |
 | **Llavero** | Contraseñas cifradas con una contraseña maestra propia, sin conexión ni recuperación remota. |
 | **Ajustes** | Apariencia, fondo, dock, pantalla, accesibilidad, almacenamiento local y apps de Linux. |
 
@@ -61,7 +80,7 @@ cd web-desktop && node --test tests/*.test.mjs
 
 ```
 docs/ARQUITECTURA.md     Visión, componentes, seguridad y copias de seguridad
-web-desktop/             Escritorio en el navegador (HTML/CSS/JS sin dependencias)
+web-desktop/             Escritorio en el navegador (HTML/CSS/JS; el correo usa IMAP/SMTP)
   server.mjs             Servicio local: escritorio, API y proxy
   server/api.mjs         API local: archivos, descargas y datos de apps
   server/store.mjs       Datos en disco: perfil local y archivos

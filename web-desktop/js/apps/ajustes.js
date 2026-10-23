@@ -97,7 +97,7 @@ export default {
         html += row('Luz nocturna', `<input type="checkbox" ${s.night ? 'checked' : ''} data-check="night" style="width:20px;height:20px;accent-color:var(--accent)">`, 'Colores más cálidos para descansar la vista');
       }
       if (current === 'accesibilidad') {
-        html += row('Tamaño del texto', segmented('scale', [['1', 'Normal'], ['1.15', 'Grande'], ['1.3', 'Muy grande']], String(s.textScale || 1.15)), 'Agranda todo el sistema: textos, iconos y ventanas');
+        html += row('Tamaño del texto', segmented('scale', [['0.9', 'Pequeño'], ['1', 'Normal'], ['1.15', 'Grande'], ['1.3', 'Muy grande']], String(s.textScale || 0.9)), 'Agranda todo el sistema: textos, iconos y ventanas');
         html += `<small style="color:var(--muted)">Todo se puede usar con el teclado: Tab para moverte, Intro para abrir y Esc para cerrar.</small>`;
       }
       if (current === 'acerca') {
