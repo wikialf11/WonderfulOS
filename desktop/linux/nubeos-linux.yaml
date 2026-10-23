@@ -25,6 +25,8 @@ provision:
   script: |
     #!/bin/bash
     set -eux
+    # Solo la primera vez: en los demás arranques no se reinstala nada (si no, cada arranque tardaba minutos).
+    [ -f /var/lib/nubeos-listo ] && exit 0
     export DEBIAN_FRONTEND=noninteractive
     apt-get update
     apt-get install -y --no-install-recommends ca-certificates curl wget gnupg flatpak libfuse2t64 dbus-x11 \

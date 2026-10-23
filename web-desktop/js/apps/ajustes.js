@@ -103,7 +103,7 @@ export default {
       if (current === 'acerca') {
         html += `<div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:30px;text-align:center">
           <div style="width:96px;height:96px">${ICONS.logo}</div><div style="font-size:26px;font-weight:650">WonderfulOS</div>
-          <div style="color:var(--muted)">Versión 0.17.1 · basado en Linux</div>
+          <div style="color:var(--muted)">Versión 0.17.2 · basado en Linux</div>
           <p style="max-width:420px;color:var(--muted)">Un sistema operativo sencillo: oficina, navegador y apps de Linux, con la potencia de tu ordenador. Es <b>software libre</b> (licencia GPL-3.0): puedes usarlo, estudiarlo, compartirlo y mejorarlo.</p></div>`;
       }
       content.innerHTML = html;

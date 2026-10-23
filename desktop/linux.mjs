@@ -51,10 +51,15 @@ export function start() {
     if (s.state !== 'sin instalar' && existsSync(vmYaml)) {
       const y = readFileSync(vmYaml, 'utf8');
       const m = y.match(/- location: "([^"]*linux-compartido)"/);
-      if (m && m[1] !== cfg.shared) {
+      // Motores creados con versiones anteriores reinstalaban los paquetes en cada arranque.
+      const guard = '    [ -f /var/lib/nubeos-listo ] && exit 0\n';
+      const needsGuard = y.includes('touch /var/lib/nubeos-listo') && !y.includes('[ -f /var/lib/nubeos-listo ] && exit 0');
+      if ((m && m[1] !== cfg.shared) || needsGuard) {
         mkdirSync(cfg.shared, { recursive: true });
         if (s.state === 'encendido') await lima(['stop', NAME], { timeout: 180000 }).catch(() => lima(['stop', '-f', NAME], { timeout: 60000 }));
-        writeFileSync(vmYaml, y.replace(m[0], `- location: ${JSON.stringify(cfg.shared)}`));
+        let ny = m ? y.replace(m[0], `- location: ${JSON.stringify(cfg.shared)}`) : y;
+        if (needsGuard) ny = ny.replace('    export DEBIAN_FRONTEND=noninteractive\n    apt-get update\n', guard + '    export DEBIAN_FRONTEND=noninteractive\n    apt-get update\n');
+        writeFileSync(vmYaml, ny);
         s = await status();
       }
     }
