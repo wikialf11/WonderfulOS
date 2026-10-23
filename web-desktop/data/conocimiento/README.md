@@ -2,8 +2,8 @@
 
 Esta carpeta alimenta el modo **Lógica** de Agentic. El motor es 100 % simbólico: no hay modelo
 neuronal, no hay entrenamiento por gradientes y no se llama a Ollama. La consulta local no usa
-internet; cuando el usuario pide una búsqueda web, noticias o una URL, el motor usa las
-herramientas de red de Agentic y devuelve las fuentes consultadas.
+internet; cuando el usuario pide una búsqueda web, noticias, una URL o un informe con fuentes, el
+motor usa las herramientas de red de Agentic y devuelve las fuentes consultadas.
 
 ## Ficheros
 
@@ -90,7 +90,18 @@ curl -s http://127.0.0.1:4310/api/conocimiento/consultar \
 curl -s http://127.0.0.1:4310/api/conocimiento/consultar \
   -H 'x-nubeos: 1' -H 'content-type: application/json' \
   -d '{"texto":"Crea una nota con las ideas de la reunión de mañana"}'
+
+curl -s http://127.0.0.1:4310/api/conocimiento/consultar \
+  -H 'x-nubeos: 1' -H 'content-type: application/json' \
+  -d '{"texto":"Redacta un informe sobre la fotosíntesis"}'
 ```
+
+Los informes multifuente (`tipo: "informe_web"`) buscan varias páginas, leen hasta cuatro dominios
+distintos, incorporan documentos locales o datos aportados y devuelven `respuesta`, `fuentes`,
+`acciones` y `avisos`. La respuesta incluye citas `[n]`, una estructura de introducción, desarrollo
+y conclusión, y no inventa contenido si no encuentra fuentes. Para usar solo datos locales:
+`Redacta un informe sobre la fotosíntesis con estos datos: … sin internet`. Para guardarlo:
+`… y guárdalo en Documentos`.
 
 Enseñar un concepto:
 
@@ -150,7 +161,10 @@ El script necesita conexión a internet solo en ese momento. El motor funciona d
 
 ## Privacidad y límites
 
-- El motor no consulta internet; la búsqueda es local sobre los datos cargados.
-- No inventa definiciones: si no hay datos, responde que no lo sabe y ofrece enseñarle el concepto.
+- La consulta local no consulta internet. Solo las intenciones web explícitas (búsqueda, noticias,
+  lectura de URL o informe con fuentes) abren conexiones.
+- No inventa definiciones ni informes: si no hay datos o fuentes, lo dice y no rellena el texto.
+- Los informes citan cada idea con `[n]` y respetan el texto entre comillas, las URLs y los términos
+  técnicos. El parafraseo es una lista cerrada de conectores y expresiones equivalentes.
 - Los correos, planes y textos son plantillas deterministas. Los huecos se marcan con `[...]`.
 - Las respuestas incluyen conceptos, fuentes y avisos para que el usuario pueda comprobarlas.

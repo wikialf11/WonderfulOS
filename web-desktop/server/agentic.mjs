@@ -767,8 +767,8 @@ export async function searchWeb(q) {
             href = decodeURIComponent(u.searchParams.get('uddg') || href);
           } catch {}
         }
-        const title = linkMatch[2].replace(/<[^>]*>/g, '').trim();
-        const snippet = snippetMatch ? snippetMatch[1].replace(/<[^>]*>/g, '').trim() : '';
+        const title = decodeHtmlEntities(linkMatch[2].replace(/<[^>]*>/g, '').trim());
+        const snippet = snippetMatch ? decodeHtmlEntities(snippetMatch[1].replace(/<[^>]*>/g, '').trim()) : '';
         if (title && href) {
           results.push({ titulo: title, enlace: href, descripcion: snippet });
         }
@@ -819,6 +819,35 @@ export async function searchImages(q) {
   }
 }
 
+const HTML_ENTITIES = Object.freeze({
+  nbsp: ' ', amp: '&', lt: '<', gt: '>', quot: '"', apos: "'",
+  aacute: 'á', eacute: 'é', iacute: 'í', oacute: 'ó', uacute: 'ú', ntilde: 'ñ', uuml: 'ü',
+  Aacute: 'Á', Eacute: 'É', Iacute: 'Í', Oacute: 'Ó', Uacute: 'Ú', Ntilde: 'Ñ', Uuml: 'Ü',
+  laquo: '«', raquo: '»', ndash: '–', mdash: '—', hellip: '…', middot: '·', bull: '•',
+  euro: '€', deg: '°', times: '×', divide: '÷', ordm: 'º', ordf: 'ª',
+  iexcl: '¡', iquest: '¿', copy: '©', reg: '®',
+  rsquo: '’', lsquo: '‘', ldquo: '“', rdquo: '”',
+});
+
+function decodeHtmlEntities(texto) {
+  return String(texto ?? '')
+    .replace(/&#x([0-9a-f]+);/gi, (marca, hex) => {
+      try {
+        return String.fromCodePoint(parseInt(hex, 16));
+      } catch {
+        return marca;
+      }
+    })
+    .replace(/&#(\d+);/g, (marca, decimal) => {
+      try {
+        return String.fromCodePoint(Number(decimal));
+      } catch {
+        return marca;
+      }
+    })
+    .replace(/&([a-z][a-z0-9]+);/gi, (marca, nombre) => HTML_ENTITIES[nombre] ?? marca);
+}
+
 export async function fetchPageText(url, maxLength = 6000) {
   try {
     const res = await fetch(url, {
@@ -831,7 +860,7 @@ export async function fetchPageText(url, maxLength = 6000) {
     if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
     const html = await res.text();
     const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-    const title = titleMatch ? titleMatch[1].replace(/<[^>]*>/g, '').trim() : '';
+    const title = titleMatch ? decodeHtmlEntities(titleMatch[1].replace(/<[^>]*>/g, '').trim()) : '';
 
     let clean = html
       .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
@@ -845,13 +874,9 @@ export async function fetchPageText(url, maxLength = 6000) {
     clean = clean
       .replace(/<(?:h[1-6]|p|div|li|tr)[^>]*>/gi, '\n')
       .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'");
+      .replace(/<[^>]+>/g, ' ');
+
+    clean = decodeHtmlEntities(clean);
 
     const lines = clean.split('\n').map((l) => l.trim()).filter((l) => l.length > 0);
     let text = lines.join('\n');

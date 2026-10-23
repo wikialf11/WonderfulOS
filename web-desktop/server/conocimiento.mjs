@@ -419,6 +419,307 @@ function resumenExtractivo(texto, consulta, max = 900) {
   return salida;
 }
 
+// ---------- Redacción de informes con varias fuentes ----------
+
+function esPeticionInforme(texto) {
+  const t = normalizar(texto);
+  const empiezaComoPregunta = /^(?:como|explicame|explica|dime|cuentame|quiero saber|necesito saber|me gustaria saber)\b/.test(t);
+  if (empiezaComoPregunta && /\bcomo\b/.test(t) && /\b(?:crear|crea|hacer|hace|redactar|redacta|elaborar|elabora|preparar|prepara|generar|genera|realizar|realiza|desarrollar|desarrolla|escribir|escribe)\b/.test(t)) return false;
+  if (/\b(redacta(?:me)?|redactes|elabora(?:me)?|elabores|prepara(?:me)?|prepares|haz(?:me)?|hagas|crea(?:me)?|crees|escribe(?:me)?|escribas|genera(?:me)?|generes|realiza(?:me)?|realices|desarrolla(?:me)?|desarrolles)\s+(?:un|una|el|la)?\s*(?:informe|monografia|articulo)\b/.test(t)) return true;
+  if (/\b(?:necesito|quiero|deseo)\s+(?:que\s+)?(?:redactes|elabores|prepares|hagas|crees|escribas|generes|realices|desarrolles)\s+(?:un|una|el|la)?\s*(?:informe|monografia|articulo)\b/.test(t)) return true;
+  return /\b(?:necesito|quiero|deseo)\s+(?:un|una)\s*(?:informe|monografia|articulo)\b/.test(t);
+}
+
+function separarDatosInforme(texto) {
+  const original = String(texto ?? '');
+  const coincidencia = original.match(/\b(?:con|usando|a partir de)\s+(?:estos|los|mis|la siguiente)?\s*(?:datos|informaci[oó]n|notas)\s*[:\-]\s*([\s\S]+)$/i)
+    || original.match(/\b(?:datos|notas)\s*[:\-]\s*([\s\S]+)$/i);
+  if (!coincidencia) return { instruccion: original, datos: '' };
+  const datos = coincidencia[1]
+    .replace(/\s+(?:y\s+)?(?:sin\s+(?:internet|conexi[oó]n)|solo\s+con\s+(?:estos|mis|los)?\s*(?:datos|documentos|informaci[oó]n)|no\s+busques(?:\s+en\s+internet)?|gu[aá]rda(?:lo|la)?\s+en\s+documentos?|guardar\s+en\s+documentos?)\b[\s\S]*$/i, '')
+    .trim();
+  return {
+    instruccion: original.slice(0, coincidencia.index).trim(),
+    datos,
+  };
+}
+
+function limpiarTemaInforme(texto) {
+  let tema = String(texto ?? '').trim();
+  tema = tema.replace(/^.*?\b(?:red[aá]cta(?:me)?|red[aá]ctes|elabora(?:me)?|elabores|prepara(?:me)?|prepares|haz(?:me)?|hagas|crea(?:me)?|crees|escribe(?:me)?|escribas|genera(?:me)?|generes|realiza(?:me)?|realices|desarrolla(?:me)?|desarrolles)\s+(?:un|una|el|la)?\s*(?:informe|monograf[ií]a|art[ií]culo)\s*/i, '');
+  tema = tema.replace(/^.*?\b(?:necesito|quiero|deseo)\s+(?:un|una)\s*(?:informe|monograf[ií]a|art[ií]culo)\s*/i, '');
+  tema = tema.replace(/^(?:sobre|acerca\s+de|en\s+torno\s+a|de|del)\s+/i, '');
+  tema = tema.replace(/\s+(?:y\s+)?(?:gu[aá]rda(?:lo|la)?|guardar)\s+en\s+documentos?\b[\s\S]*$/i, '');
+  tema = tema.replace(/\s+(?:sin\s+(?:internet|conexi[oó]n)|solo\s+con\s+(?:estos|mis|los)?\s*(?:datos|documentos|informaci[oó]n)|no\s+busques(?:\s+en\s+internet)?)\b[\s\S]*$/i, '');
+  tema = tema.replace(/\s+(?:con|usando|a partir de)\s+(?:estos|los|mis|la siguiente)?\s*(?:datos|notas|informaci[oó]n)\b[\s\S]*$/i, '');
+  tema = tema.replace(/\s+en\s+documentos?\s*$/i, '');
+  tema = tema.replace(/^["'«»]+|["'«»]+$/g, '').replace(/[.,;:]+$/g, '').trim();
+  return tema;
+}
+
+function esOracionUtil(oracion) {
+  const o = String(oracion ?? '').replace(/\s+/g, ' ').trim();
+  if (o.length < 55 || o.length > 520) return false;
+  if (esFraseBoilerplate(o)) return false;
+  if (/[?¿]/.test(o)) return false;
+  if (/https?:\/\//i.test(o)) return false;
+  if (/^(?:ver|leer|compartir|imprimir|descargar|siguiente|anterior|volver|inicio|menú|menu|te explicamos|te contamos|descubre|aprende|si deseas leer|te recomendamos|sigue leyendo|cuando hablamos de|en este artículo|a continuación|diferencia entre|qué es|que es|cómo|como se|cuándo|dónde|por qué|para qué|características|importancia|tipos|ejemplos|ventajas|desventajas|resumen|introducción|conclusión|índice|bibliografía|referencias|perdonen|perdón|disculpen|me gust|excelente|muy bueno|buen artículo|interesante artículo|opino|creo que|considero que|aguante|viva|jaja|jajaja|xd|en mi opinión|para mí|yo creo|yo opino)\b/i.test(o)) return false;
+  if (/(cookies?|pol[ií]tica de privacidad|suscr[ií]bete|iniciar sesi[oó]n|todos los derechos|publicidad|newsletter|aceptar cookies|artículos parecidos|entra en nuestra categoría|no podemos evitar pensar|si deseas leer más|les doy|sumamente completo|este comentario|otro comentario|la verdad es que|sumamente buen|buen texto|gran artículo|me encanta|me gustó|me gusta|increíble|increible|jajaja?|xd|del la|es algo que todos hemos oído|hemos oído mencionar|si quieres aprender|acompáñanos|acompananos|continúa leyendo|continua leyendo|no te lo pierdas|te invitamos a leer)/i.test(o)) return false;
+  if (/\b[A-ZÁÉÍÓÚÑ]{6,}\b/.test(o)) return false;
+  if (/^[^.]{1,90}:\s*(?:qué|que|cómo|como|cuándo|cuando|dónde|donde|por qué|para qué|fases|características|importancia|tipos|ejemplos)\b/i.test(o)) return false;
+  if (/[–-]\s*(?:con|sin)\s+(?:esquema|ejemplos|resumen|vídeo|video|imágenes|imagenes)\b/i.test(o)) return false;
+  if ((o.match(/[A-ZÁÉÍÓÚÑ]{5,}/g) || []).length > 4) return false;
+  if (/[|]{2,}/.test(o)) return false;
+  return true;
+}
+
+function oracionBreve(texto) {
+  const limpio = String(texto ?? '').replace(/\s+/g, ' ').trim();
+  if (!limpio) return '';
+  const base = limpio.length > 420 ? `${limpio.slice(0, 420).replace(/\s+\S*$/, '')}…` : limpio;
+  return capitalizar(/[.!?]$/.test(base) ? base : `${base}.`);
+}
+
+function extraerOracionesFuente(texto, terminos, max = 4) {
+  const bloques = String(texto ?? '').replace(/\r/g, '').split(/\n+/);
+  const oraciones = [];
+  let orden = 0;
+  for (const bloque of bloques) {
+    const limpioBloque = bloque.replace(/[ \t]+/g, ' ').trim();
+    if (!limpioBloque) continue;
+    const partes = limpioBloque.split(/(?<=[.!?])\s+/);
+    for (let parte of partes) {
+      parte = parte.replace(/^[\s•·*\-–—]+/, '').replace(/\s+/g, ' ').trim();
+      if (!esOracionUtil(parte)) continue;
+      parte = parte.replace(/\s*\[\d+\]/g, '').replace(/\s*\(\d+\)/g, '');
+      if (!/[.!?]$/.test(parte)) parte += '.';
+      parte = capitalizar(parte);
+      const presentes = new Set(tokens(parte).filter((t) => !STOPWORDS.has(t)).map(raiz));
+      const score = [...terminos].filter((t) => presentes.has(t)).length;
+      oraciones.push({ texto: parte, score, orden: orden++ });
+    }
+  }
+
+  const vistos = new Set();
+  const unicas = [];
+  for (const oracion of oraciones) {
+    const firma = firmaOracion(oracion.texto);
+    if (!firma || vistos.has(firma)) continue;
+    vistos.add(firma);
+    unicas.push(oracion);
+  }
+  const relevantes = unicas
+    .filter((o) => o.score > 0)
+    .sort((a, b) => b.score - a.score || a.orden - b.orden);
+  const seleccion = relevantes.slice(0, max);
+  if (seleccion.length < max) {
+    for (const oracion of unicas) {
+      if (seleccion.length >= max) break;
+      if (!seleccion.includes(oracion)) seleccion.push(oracion);
+    }
+  }
+  return seleccion.slice(0, max).sort((a, b) => a.orden - b.orden);
+}
+
+function firmaOracion(texto) {
+  return [...new Set(tokens(texto).filter((t) => !STOPWORDS.has(t)).map(raiz))]
+    .sort()
+    .join(' ');
+}
+
+function esOracionDuplicada(texto, seleccionadas) {
+  const firma = new Set(firmaOracion(texto).split(' ').filter(Boolean));
+  if (!firma.size) return true;
+  return seleccionadas.some((s) => {
+    if (!s.firma?.size) return false;
+    let comunes = 0;
+    for (const t of firma) if (s.firma.has(t)) comunes += 1;
+    const union = firma.size + s.firma.size - comunes;
+    return union > 0 && comunes / union >= 0.7;
+  });
+}
+
+const PARAFRASIS_CONECTORES = [
+  [/^Además,\s*/i, 'Asimismo, '],
+  [/^Sin embargo,\s*/i, 'No obstante, '],
+  [/^No obstante,\s*/i, 'Sin embargo, '],
+  [/^Por otro lado,\s*/i, 'En otro orden, '],
+  [/^Por ejemplo,\s*/i, 'A modo de ejemplo, '],
+  [/^Finalmente,\s*/i, 'Para terminar, '],
+  [/^En conclusión,\s*/i, 'En suma, '],
+  [/^También,\s*/i, 'Igualmente, '],
+];
+
+const PARAFRASIS_FRASES = [
+  [/\bdebido a que\b/gi, 'puesto que'],
+  [/\bdebido a\b/gi, 'a causa de'],
+  [/\ba pesar de\b/gi, 'pese a'],
+  [/\ba través de\b/gi, 'mediante'],
+  [/\bpor medio de\b/gi, 'mediante'],
+  [/\bde acuerdo con\b/gi, 'según'],
+  [/\bcon respecto a\b/gi, 'en relación con'],
+  [/\bal mismo tiempo\b/gi, 'a la vez'],
+  [/\ben su mayoría\b/gi, 'mayoritariamente'],
+  [/\bcon el fin de\b/gi, 'con el objetivo de'],
+  [/\ba fin de\b/gi, 'con el objetivo de'],
+  [/\bse lleva a cabo\b/gi, 'se realiza'],
+  [/\blleva a cabo\b/gi, 'realiza'],
+  [/\btiene lugar\b/gi, 'ocurre'],
+  [/\bestá formado por\b/gi, 'se compone de'],
+  [/\bestá formada por\b/gi, 'se compone de'],
+  [/\bestá compuesto por\b/gi, 'se compone de'],
+  [/\bestá compuesta por\b/gi, 'se compone de'],
+  [/\bse basa en\b/gi, 'se fundamenta en'],
+  [/\bhace referencia a\b/gi, 'se refiere a'],
+  [/\bse caracteriza por\b/gi, 'se distingue por'],
+  [/\bjuega un papel\b/gi, 'desempeña una función'],
+  [/\bse producen\b/gi, 'se generan'],
+  [/\bse produce\b/gi, 'se genera'],
+  [/\bprovoca\b/gi, 'causa'],
+  [/\ben la actualidad\b/gi, 'hoy en día'],
+  [/\bcada vez más\b/gi, 'de forma creciente'],
+  [/\bes importante\b/gi, 'resulta relevante'],
+  [/\bes fundamental\b/gi, 'resulta esencial'],
+  [/\bse puede\b/gi, 'es posible'],
+  [/\bpor lo tanto\b/gi, 'en consecuencia'],
+  [/\bpor ejemplo\b/gi, 'a modo de ejemplo'],
+  [/\bes decir\b/gi, 'esto es'],
+  [/\bporque\b/gi, 'ya que'],
+  [/\bseñala\b/gi, 'indica'],
+  [/\bexplica\b/gi, 'detalla'],
+  [/\bdestaca\b/gi, 'subraya'],
+  [/\bpermite\b/gi, 'posibilita'],
+  [/\bproporciona\b/gi, 'aporta'],
+  [/\bcontiene\b/gi, 'incluye'],
+  [/\bcomienza\b/gi, 'inicia'],
+  [/\btermina\b/gi, 'finaliza'],
+  [/\bse utilizan\b/gi, 'se emplean'],
+  [/\bse utiliza\b/gi, 'se emplea'],
+  [/\bson utilizados\b/gi, 'se emplean'],
+  [/\bson utilizadas\b/gi, 'se emplean'],
+  [/\bes utilizado\b/gi, 'se emplea'],
+  [/\bes utilizada\b/gi, 'se emplea'],
+  [/\bson usados\b/gi, 'se emplean'],
+  [/\bson usadas\b/gi, 'se emplean'],
+  [/\bes usado\b/gi, 'se emplea'],
+  [/\bes usada\b/gi, 'se emplea'],
+  [/\butiliza\b/gi, 'emplea'],
+  [/\butilizan\b/gi, 'emplean'],
+  [/\bproduce\b/gi, 'genera'],
+  [/\bmuy\b/gi, 'sumamente'],
+  [/\bactualmente\b/gi, 'en la actualidad'],
+  [/\bprincipalmente\b/gi, 'sobre todo'],
+  [/\bgeneralmente\b/gi, 'por lo general'],
+  [/\brápidamente\b/gi, 'con rapidez'],
+  [/\bclaramente\b/gi, 'de forma clara'],
+  [/\bde forma clara\b/gi, 'de manera clara'],
+  [/\buso\b/gi, 'empleo'],
+  [/\bmétodos\b/gi, 'procedimientos'],
+  [/\bmétodo\b/gi, 'procedimiento'],
+  [/\bimportantes\b/gi, 'relevantes'],
+  [/\bimportante\b/gi, 'relevante'],
+];
+
+function aplicarFueraDeProtegido(texto, fn) {
+  const partes = String(texto).split(/(https?:\/\/\S+|«[^»]*»|"[^"]*")/g);
+  return partes.map((parte, i) => (i % 2 === 1 ? parte : fn(parte))).join('');
+}
+
+function parafrasearOracion(texto) {
+  let salida = String(texto ?? '').trim();
+  if (!salida) return '';
+  for (const [regex, reemplazo] of PARAFRASIS_CONECTORES) {
+    if (regex.test(salida)) {
+      salida = salida.replace(regex, reemplazo);
+      break;
+    }
+  }
+  salida = aplicarFueraDeProtegido(salida, (parte) => {
+    let limpio = parte;
+    for (const [regex, reemplazo] of PARAFRASIS_FRASES) {
+      limpio = limpio.replace(regex, (encontrado) => (
+        encontrado[0] === encontrado[0].toUpperCase()
+          ? reemplazo.charAt(0).toUpperCase() + reemplazo.slice(1)
+          : reemplazo
+      ));
+    }
+    return limpio;
+  });
+  salida = salida.replace(/\s+/g, ' ').replace(/\s+([,.;:!?])/g, '$1').trim();
+  if (salida) salida = capitalizar(salida);
+  if (salida && !/[.!?]$/.test(salida)) salida += '.';
+  return salida;
+}
+
+function conCita(texto, numero) {
+  const limpio = String(texto ?? '').replace(/\s*[.!?]\s*$/, '').trim();
+  return `${limpio} [${numero}].`;
+}
+
+const INICIOS_MINUSCULA = new Set([
+  'el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas', 'este', 'esta',
+  'estos', 'estas', 'aquel', 'aquella', 'su', 'sus', 'es', 'son', 'se',
+  'en', 'de', 'por', 'para', 'con', 'sin', 'cuando', 'como', 'aunque',
+  'mientras', 'no', 'también', 'además', 'esto', 'ello', 'ellos', 'ellas',
+]);
+
+const RE_CONECTOR_INICIAL = /^(Además|Asimismo|Igualmente|También|Finalmente|Por su parte|En la misma línea|No obstante|Sin embargo|En cambio|Por el contrario|En primer lugar|En segundo lugar|A modo de ejemplo|En suma|Para terminar|En otro orden|Por ejemplo|En consecuencia|Esto es),\s*/i;
+
+function conectorInicial(texto) {
+  const t = normalizar(texto);
+  const coincidencia = t.match(/^(ademas|asimismo|igualmente|tambien|finalmente|por su parte|en la misma linea|no obstante|sin embargo|en cambio|por el contrario|en primer lugar|en segundo lugar|a modo de ejemplo|en suma|para terminar|en otro orden|por ejemplo|en consecuencia|esto es)\b/);
+  return coincidencia ? coincidencia[1] : '';
+}
+
+function conTransicion(oracion, transicion) {
+  const inicial = oracion.match(/^([A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)/);
+  if (!inicial) return oracion;
+  const primera = normalizar(inicial[1]);
+  const arranque = normalizar(oracion).split(' ').slice(0, 9).join(' ');
+  if (conectorInicial(oracion)) return oracion;
+  if (/\b(tambien|igualmente|ademas|asimismo|no obstante|sin embargo)\b/.test(arranque)) {
+    return oracion;
+  }
+  if (!INICIOS_MINUSCULA.has(primera)) return oracion;
+  return `${transicion} ${oracion.charAt(0).toLowerCase()}${oracion.slice(1)}`;
+}
+
+function unirOraciones(items) {
+  let ultimoConector = '';
+  return items.map((item, i) => {
+    if (i === 0) {
+      ultimoConector = conectorInicial(item.texto);
+      return item.texto;
+    }
+    const cambioFuente = items[i - 1].fuente.n !== item.fuente.n;
+    const transiciones = cambioFuente
+      ? ['Por su parte,', 'En la misma línea,', 'Asimismo,']
+      : ['Asimismo,', 'Además,', 'Igualmente,'];
+    let texto = item.texto;
+    const inicial = conectorInicial(texto);
+    if (inicial && inicial === ultimoConector) {
+      const alternativas = ['no obstante', 'sin embargo', 'en cambio', 'por el contrario'].includes(inicial)
+        ? ['No obstante,', 'Sin embargo,', 'En cambio,', 'Por el contrario,']
+        : ['por su parte', 'en la misma linea'].includes(inicial)
+          ? ['Por su parte,', 'En la misma línea,']
+          : ['Asimismo,', 'Igualmente,', 'Además,', 'En la misma línea,'];
+      const alternativa = alternativas.find((candidato) => normalizar(candidato) !== inicial);
+      if (alternativa) texto = texto.replace(RE_CONECTOR_INICIAL, `${alternativa} `);
+    }
+    let transicion = transiciones[(i - 1) % transiciones.length];
+    for (let salto = 0; salto < transiciones.length; salto += 1) {
+      const candidata = transiciones[(i - 1 + salto) % transiciones.length];
+      if (normalizar(candidata) !== ultimoConector) {
+        transicion = candidata;
+        break;
+      }
+    }
+    const unida = conTransicion(texto, transicion);
+    ultimoConector = unida === texto ? conectorInicial(texto) : normalizar(transicion);
+    return unida;
+  }).join(' ');
+}
+
 export function createEngine(opciones = {}) {
   const dataDir = opciones.dataDir || path.join(DATA, 'conocimiento');
   const seedDir = opciones.seedDir || SEED_DIR;
@@ -1307,6 +1608,255 @@ export function createEngine(opciones = {}) {
     };
   }
 
+  async function respuestaInformeWeb(texto) {
+    const { instruccion, datos } = separarDatosInforme(texto);
+    const tema = limpiarTemaInforme(instruccion);
+    const avisos = [];
+    if (!tema) {
+      return {
+        tipo: 'informe_web',
+        respuesta: 'Indica el tema del informe. Por ejemplo: «Redacta un informe sobre la fotosíntesis».',
+        conceptos: [],
+        fuentes: [],
+        acciones: [],
+        avisos: ['No se ha generado ningún texto porque falta el tema.'],
+      };
+    }
+
+    const guardar = /en\s+documentos?\b|\bgu[aá]rda(?:lo|la)?\b|\bguardar\b/i.test(texto)
+      && !/\b(?:no|sin)\s+(?:quiero\s+)?guard/i.test(texto);
+    const sinInternet = /\b(?:sin\s+(?:internet|conexi[oó]n)|solo\s+con\s+(?:estos|mis|los)?\s*(?:datos|documentos|informaci[oó]n)|no\s+busques)\b/i.test(texto);
+    const quiereDocumentos = /\b(?:mis\s+documentos|documentos\s+del\s+usuario|mis\s+notas)\b/i.test(texto);
+    const terminosBase = [...new Set(tokens(tema).filter((t) => !STOPWORDS.has(t)))];
+    const terminos = new Set([...terminosBase, ...expandirTerminos(terminosBase)].map(raiz));
+    const fuentes = [];
+
+    const locales = state.documentos
+      .filter((d) => d.origen === 'usuario' && d.texto)
+      .map((d) => {
+        const presentes = new Set(tokens(`${d.titulo} ${d.texto}`).filter((t) => !STOPWORDS.has(t)).map(raiz));
+        const score = [...terminos].filter((t) => presentes.has(t)).length;
+        return { ...d, score };
+      })
+      .filter((d) => d.score > 0 || quiereDocumentos)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 2);
+    for (const documento of locales) {
+      const oraciones = extraerOracionesFuente(documento.texto, terminos, 4);
+      if (oraciones.length) {
+        fuentes.push({
+          titulo: documento.titulo || 'Documento del usuario',
+          url: '',
+          tipo: 'usuario',
+          oraciones,
+        });
+      }
+    }
+
+    if (datos) {
+      let oraciones = extraerOracionesFuente(datos, terminos, 4);
+      if (!oraciones.length) {
+        const breve = oracionBreve(datos);
+        if (breve) oraciones = [{ texto: breve, score: 1, orden: 0 }];
+      }
+      if (oraciones.length) {
+        fuentes.push({
+          titulo: 'Datos aportados por el usuario',
+          url: '',
+          tipo: 'datos',
+          oraciones,
+        });
+      }
+    }
+
+    if (!sinInternet) {
+      const busqueda = await searchWeb(tema);
+      if (!busqueda.ok) {
+        avisos.push(`No se pudo consultar internet: ${busqueda.error || 'sin conexión'}.`);
+      } else {
+        const candidatos = [];
+        const dominios = new Set();
+        for (const resultado of busqueda.resultados || []) {
+          if (!/^https?:\/\//i.test(String(resultado.enlace || ''))) continue;
+          let host = '';
+          try {
+            host = new URL(resultado.enlace).hostname.replace(/^www\./i, '');
+          } catch {
+            continue;
+          }
+          if (!host || dominios.has(host)) continue;
+          dominios.add(host);
+          candidatos.push(resultado);
+          if (candidatos.length >= 4) break;
+        }
+        const paginas = await Promise.all(candidatos.map(async (resultado) => {
+          const pagina = await fetchPageText(resultado.enlace, 12000);
+          return pagina.ok
+            ? {
+              ...resultado,
+              texto: pagina.texto,
+              titulo: pagina.titulo || resultado.titulo,
+              url: pagina.url || resultado.enlace,
+              leida: true,
+            }
+            : {
+              ...resultado,
+              texto: resultado.descripcion || '',
+              titulo: resultado.titulo,
+              url: resultado.enlace,
+              leida: false,
+            };
+        }));
+        let leidas = 0;
+        for (const pagina of paginas) {
+          let oraciones = extraerOracionesFuente(pagina.texto, terminos, 4);
+          if (!oraciones.length && !pagina.leida) {
+            const breve = oracionBreve(pagina.descripcion || pagina.texto);
+            if (breve) oraciones = [{ texto: breve, score: 1, orden: 0 }];
+          }
+          if (!oraciones.length) continue;
+          if (pagina.leida) leidas += 1;
+          fuentes.push({
+            titulo: pagina.titulo || pagina.url,
+            url: pagina.url,
+            tipo: 'web',
+            oraciones,
+          });
+        }
+        if (paginas.length && leidas < paginas.length) {
+          avisos.push(`Se leyeron ${leidas} de ${paginas.length} páginas; en las demás se usó el resumen del buscador.`);
+        }
+      }
+    } else {
+      avisos.push('No se consultó internet por indicación de la petición; el informe se basa en los datos locales disponibles.');
+    }
+
+    // Si hay varias páginas con contenido desarrollado, descartamos las que
+    // solo aportan un titular o un fragmento suelto. El umbral sube cuando hay
+    // suficientes fuentes con tres o más pasajes.
+    const webConTres = fuentes.filter((fuente) => fuente.tipo === 'web' && fuente.oraciones.length >= 3);
+    const minimoPasajes = webConTres.length >= 3 ? 3 : 2;
+    const fuentesWebFuertes = fuentes.filter((fuente) => fuente.tipo === 'web' && fuente.oraciones.length >= minimoPasajes);
+    if (fuentesWebFuertes.length >= 2) {
+      for (let i = fuentes.length - 1; i >= 0; i -= 1) {
+        if (fuentes[i].tipo === 'web' && fuentes[i].oraciones.length < minimoPasajes) fuentes.splice(i, 1);
+      }
+    }
+
+    if (!fuentes.length) {
+      return {
+        tipo: 'informe_web',
+        respuesta: `No he podido reunir fuentes suficientes para redactar un informe sobre «${tema}». No voy a inventar el contenido.`,
+        conceptos: [],
+        fuentes: [],
+        acciones: [],
+        avisos: ['La búsqueda no devolvió páginas legibles; prueba con otras palabras o revisa la conexión.', ...avisos],
+      };
+    }
+    if (fuentes.length === 1) {
+      avisos.push('Solo se ha podido reunir una fuente; el informe es necesariamente parcial.');
+    }
+    fuentes.forEach((fuente, i) => { fuente.n = i + 1; });
+
+    const listas = fuentes.map((fuente) => fuente.oraciones.slice(0, 3));
+    const seleccionadas = [];
+    for (let ronda = 0; ronda < 3; ronda += 1) {
+      for (let i = 0; i < listas.length; i += 1) {
+        const oracion = listas[i][ronda];
+        if (!oracion || esOracionDuplicada(oracion.texto, seleccionadas)) continue;
+        seleccionadas.push({
+          ...oracion,
+          fuente: fuentes[i],
+          firma: new Set(firmaOracion(oracion.texto).split(' ').filter(Boolean)),
+        });
+        if (seleccionadas.length >= 12) break;
+      }
+      if (seleccionadas.length >= 12) break;
+    }
+
+    if (!seleccionadas.length) {
+      return {
+        tipo: 'informe_web',
+        respuesta: `He encontrado fuentes sobre «${tema}», pero no pasajes suficientemente claros para construir un informe. No voy a rellenar el texto con datos inventados.`,
+        conceptos: [],
+        fuentes: fuentes.map((f) => `${f.titulo}${f.url ? ` — ${f.url}` : ''}`),
+        acciones: [],
+        avisos: ['No se generó texto porque las fuentes no contenían fragmentos utilizables.', ...avisos],
+      };
+    }
+
+    const redactadas = seleccionadas.map((seleccion) => ({
+      ...seleccion,
+      texto: conCita(parafrasearOracion(seleccion.texto), seleccion.fuente.n),
+    }));
+    const introCount = redactadas.length >= 4 ? 2 : 1;
+    const introduccion = redactadas.slice(0, introCount);
+    const desarrollo = redactadas.slice(introCount, 9);
+    const cierre = redactadas.slice(9, 11);
+    const recuentoFuentes = fuentes.length === 1 ? '1 fuente consultada' : `${fuentes.length} fuentes consultadas`;
+    const lineas = [
+      `**Informe: ${capitalizar(tema)}**`,
+      '',
+      '**Introducción**',
+      '',
+      `El presente informe ofrece una síntesis sobre ${tema} a partir de ${recuentoFuentes}. Los pasajes se han seleccionado por su relación con el tema, se han reorganizado y se han reformulado con un criterio de estilo uniforme. Las citas entre corchetes remiten a la lista final de fuentes.`,
+    ];
+    if (introduccion.length) lineas.push('', unirOraciones(introduccion));
+    lineas.push('', '**Desarrollo**', '');
+    if (desarrollo.length) {
+      for (let i = 0; i < desarrollo.length; i += 4) {
+        lineas.push(unirOraciones(desarrollo.slice(i, i + 4)));
+        lineas.push('');
+      }
+    } else {
+      lineas.push('Las fuentes consultadas no aportan suficientes pasajes para desarrollar el tema en varios párrafos.');
+      lineas.push('');
+    }
+    lineas.push('**Conclusión**', '');
+    if (cierre.length) lineas.push(unirOraciones(cierre));
+    const sintesisFinal = fuentes.length === 1
+      ? `En conjunto, este informe reúne los aspectos principales sobre ${tema} presentes en la fuente consultada.`
+      : `En conjunto, este informe reúne los aspectos principales sobre ${tema} presentes en las fuentes consultadas.`;
+    lineas.push(`${sintesisFinal} Para ampliar o verificar cualquier dato, conviene consultar los documentos originales citados.`);
+    lineas.push('', '**Fuentes**', '');
+    for (const fuente of fuentes) {
+      const origen = fuente.url
+        ? ` — ${fuente.url}`
+        : fuente.tipo === 'datos'
+          ? ' (datos aportados en el mensaje)'
+          : ' (documento del usuario)';
+      lineas.push(`${fuente.n}. ${fuente.titulo}${origen}`);
+    }
+
+    let accion = null;
+    if (guardar) {
+      const contenido = lineas.join('\n');
+      try {
+        accion = await executeOsTool('crear_documento', {
+          nombre: `Informe-${slug(tema)}.md`,
+          contenido,
+        });
+        lineas.push('', '**Acción del sistema**', `- Informe guardado en \`${accion.ruta}\``);
+      } catch (err) {
+        accion = { ok: false, error: err.message };
+        lineas.push('', '**Acción del sistema**', '- No se pudo guardar el informe en Documentos.');
+      }
+    }
+
+    return {
+      tipo: 'informe_web',
+      respuesta: lineas.join('\n'),
+      conceptos: buscarConceptos(tema, 3).map((c) => c.id),
+      fuentes: fuentes.map((f) => `${f.titulo}${f.url ? ` — ${f.url}` : ' (documento del usuario)'}`),
+      acciones: accion ? [accion] : [],
+      avisos: [
+        'Informe elaborado mediante búsqueda, selección y parafraseo controlado de las fuentes; no se ha usado ningún modelo neuronal.',
+        'Las citas [n] indican la fuente de cada idea; el orden y los conectores son una síntesis editorial.',
+        ...avisos,
+      ],
+    };
+  }
+
   async function respuestaAccion(texto) {
     const original = String(texto || '').trim();
     // El tipo de acción se decide por la cabeza de la orden, no por palabras
@@ -1555,6 +2105,7 @@ export function createEngine(opciones = {}) {
   function detectarIntencion(texto) {
     const lower = normalizar(texto);
     if (/https?:\/\//i.test(String(texto || ''))) return 'leer_url';
+    if (esPeticionInforme(texto)) return 'informe_web';
     if (/(busca|buscar|buscame|consulta|consultar|averigua|averiguar|dime|encuentra)\s+(?:en\s+)?(?:internet|la\s+web|la\s+red|online|google)\b/.test(lower)) return 'internet';
     if (esPeticionNoticias(texto) || esPeticionActual(texto)) return 'internet';
     if (/^(hola|buenas|buenos dias|buenas tardes|buenas noches)\b/.test(lower)) return 'saludo';
@@ -1582,6 +2133,7 @@ export function createEngine(opciones = {}) {
     switch (intencion) {
       case 'internet':
       case 'leer_url':
+      case 'informe_web':
         resultado = {
           tipo: 'herramienta',
           respuesta: 'Esta consulta necesita una herramienta web. Usa consultarConHerramientas() o el endpoint /api/conocimiento/consultar.',
@@ -1653,6 +2205,7 @@ export function createEngine(opciones = {}) {
     const intencion = detectarIntencion(entrada);
     let resultado;
     if (intencion === 'accion') resultado = await respuestaAccion(entrada);
+    else if (intencion === 'informe_web') resultado = await respuestaInformeWeb(entrada);
     else if (intencion === 'internet') resultado = await respuestaInternet(entrada);
     else if (intencion === 'leer_url') resultado = await respuestaLeerUrl(entrada);
     else resultado = consultar(entrada);

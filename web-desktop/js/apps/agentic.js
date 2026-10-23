@@ -224,6 +224,9 @@ export default {
                 <button class="ag-prompt-chip" data-text="Explica la vegetación.">
                   <span>▥</span> Texto expositivo con fuentes
                 </button>
+                <button class="ag-prompt-chip" data-text="Redacta un informe sobre la fotosíntesis">
+                  <span>▤</span> Informe con fuentes web
+                </button>
                 <button class="ag-prompt-chip" data-text="¿Qué relación hay entre verde y vegetación?">
                   <span>↔</span> Recorrer relaciones
                 </button>
@@ -300,7 +303,7 @@ export default {
       input.placeholder = mode === 'redaccion'
         ? 'Escribe o pega el texto: correo formal, plan, ideas, reescritura…'
         : mode === 'logica'
-          ? 'Pregunta qué es algo, pide un correo, un plan o un texto con fuentes…'
+          ? 'Pregunta qué es algo, pide un correo, un plan, un informe con fuentes o un texto expositivo…'
           : 'Pídele a Agentic que cree o automatice cualquier tarea...';
       win.body.querySelector('.ag-prompts-agent')?.toggleAttribute('hidden', mode !== 'agente');
       win.body.querySelector('.ag-prompts-write')?.toggleAttribute('hidden', mode !== 'redaccion');

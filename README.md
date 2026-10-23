@@ -61,8 +61,8 @@ Notas de Agentic:
 
 El modo **Lógica** de Agentic funciona en cualquier equipo con Node.js, aunque no haya modelos
 descargados. No entrena ni genera con una red neuronal. Por defecto razona en local; solo abre
-conexiones a internet cuando se lo pides explícitamente (búsqueda web, noticias o lectura de una
-URL), y entonces muestra las fuentes consultadas.
+conexiones a internet cuando se lo pides explícitamente (búsqueda web, noticias, lectura de una
+URL o un informe con fuentes), y entonces muestra las fuentes consultadas.
 
 - **Diccionario abierto**: semilla curada de 103 conceptos más 18.913 synsets del
   [Multilingual Central Repository (MCR/WordNet)](https://github.com/omwn/omw-data) en español,
@@ -75,11 +75,16 @@ URL), y entonces muestra las fuentes consultadas.
 - **Herramientas web**: búsqueda en DuckDuckGo, titulares y fechas de Google News, y lectura
   extractiva de una URL. La respuesta incluye enlaces y fragmentos de las fuentes; si la red falla,
   lo dice y no inventa una respuesta.
+- **Informes multifuente**: con «Redacta un informe sobre…» busca varias páginas, lee hasta cuatro
+  dominios distintos, incorpora documentos del usuario o datos aportados en el mensaje, elimina
+  pasajes duplicados y redacta una introducción, un desarrollo, una conclusión y una lista de
+  fuentes. El parafraseo es determinista y controlado: cambia conectores y expresiones frecuentes,
+  pero protege URLs, citas y términos técnicos.
 - **Acciones locales**: puede crear notas, listas de tareas y documentos en las apps de
-  WonderfulOS, y guardar un informe con fuentes cuando se lo pides junto a una búsqueda web.
-- **Generación determinista**: correos formales, planes semanales, textos expositivos con
-  introducción/desarrollo/conclusión/fuentes y listas. Las plantillas marcan los datos que faltan
-  con placeholders.
+  WonderfulOS, y guardar el informe en Documentos cuando se lo pides explícitamente.
+- **Generación determinista**: correos formales, planes semanales, textos expositivos e informes
+  con introducción/desarrollo/conclusión/fuentes, además de listas. Las plantillas marcan los datos
+  que faltan con placeholders.
 - **Enseñanza**: desde el botón **+ Enseñar concepto** del modo Lógica se añaden conceptos con
   definición, género y relaciones. La API permite además enseñar relaciones, textos y reglas. Todo
   se guarda en `NUBEOS_DATA/conocimiento/` y se usa en la siguiente consulta.
@@ -93,6 +98,8 @@ Ejemplos de consultas:
 Redacta un correo formal al Ayuntamiento de La Laguna para solicitar un certificado de residencia.
 Hazme un plan semanal realista para una persona autónoma que cuida de un familiar mayor.
 Explica la vegetación.
+Redacta un informe sobre la fotosíntesis.
+Redacta un informe sobre la fotosíntesis con estos datos: la clorofila capta la luz solar. Sin internet y guárdalo en Documentos.
 Busca en internet las noticias de hoy sobre inteligencia artificial.
 Busca en internet información sobre fotosíntesis y crea un informe en Documentos.
 Lee esta página y resúmela: https://es.wikipedia.org/wiki/Fotosíntesis

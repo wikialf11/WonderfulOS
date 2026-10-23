@@ -140,33 +140,58 @@ data/conocimiento/
 Flujo de una consulta:
 
 1. **Detección de intención**: definición, comprobación `es_un`, camino entre
-   conceptos, búsqueda local, correo, plan, texto expositivo, búsqueda web,
-   noticias, lectura de una URL o una acción local (nota, lista o documento).
+   conceptos, búsqueda local, correo, plan, texto expositivo, informe
+   multifuente, búsqueda web, noticias, lectura de una URL o una acción local
+   (nota, lista o documento).
 2. **Resolución de conceptos**: índice por lema y sinónimo; prioriza la semilla
    y los conceptos enseñados por el usuario sobre MCR.
 3. **Hechos y reglas**: se construyen hechos `es_un`, `parte_de`,
    `asociado_con`, etc., y se aplican reglas de transitividad, simetría y
    herencia. Las deducciones guardan premisas y nombre de regla.
 4. **Recuperación**: índice BM25 sobre definiciones y documentos. La consulta se
-   expande con sinónimos. Si el usuario pide internet, noticias o incluye una
-   URL, se usan las herramientas web de Agentic (`searchWeb`, Google News RSS y
-   `fetchPageText`) y se devuelven enlaces, fechas y fragmentos. Si la red falla,
-   la respuesta lo declara y no inventa datos.
-5. **Generación y acciones**: plantillas deterministas para correos, planes y
-   textos. Los huecos se marcan con placeholders y cada respuesta incluye
-   conceptos, fuentes y avisos. Las respuestas web son extractivas: no se
-   redacta una opinión sin fuente. Las órdenes explícitas de crear una nota,
+   expande con sinónimos. Si el usuario pide internet, noticias, un informe o
+   incluye una URL, se usan las herramientas web de Agentic (`searchWeb`,
+   Google News RSS y `fetchPageText`) y se devuelven enlaces, fechas y
+   fragmentos. Si la red falla, la respuesta lo declara y no inventa datos.
+5. **Generación y acciones**: plantillas deterministas para correos, planes,
+   textos e informes. Los huecos se marcan con placeholders y cada respuesta
+   incluye conceptos, fuentes y avisos. Las respuestas web son extractivas: no
+   se redacta una opinión sin fuente. Las órdenes explícitas de crear una nota,
    lista o documento se ejecutan con `executeOsTool` y se confirman con la
    ruta o el identificador del resultado.
 6. **Verificación**: la comprobación `es_un` y el detector de contradicciones
    solo afirman lo que está en la base o se deduce de ella.
+
+#### Informes multifuente
+
+La intención `informe_web` se activa con órdenes como «Redacta un informe sobre
+la fotosíntesis». El flujo es determinista:
+
+1. Separa los datos aportados por el usuario (`con estos datos: …`) y limpia el
+   tema de la orden.
+2. Añade documentos locales del usuario que sean relevantes para el tema.
+3. Busca en DuckDuckGo y lee hasta cuatro dominios distintos con
+   `fetchPageText`. Si una página no se puede leer, usa el resumen del buscador
+   y lo advierte.
+4. Extrae oraciones con `extraerOracionesFuente`, filtra navegación, cookies,
+   preguntas y URLs, y puntúa cada pasaje por los términos del tema.
+5. Deduplica pasajes con similitud Jaccard (≥ 0,7) y reparte la selección entre
+   fuentes para no depender de una sola página.
+6. Parafrasea con una lista cerrada de conectores y expresiones equivalentes.
+   Las URLs, el texto entre comillas y los términos técnicos quedan protegidos;
+   no se usan sinónimos MCR indiscriminadamente para evitar errores gramaticales.
+7. Compone introducción, desarrollo, conclusión y fuentes. Cada idea lleva una
+   cita `[n]` y la lista final identifica la página o el documento. Si no hay
+   fuentes legibles, devuelve un aviso y no inventa contenido.
+8. Solo guarda el informe en Documentos si la petición incluye «en Documentos»
+   o una orden equivalente de guardado.
 
 La API está en `server/api.mjs`:
 
 | Ruta | Uso |
 |---|---|
 | `GET /api/conocimiento/status` | Estadísticas del motor. |
-| `POST /api/conocimiento/consultar` | `{ "texto": "¿Qué es el verde?" }`; también resuelve búsquedas web, noticias y URLs. |
+| `POST /api/conocimiento/consultar` | `{ "texto": "¿Qué es el verde?" }`; también resuelve búsquedas web, noticias, URLs, informes multifuente y acciones locales. |
 | `POST /api/conocimiento/ensenar` | Concepto, relación, texto o regla. |
 | `GET /api/conocimiento/buscar?q=...` | Búsqueda BM25 directa. |
 | `GET /api/conocimiento/concepto?lema=...` | Definición directa. |
